@@ -28,4 +28,5 @@ packages = ["src/repair_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]  # tests가 examples/ 모듈을 불러온다
 asyncio_mode = "auto"
