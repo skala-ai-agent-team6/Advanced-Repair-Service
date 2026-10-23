@@ -22,9 +22,13 @@ export const FEATURES = {
   /** 접수 사진 품질 검사 API (실서버는 아직 없음 → false 면 검사 없이 업로드만). Mock 은 파일 이름으로 흉내 */
   photoQualityCheck: USE_MOCK,
   /** 보증 판정(무상/유상) 카드 — 실서버 API 없음 → false 면 진단 리포트에서 카드를 숨김 */
-  warranty: USE_MOCK,
+  // [출장] 백엔드 FieldController 추가로 켬: GET /repairs/{id}/warranty, POST …/warranty/decision
+  warranty: true,
+  /** 접수 화면 보증 기간 안내 (POST /warranty/period) — 실서버 API 없음 */
+  warrantyPeriod: USE_MOCK,
   /** 출장 준비 · 재고 예약(예약/취소/출고/이력) — 실서버 API 없음 → false 면 예약 UI 를 숨기고 기존 부품 발주 화면만 */
-  stockReservation: USE_MOCK,
+  // [출장] 백엔드 FieldController 추가로 켬: trip-parts · stock/reservations · stock-history
+  stockReservation: true,
   /** 소비자용 수리 진행 조회 (/track) — 실서버 API 없음 → false 면 조회 화면에 준비 중 안내, 접수 완료 화면의 링크 숨김 */
   customerReport: USE_MOCK,
   /** 고객(비회원) 고장 접수 /service/request — 실서버 API 없음 → false 면 안내만 보이고 접수 버튼 비활성 */
@@ -32,7 +36,8 @@ export const FEATURES = {
   /** 회원가입 (실서버 API 없음 → false 면 회원가입 화면에 안내만, 가입 버튼 비활성) */
   signup: USE_MOCK,
   /** 출장 일정(오늘의 출장) API — 실서버에 아직 없음 → false 면 출장 API 를 호출하지 않고 0건으로 표시 */
-  fieldSchedule: USE_MOCK,
+  // [출장] 백엔드 GET /field/visits 추가로 켬
+  fieldSchedule: true,
   /** 확정 리포트의 사내 사례 동기화 상태 (US-08) — 실서버 API 없음 → false 면 리포트 화면에서 동기화 카드를 숨기고 호출하지 않음 */
   caseSync: USE_MOCK,
   /** 자동 재처리(재시도) 상태 (US-10) — 실서버 API 없음 → false 면 재처리 카드를 숨기고 호출하지 않음 */

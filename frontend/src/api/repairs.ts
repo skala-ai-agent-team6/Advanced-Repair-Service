@@ -113,6 +113,21 @@ async function realList(q: RepairQuery): Promise<RepairListResponse> {
   return { items, total: items.length, counts: summarize(all), statusCounts: {} }
 }
 
+/** 사진 품질 검사 완료 대기(최대 30초) → 경고 사진 사용 확인 → POST /repairs/{id}/diagnosis */
+async function startAfterQuality(repairId: number, attachmentIds: string[]) {
+  type Q = { status: string; latest?: { id: string; verdict?: string } | null }
+  const deadline = Date.now() + 30_000
+  let results: Q[] = []
+  for (;;) {
+    results = await Promise.all(attachmentIds.map(async (id) => (await http.get<Q>(`/attachments/${id}/quality`)).data))
+    if (results.every((q) => q.status !== 'PENDING' && q.status !== 'RUNNING') || Date.now() > deadline) break
+    await new Promise((r) => setTimeout(r, 1000))
+  }
+  for (const [i, q] of results.entries())
+    if (q.latest?.verdict === 'WARNING') await http.post(`/attachments/${attachmentIds[i]}/quality/acknowledgment`, { resultId: Number(q.latest.id) })
+  await http.post(`/repairs/${repairId}/diagnosis`, { attachmentIds: attachmentIds.map(Number) }, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
+}
+
 export const repairApi = {
   /** GET /api/products?serialNumber= — 시리얼로 제품 정보 자동 조회 */
   async lookupProduct(serial: string): Promise<ProductInfo> {
@@ -177,6 +192,9 @@ export const repairApi = {
     // 사진별 종류(PCB/MOTOR)를 같은 순서로 보낸다 → 백엔드 attachment.target 에 저장, 에이전트가 사진을 나눠 분석
     const targets = photos.map((p) => p.kind)
     const res = (await http.post<BeAccepted>('/repairs', f, { params: { targets }, paramsSerializer: { indexes: null } })).data
+    // [사진 품질] 백엔드가 품질 검사를 켜면 접수만 되고 진단은 시작되지 않는다(taskId=null, requiresDiagnosisRequest=true).
+    // 품질 검사가 끝나길 기다렸다가, 경고 사진은 기사가 올린 그대로 쓰겠다고 확인 기록을 남기고 진단을 시작한다.
+    if (res.requiresDiagnosisRequest && res.attachments?.length) await startAfterQuality(Number(res.repairId), res.attachments.map((a) => a.attachmentId))
     return { repairId: Number(res.repairId) }
   },
 

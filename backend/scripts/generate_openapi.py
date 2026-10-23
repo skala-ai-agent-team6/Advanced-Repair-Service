@@ -234,6 +234,16 @@ add('/api/operations/reprocessing','get','별도 operations_enabled 권한: 실�
 add('/api/operations/events/{eventId}/attempts','get','별도 운영 권한: 원래 이벤트의 수동 재처리 이력',array(free))
 for kind in ['events','outbox']:
     add('/api/operations/'+kind+'/{eventId}/retry','post','별도 운영 권한: 원래 실패 이벤트와 연결한 재처리 시도',free,ref('Reprocess'))
+# [출장] FieldController: 출장기사 화면(frontend field.ts·stock.ts·warranty.ts) 경로
+add('/api/field/visits','get','TECHNICIAN: 나에게 배정된 출장 방문 일정 (from 이후, 방문 시각 순)',array(free),params=[query('from',string(format='date'))])
+add('/api/repairs/{id}/visit','put','방문 일정 지정·방문 완료 표시',free,obj({'visitAt':nullable(string(format='date-time')),'done':nullable({'type':'boolean'})}))
+add('/api/repairs/{id}/trip-parts','get','TECHNICIAN: AI 추천 부품별 창고 재고·이 건의 최근 예약',array(free))
+add('/api/stock/reservations','post','TECHNICIAN: 출장 부품 재고 예약(24시간). 가용 부족 시 409 STOCK_CONFLICT',free,obj({'partId':integer(),'quantity':integer(minimum=1,maximum=100),'repairId':integer()},['partId','quantity','repairId']))
+for action,summary in [('cancel','예약 취소: 가용 재고로 복구'),('release','출고: 보유·예약 차감')]:
+    add('/api/stock/reservations/{id}/'+action,'post','TECHNICIAN: '+summary,free)
+add('/api/parts/{id}/stock-history','get','TECHNICIAN: 부품 예약·취소·만료·출고 이력 (최근 50건)',array(free))
+add('/api/repairs/{id}/warranty','get','보증 기간 기반 무상/유상 제안과 기사 확정',free)
+add('/api/repairs/{id}/warranty/decision','post','TECHNICIAN: 무상/유상 확정. 제안과 다르면 사유 필수',free,obj({'result':string(enum=['FREE','PAID']),'reason':string(maxLength=1000)},['result']))
 add('/internal/rag/confirmed-changes','get','RAG: 고정 high-water mark와 단조 cursor로 확정 변경분 조회',ref('RagPage'),params=[query('after',integer(minimum=0,format='int64',default=0)),query('until',integer(minimum=0,format='int64')),query('size',integer(minimum=1,maximum=500,default=100))],internal=True)
 add('/internal/rag/confirmed-changes/{id}/receipt','post','RAG: 실제 색인 처리 결과 기록; 이전 버전은 최신 상태에 영향 없음',ref('RagState'),ref('SyncReceipt'),internal=True)
 add('/internal/reports/{id}/edit-proposals','post','편집자 AI: 정의된 제안 저장 adapter; 모델 호출 안 함',ref('ProposalState'),ref('EditProposal'),internal=True)

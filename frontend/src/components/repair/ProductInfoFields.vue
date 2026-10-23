@@ -118,7 +118,7 @@ let wpKey = ''
 async function refreshWarranty() {
   window.clearTimeout(wpTimer)
   const s = serial.value.trim().toUpperCase()
-  if (!FEATURES.warranty || !/^RC\d{10}$/.test(s)) {
+  if (!FEATURES.warrantyPeriod || !/^RC\d{10}$/.test(s)) {
     warrantyPeriod.value = null
     wpKey = ''
     return

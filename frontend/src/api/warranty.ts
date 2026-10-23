@@ -26,6 +26,6 @@ export async function decideWarranty(repairId: number, result: 'FREE' | 'PAID', 
  *  응답은 보증 상태·만료일·근거만. 소유자·수리 이력 등은 담지 않는다 */
 export async function checkWarrantyPeriod(serial: string, purchaseDate?: string): Promise<WarrantyPeriod> {
   if (USE_MOCK) return mockDelay(() => mock.checkWarrantyPeriod(serial, purchaseDate), 300)
-  if (!FEATURES.warranty) throw notReady()
+  if (!FEATURES.warrantyPeriod) throw notReady()
   return (await http.post<WarrantyPeriod>('/warranty/period', { serial, purchaseDate })).data
 }
