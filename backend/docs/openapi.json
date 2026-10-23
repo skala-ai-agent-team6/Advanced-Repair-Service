@@ -585,7 +585,8 @@
                       "category": "PCB"
                     }
                   ],
-                  "appliance_type": "예시"
+                  "appliance_type": "예시",
+                  "product_type": "vacuum"
                 }
               }
             }
@@ -1047,7 +1048,8 @@
                       "intake_source": "STAFF",
                       "service_type": "CENTER",
                       "purchase_date": "2026-10-22",
-                      "assigned_technician_id": "1"
+                      "assigned_technician_id": "1",
+                      "product_type": "vacuum"
                     }
                   ]
                 }
@@ -1198,6 +1200,7 @@
                   "service_type": "CENTER",
                   "purchase_date": "2026-10-22",
                   "assigned_technician_id": "1",
+                  "product_type": "vacuum",
                   "attachments": [
                     {
                       "id": "1",
@@ -6232,7 +6235,8 @@
                     "intake_source": "STAFF",
                     "service_type": "CENTER",
                     "purchase_date": "2026-10-22",
-                    "assigned_technician_id": "1"
+                    "assigned_technician_id": "1",
+                    "product_type": "vacuum"
                   },
                   "task": {
                     "id": "1",
@@ -6592,7 +6596,8 @@
                       "category": "PCB"
                     }
                   ],
-                  "appliance_type": "예시"
+                  "appliance_type": "예시",
+                  "product_type": "vacuum"
                 }
               }
             }
@@ -7147,7 +7152,8 @@
                         {}
                       ]
                     },
-                    "confirmed_at": "2026-10-22T09:00:00+09:00"
+                    "confirmed_at": "2026-10-22T09:00:00+09:00",
+                    "product_type": "vacuum"
                   }
                 ]
               }
@@ -8062,7 +8068,8 @@
                         {}
                       ]
                     },
-                    "confirmed_at": "2026-10-22T09:00:00+09:00"
+                    "confirmed_at": "2026-10-22T09:00:00+09:00",
+                    "product_type": "vacuum"
                   }
                 ]
               }
@@ -9292,6 +9299,7 @@
                   "service_type": "CENTER",
                   "purchase_date": "2026-10-22",
                   "assigned_technician_id": "1",
+                  "product_type": "vacuum",
                   "attachments": [
                     {
                       "id": "1",
@@ -10452,6 +10460,7 @@
                   "service_type": "CENTER",
                   "purchase_date": "2026-10-22",
                   "assigned_technician_id": "1",
+                  "product_type": "vacuum",
                   "attachments": [
                     {
                       "id": "1",
@@ -10601,7 +10610,8 @@
                         "category": "PCB"
                       }
                     ],
-                    "appliance_type": "예시"
+                    "appliance_type": "예시",
+                    "product_type": "vacuum"
                   },
                   "diagnosis": {},
                   "recommendedParts": [
@@ -10794,6 +10804,7 @@
                   "service_type": "CENTER",
                   "purchase_date": "2026-10-22",
                   "assigned_technician_id": "1",
+                  "product_type": "vacuum",
                   "attachments": [
                     {
                       "id": "1",
@@ -10943,7 +10954,8 @@
                         "category": "PCB"
                       }
                     ],
-                    "appliance_type": "예시"
+                    "appliance_type": "예시",
+                    "product_type": "vacuum"
                   },
                   "diagnosis": {},
                   "recommendedParts": [
@@ -12966,13 +12978,15 @@
                         "replacedParts": [
                           {}
                         ],
-                        "outcome": "예시"
+                        "outcome": "예시",
+                        "product_type": "vacuum"
                       },
                       "status": "PENDING",
                       "succeeded_at": "2026-10-22T09:00:00+09:00",
                       "error_code": "예시",
                       "attempts": 1,
-                      "updated_at": "2026-10-22T09:00:00+09:00"
+                      "updated_at": "2026-10-22T09:00:00+09:00",
+                      "product_type": "vacuum"
                     }
                   ],
                   "nextCursor": 1,
@@ -14373,6 +14387,9 @@
           },
           "appliance_type": {
             "type": "string"
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -14384,7 +14401,8 @@
           "manufactured_on",
           "information",
           "components",
-          "compatibleParts"
+          "compatibleParts",
+          "product_type"
         ]
       },
       "Repair": {
@@ -14521,6 +14539,9 @@
                 "type": "null"
               }
             ]
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -14539,7 +14560,8 @@
           "created_at",
           "closed_at",
           "version",
-          "correlation_id"
+          "correlation_id",
+          "product_type"
         ]
       },
       "RepairDetail": {
@@ -15601,6 +15623,9 @@
           "confirmed_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -15608,7 +15633,8 @@
           "case_id",
           "confirmed_revision",
           "content",
-          "confirmed_at"
+          "confirmed_at",
+          "product_type"
         ]
       },
       "AnalysisInput": {
@@ -16175,6 +16201,16 @@
           "replacedParts"
         ]
       },
+      "ProductType": {
+        "type": "string",
+        "enum": [
+          "vacuum",
+          "washing_machine",
+          "air_conditioner",
+          "unknown"
+        ],
+        "description": "PR #6 제품 종류. 누락·미지원 메타데이터는 unknown, 소견에서 추정하지 않음"
+      },
       "ConsumerIntake": {
         "type": "object",
         "properties": {
@@ -16728,6 +16764,9 @@
                 "type": "null"
               }
             ]
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -16740,7 +16779,8 @@
           "actualCause",
           "actualAction",
           "replacedParts",
-          "outcome"
+          "outcome",
+          "product_type"
         ]
       },
       "RagChange": {
@@ -16801,6 +16841,9 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -16813,7 +16856,8 @@
           "succeeded_at",
           "error_code",
           "attempts",
-          "updated_at"
+          "updated_at",
+          "product_type"
         ]
       },
       "RagPage": {

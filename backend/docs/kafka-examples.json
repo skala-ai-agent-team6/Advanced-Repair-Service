@@ -13,6 +13,7 @@
     "payload": {
       "repair": {
         "id": "1",
+        "product_type": "vacuum",
         "product_snapshot": {
           "id": "1",
           "serial_number": "ROBOT-SEOUL-001",
@@ -139,6 +140,7 @@
     "payload": {
       "repair": {
         "id": "1",
+        "product_type": "vacuum",
         "product_snapshot": {
           "id": "1",
           "serial_number": "ROBOT-SEOUL-001",

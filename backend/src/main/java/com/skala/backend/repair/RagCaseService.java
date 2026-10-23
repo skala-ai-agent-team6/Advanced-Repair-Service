@@ -17,10 +17,11 @@ public class RagCaseService {
     }
     void confirmed(Long report,int revision){
         // A transaction-wide writer lock makes ID order also commit order; page high-water marks cannot skip an earlier uncommitted row.
-        lock();var row=db.one("SELECT r.case_id,rr.content,rr.confirmed_at,c.symptom FROM repair_report r JOIN repair_report_revision rr ON rr.report_id=r.id JOIN repair_case c ON c.id=r.case_id WHERE r.id=? AND rr.revision=? AND rr.confirmed_at IS NOT NULL",report,revision);
+        lock();var row=db.one("SELECT r.case_id,rr.content,rr.confirmed_at,c.symptom,c.product_type FROM repair_report r JOIN repair_report_revision rr ON rr.report_id=r.id JOIN repair_case c ON c.id=r.case_id WHERE r.id=? AND rr.revision=? AND rr.confirmed_at IS NOT NULL",report,revision);
         var contacts=db.list("SELECT contact_name,contact_phone,visit_address FROM consumer_access WHERE case_id=?",row.get("case_id"));var privateData=contacts.isEmpty()?Map.<String,Object>of():contacts.getFirst();
         var content=(Map<?,?>)row.get("content");var doc=new LinkedHashMap<String,Object>();
         doc.put("documentId","internal:report:"+report);doc.put("source","INTERNAL_CONFIRMED_REPORT");doc.put("reportId",report);doc.put("revision",revision);doc.put("confirmedAt",row.get("confirmed_at"));
+        doc.put("product_type",ProductTypes.canonical(row.get("product_type")));
         doc.put("symptom",clean(row.get("symptom"),privateData));doc.put("actualCause",clean(content.get("actualCause"),privateData));doc.put("actualAction",clean(content.get("actualAction"),privateData));
         doc.put("replacedParts",db.list("SELECT p.part_id,p.quantity FROM report_replaced_part p WHERE report_id=? AND revision=? ORDER BY part_id",report,revision));
         // Mirror the legacy confirmation rule using this revision, never the latest report header.
@@ -35,7 +36,12 @@ public class RagCaseService {
         for(var r:db.list("SELECT r.report_id,r.revision FROM repair_report_revision r WHERE confirmed_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM rag_case_change c WHERE c.report_id=r.report_id AND c.revision=r.revision) ORDER BY confirmed_at,report_id,revision LIMIT 500"))confirmed((Long)r.get("report_id"),Json.number(r.get("revision")));
         long max=((Number)db.one("SELECT coalesce(max(id),0) AS n FROM rag_case_change").get("n")).longValue();long bound=until==null?max:until;
         if(bound>max)throw ApiError.bad("CURSOR");
-        var rows=db.list("SELECT * FROM rag_case_change WHERE id>? AND id<=? ORDER BY id LIMIT ?",after,bound,size);
+        var rows=db.list("SELECT ch.*,c.product_type AS intake_product_type FROM rag_case_change ch JOIN repair_report r ON r.id=ch.report_id JOIN repair_case c ON c.id=r.case_id WHERE ch.id>? AND ch.id<=? ORDER BY ch.id LIMIT ?",after,bound,size);
+        for(var item:rows){
+            var doc=new LinkedHashMap<String,Object>();((Map<?,?>)item.get("document")).forEach((key,value)->doc.put(key.toString(),value));
+            String type=ProductTypes.canonical(doc.containsKey("product_type")?doc.get("product_type"):item.get("intake_product_type"));
+            doc.put("product_type",type);item.put("document",doc);item.put("product_type",type);item.remove("intake_product_type");
+        }
         long next=rows.isEmpty()?bound:((Number)rows.getLast().get("id")).longValue();
         return Map.of("items",rows,"nextCursor",next,"until",bound,"hasMore",next<bound,"enabled",true);
     }

@@ -1,3 +1,5 @@
+> PR #6 이후 제품 유형 전달 테스트와 최신 검증은 [PRODUCT_TYPE.md](PRODUCT_TYPE.md)를 참고한다. 아래는 V2 구현 당시 기록이다.
+
 # V2 실제 검증 기록
 
 2026-10-23 Asia/Seoul. Java21/Spring Boot4.1.1, 독립 PostgreSQL17·Kafka4.1.1 Testcontainers, 합성 JPEG/PNG, MockMvc 및 테스트용 indexer를 사용했다. 운영 DB·실제 제조사·Vue·실제 AI·RAG/Qdrant에는 연결하지 않았다.

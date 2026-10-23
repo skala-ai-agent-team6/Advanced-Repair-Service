@@ -84,7 +84,21 @@
             "type": "object",
             "properties": {
               "repair": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "product_type": {
+                    "type": "string",
+                    "enum": [
+                      "vacuum",
+                      "washing_machine",
+                      "air_conditioner",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "product_type"
+                ]
               },
               "task": {
                 "type": "object"
@@ -237,7 +251,21 @@
             "type": "object",
             "properties": {
               "repair": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "product_type": {
+                    "type": "string",
+                    "enum": [
+                      "vacuum",
+                      "washing_machine",
+                      "air_conditioner",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "product_type"
+                ]
               },
               "task": {
                 "type": "object"

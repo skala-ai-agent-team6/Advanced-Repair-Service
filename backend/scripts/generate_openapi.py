@@ -186,6 +186,10 @@ S['User']['properties']['operationsEnabled']=boolean
 S['RagLegacyContent']=obj({'actualCause':string(),'actualAction':string(),'repairSuccessful':boolean,'outcome':nullable(string()),'replacedParts':nullable(array(free))})
 S['ConfirmedCase']['properties']['content']=ref('RagLegacyContent')
 S['Candidate']['properties']['confidence']['description']='모델 점수이며 실제 고장 확률을 의미하지 않습니다.'
+S['ProductType']=string(enum=['vacuum','washing_machine','air_conditioner','unknown'],description='PR #6 제품 종류. 누락·미지원 메타데이터는 unknown, 소견에서 추정하지 않음')
+S['Product']['properties']['product_type']=ref('ProductType');S['Product']['required'].append('product_type')
+S['ConfirmedCase']['properties']['product_type']=ref('ProductType')
+S['ConfirmedCase']['required'].append('product_type')
 # V2 service expansion: public intake, human publication, RAG/editor and operations.
 S['ConsumerIntake']=obj({'symptoms':string(minLength=1,maxLength=10000),'purchaseDate':string(format='date',description='구매일; 미래 날짜 거부'),'serialNumber':string(maxLength=100),'modelCode':string(maxLength=100),'centerId':uid,'serviceType':string(enum=['CENTER','FIELD']),'contactName':nullable(string(maxLength=100)),'contactPhone':nullable(string(maxLength=40)),'visitAddress':nullable(string(maxLength=500))},['symptoms','purchaseDate','serialNumber','modelCode','centerId','serviceType'])
 S['ConsumerAccepted']=obj({'caseNumber':string(),'lookupKey':string(description='256비트 임의 키. 발급 응답에서 한 번 제공하며 로그·URL에 넣지 마세요.'),'expiresAt':date,'status':string(enum=['RECEIVED']),'attachmentIds':array(uid),'requiresTechnicianReview':boolean})
@@ -244,6 +248,9 @@ for route,methods in paths.items():
             for status in [429,503]:op['responses'][str(status)]={'description':'요청량 제한 또는 이미지 검증 포화·처리 오류','content':{'application/json':{'schema':ref('Error')}}}
         if route.startswith('/internal/') and method=='post':op['parameters']=[p for p in op.get('parameters',[]) if p['name']!='X-CSRF-TOKEN']
 
+S['Repair']['properties']['product_type']=ref('ProductType');S['Repair']['required'].append('product_type')
+S['RagDocument']['properties']['product_type']=ref('ProductType');S['RagDocument']['required'].append('product_type')
+S['RagChange']['properties']['product_type']=ref('ProductType');S['RagChange']['required'].append('product_type')
 # Swagger UI grouping and executable examples for every documented operation.
 def sample(schema, depth=0):
     if depth > 12: return None

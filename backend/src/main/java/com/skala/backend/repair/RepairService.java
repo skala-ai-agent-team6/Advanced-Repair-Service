@@ -26,7 +26,7 @@ public class RepairService {
         if(data.purchaseDate()!=null && data.purchaseDate().isAfter(WarrantyService.today()))throw ApiError.bad("FUTURE_PURCHASE_DATE");
         Long id=db.insert("INSERT INTO repair_case(case_number,center_id,product_id,technician_id,symptom,error_codes,firmware_version,user_input,product_snapshot) VALUES (?,?,?,?,?,?::jsonb,?,?::jsonb,?::jsonb)",
             "R-"+UUID.randomUUID(),user.centerId,data.productId(),user.id,data.symptoms(),Json.write(data.errorCodes()),data.firmware(),Json.raw(data.userInput()),Json.write(snapshot));
-        db.update("UPDATE repair_case SET purchase_date=?,service_type=? WHERE id=?",data.purchaseDate(),data.serviceType()==null?"CENTER":data.serviceType(),id);
+        db.update("UPDATE repair_case SET purchase_date=?,service_type=?,product_type=? WHERE id=?",data.purchaseDate(),data.serviceType()==null?"CENTER":data.serviceType(),snapshot.get("product_type"),id);
         warranty.record(id,WarrantyService.today());
         if(uploads==null || uploads.isEmpty() || uploads.size()>10) throw ApiError.bad("INITIAL_FILES_REQUIRED_MAX_10");
         var attachments=new ArrayList<Map<String,Object>>();for(int i=0;i<uploads.size();i++) attachments.add(addFile(id,null,uploads.get(i),targets==null||i>=targets.size()?null:targets.get(i)));
@@ -51,8 +51,6 @@ public class RepairService {
         if(intake.get("intake_source").equals("CONSUMER") && (intake.get("purchase_date")==null || requested==null))throw ApiError.conflict("CONSUMER_REVIEW_AND_SELECTION_REQUIRED");
         if(intake.get("purchase_date")!=null && WarrantyService.date(intake.get("purchase_date")).isAfter(WarrantyService.today()))throw ApiError.bad("FUTURE_PURCHASE_DATE");
         if(db.list("SELECT id FROM attachment WHERE case_id=?",repair).isEmpty()) throw ApiError.conflict("ATTACHMENTS_REQUIRED");
-        var appliance=db.one("SELECT m.appliance_type FROM product_model m JOIN product p ON p.model_id=m.id JOIN repair_case r ON r.product_id=p.id WHERE r.id=?",repair).get("appliance_type");
-        if(!appliance.equals("VACUUM_CLEANER"))throw ApiError.conflict("APPLIANCE_DIAGNOSIS_UNSUPPORTED");
         var selected=quality.chooseInitial(repair,requested);
         Long task=db.insert("INSERT INTO diagnosis_job(case_id,request_key,workflow_version) VALUES (?,?,'repair-v2')",repair,key==null?UUID.randomUUID():key);
         quality.freeze(repair,task,1,selected,List.of());
@@ -131,7 +129,7 @@ public class RepairService {
         db.event(repair,"APPROVAL_"+input.action(),data);db.audit(access.user().email,"APPROVAL_"+input.action(),repair,data);
     }
     public Map<String,Object> analysisInput(Long repair,Long task) {
-        var result=new LinkedHashMap<String,Object>();result.put("repair",db.one("SELECT * FROM repair_case WHERE id=?",repair));
+        var result=new LinkedHashMap<String,Object>();result.put("repair",ProductTypes.wireRepair(db.one("SELECT * FROM repair_case WHERE id=?",repair)));
         result.put("task",db.one("SELECT * FROM diagnosis_job WHERE id=? AND case_id=?",task,repair));
         var attachments=db.list("SELECT a.id,a.request_id,a.kind,a.target,a.mime_type,a.byte_size,a.sha256,i.quality_result_id,i.warning_confirmation_id,i.quality_gate FROM diagnosis_input_attachment i JOIN attachment a ON a.id=i.attachment_id JOIN diagnosis_job j ON j.id=i.job_id WHERE j.id=? AND j.case_id=? AND i.input_revision=j.input_revision ORDER BY a.created_at,a.id",task,repair);
         for(var a:attachments) a.put("downloadPath","/internal/attachments/"+a.get("id"));result.put("attachments",attachments);return result;
