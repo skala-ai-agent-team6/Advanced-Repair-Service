@@ -1,6 +1,6 @@
 INSERT INTO service_center(id,code,name,region,address,phone) OVERRIDING SYSTEM VALUE VALUES (1,'SEOUL','Seoul','Seoul','Demo Seoul','02-000-0000'),(2,'BUSAN','Busan','Busan','Demo Busan','051-000-0000') ON CONFLICT DO NOTHING;
 INSERT INTO factory(id,name,country,region,address,phone) OVERRIDING SYSTEM VALUE VALUES (1,'Demo factory','KR','Gyeonggi','Demo factory address','031-000-0000') ON CONFLICT DO NOTHING;
-INSERT INTO product_model(id,model_code,name) OVERRIDING SYSTEM VALUE VALUES (1,'R1','Robot R1'),(2,'R2','Robot R2') ON CONFLICT DO NOTHING;
+INSERT INTO product_model(id,model_code,name,appliance_type) OVERRIDING SYSTEM VALUE VALUES (1,'R1','Robot R1','VACUUM_CLEANER'),(2,'R2','Robot R2','VACUUM_CLEANER') ON CONFLICT DO NOTHING;
 INSERT INTO part(id,part_number,name,category) OVERRIDING SYSTEM VALUE VALUES (1,'MOTOR-001','Wheel motor','MOTOR'),(2,'LIDAR-001','Lidar','OTHER') ON CONFLICT DO NOTHING;
 INSERT INTO model_part VALUES (1,1),(2,2) ON CONFLICT DO NOTHING;
 INSERT INTO part_supplier VALUES (1,1,3),(2,1,5) ON CONFLICT DO NOTHING;

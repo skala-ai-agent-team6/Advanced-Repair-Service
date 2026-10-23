@@ -18,7 +18,7 @@
 | Kafka 검증·재처리 | 일부 | 출력 검증, bounded Outbox, 독립 운영 권한과 원래 이벤트 연결 수동 시도 |
 | 실제 제조사 보증·Vue·AI/RAG 통합 | 외부/미정 | 팀별 인계 문서와 검증 목표 명시, 실제 성공 기록 안 함 |
 
-제품 모델에 appliance_type을 추가했다. 초기 값은 VACUUM_CLEANER이며 현재 실행 AI는 청소기 범위다. 다른 가전용 모델을 새로 만들지 않았다. 새 도구 실행 agentType은 PCB/SURFACE/BUSINESS/RAG다. 과거 MOTOR/SW DB 기록과 MOTOR 촬영 부위는 유지한다. 모터 단독 성능·독립 SW 분석 MCP는 신규로 호출하지 않는다.
+제품 모델에 appliance_type을 추가했다. 초기 값은 VACUUM_CLEANER이며 초기 검증은 청소기이며 PR #6 제품 유형별 RAG 전달은 [PRODUCT_TYPE.md](PRODUCT_TYPE.md)를 따른다. 다른 가전용 모델을 새로 만들지 않았다. 새 도구 실행 agentType은 PCB/SURFACE/BUSINESS/RAG다. 과거 MOTOR/SW DB 기록과 MOTOR 촬영 부위는 유지한다. 모터 단독 성능·독립 SW 분석 MCP는 신규로 호출하지 않는다.
 
 ## 실행과 설정
 

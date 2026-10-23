@@ -33,7 +33,8 @@ public class ConsumerService {
             else {var p=existing.getFirst();if(!p.get("model_id").equals(model.get("id"))) throw ApiError.bad("PRODUCT_IDENTITY_MISMATCH");product=(Long)p.get("id");}
             String number="C-"+UUID.randomUUID();
             Long id=db.insert("INSERT INTO repair_case(case_number,product_id,center_id,technician_id,symptom,purchase_date,intake_source,service_type) VALUES (?,?,?,NULL,?,?,'CONSUMER',?)",number,product,input.centerId(),input.symptoms(),input.purchaseDate(),input.serviceType());
-            db.update("UPDATE repair_case SET product_snapshot=?::jsonb WHERE id=?",Json.write(catalog.product(input.serialNumber())),id);
+            var snapshot=catalog.product(input.serialNumber());
+            db.update("UPDATE repair_case SET product_snapshot=?::jsonb,product_type=? WHERE id=?",Json.write(snapshot),snapshot.get("product_type"),id);
             Instant expires=Instant.now().plus(Duration.ofDays(keyDays));
             db.update("INSERT INTO consumer_access(case_id,key_hash,expires_at,contact_name,contact_phone,visit_address) VALUES (?,?,?,?,?,?)",id,hash(key),expires.atOffset(ZoneOffset.UTC),input.contactName(),input.contactPhone(),input.visitAddress());
             var ids=new ArrayList<Long>();for(var f:uploads) ids.add(save(id,f));warranty.record(id,WarrantyService.today());

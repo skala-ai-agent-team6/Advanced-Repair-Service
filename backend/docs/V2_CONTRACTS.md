@@ -20,6 +20,8 @@ Swagger /v3/api-docs 및 docs/openapi.json이 HTTP 계약이다. bigint ID는 �
 
 ## Kafka schemaVersion=2
 
+PR #6 제품 유형 추가 계약과 증분 재조회 절차는 [PRODUCT_TYPE.md](PRODUCT_TYPE.md)를 참고한다.
+
 기존 토픽·키(taskId)·Outbox·eventId 중복 방지를 유지한다. 계약 재생성은 backend에서 `python3 scripts/generate_kafka_contract.py --sync-shared`로 수행한다. backend/docs/kafka-event.schema.json과 kafka-examples.json을 갱신했다. 공유 contract/의 스키마·예시에도 검토한 동일 계약 변경을 반영했다. worker 구현은 변경하지 않았으며 Agent 팀은 엄격해진 출력을 확인해야 한다.
 
 - eventId/executionId/correlationId UUID, repairId/taskId 양의 정수 문자열, inputRevision≥1, sequence≥0. correlationId는 접수와 일치해야 한다. sequence=0은 해당 작업에서 첫 적용 이벤트일 때만 허용한다.
