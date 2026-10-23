@@ -44,12 +44,24 @@ async def flush(journal, command, producer):
 
 
 async def waiting_for_input(graph, command) -> bool:
-    """이 작업이 추가 자료를 기다리며 멈춰 있는가. 체크포인터가 없으면 항상 아니다."""
-    try:
-        snapshot = await graph.aget_state({"configurable": {"thread_id": harness.thread_id(command)}})
-    except Exception:
+    """이 작업이 추가 자료를 기다리며 멈춰 있는가.
+
+    체크포인터가 없으면 멈춘 상태도 없다. 체크포인터가 있는데 조회가 실패하면 모르는
+    상태다. 모르는 것을 '안 멈춤'으로 처리하면 멈춘 작업을 새 진단으로 다시 돌리므로,
+    한 번 더 시도하고 그래도 안 되면 올린다.
+    """
+    if getattr(graph, "checkpointer", None) is None:
         return False
-    return any(task.interrupts for task in snapshot.tasks)
+    config = {"configurable": {"thread_id": harness.thread_id(command)}}
+    for remaining in (1, 0):
+        try:
+            snapshot = await graph.aget_state(config)
+        except Exception:
+            if not remaining:
+                raise
+            await asyncio.sleep(0.1)
+        else:
+            return any(task.interrupts for task in snapshot.tasks)
 
 
 async def drop_checkpoints(graph, command, result) -> None:
@@ -64,6 +76,9 @@ async def drop_checkpoints(graph, command, result) -> None:
     if saver is None:
         return
     try:
+        # 실패로 끝난 경우에도 호출된다. 아직 기다리는 중이면 지우지 않는다 — 지우면 재개할 수 없다.
+        if await waiting_for_input(graph, command):
+            return
         await saver.adelete_thread(harness.thread_id(command))
     except Exception as exc:  # 정리 실패가 진단 결과를 바꾸지 않는다
         log.warning("체크포인트 정리 보류: %s", type(exc).__name__)

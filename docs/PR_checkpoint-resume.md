@@ -19,7 +19,15 @@
 
 ## 검증
 
-**테스트 138 passed** (신규 `tests/test_checkpoint.py` 6건, `tests/test_findings_merge.py` 5건)
+**테스트** `uv run pytest`
+
+| 시점 | 결과 |
+|---|---|
+| dev 병합 전 (이 브랜치 단독) | 138 passed |
+| dev 병합 직후 | 122 passed, 15 failed — 같은 실패가 당시 dev에서도 났다 (공용 가짜 Producer가 처리 상태 토픽 메시지를 이벤트로 셈) |
+| 후속 수정 시점의 dev | 151 passed — 위 15건은 dev에서 해소됨 |
+
+신규 `tests/test_checkpoint.py` 9건, `tests/test_findings_merge.py` 5건
 
 **실환경** — 실제 PCB·observation·damage·RAG MCP + OpenAI, 사진 입력과 Kafka 출력만 로컬
 

@@ -67,12 +67,17 @@ async def emit(config, event_type: str, payload: dict):
 async def classify_photos(state: State, config) -> dict:
     await emit(config, "DIAGNOSIS_PROGRESS", {"stage": "CLASSIFYING_PHOTOS"})
     photos = await tools.load_photos(state["command"])
-    # 재개한 경우 이미 분석이 끝난 사진은 다시 모델에 넣지 않는다.
-    analyzed = {f.get("attachmentId") for f in state.get("findings", [])
-                if f.get("source") in ("PCB", "MECH") and not f["output"].get("error")}
-    photos = [p for p in photos if p["attachmentId"] not in analyzed]
-    failures = []
+    # 재개한 경우 이미 분석이 끝난 사진은 다시 모델에 넣지 않는다. 목록에서 빼지는 않는다 —
+    # 리포트의 사진 박스와 라벨 해석이 1차 사진 경로를 계속 쓴다.
+    analyzed = {f["attachmentId"]: f["source"] for f in state.get("findings", [])
+                if f.get("source") in ("PCB", "MECH") and f.get("attachmentId")
+                and not f["output"].get("error")}
+    failures, failed_now = [], set()
     for p in photos:
+        if p["attachmentId"] in analyzed:
+            p["kind"], p["analyzed"] = analyzed[p["attachmentId"]], True
+            continue
+        p["analyzed"] = False
         # 이미 구분해 접수한 사진은 그 구분을 사용. GENERAL/미지정은 원본 GPT 분류 유지.
         p["kind"] = {"PCB": "PCB", "MOTOR": "MECH", "MECHANICAL": "MECH"}.get(p.get("target"))
         if p["kind"] is None:
@@ -82,18 +87,20 @@ async def classify_photos(state: State, config) -> dict:
                 raise
             except Exception as exc:
                 p["kind"] = "OTHER"
+                failed_now.add(p["attachmentId"])
                 out = failure_output("classify_photo", exc, required=True)
                 failures.append({"source": "CLASSIFICATION", "attachmentId": p["attachmentId"],
                                  "found": False, "output": out})
                 await emit(config, "TOOL_EXECUTED", {"tool": "classify_photo", "toolVersion": "1",
                            "agentType": "RAG", "mcpServer": "agent-llm", "input": {}, "output": out})
     # 이전 라운드에서 분류가 실패했던 사진이 이번에 성공하면, 그 실패 기록을 덮는다.
+    # 분류기가 정상적으로 OTHER를 돌려준 것도 성공이다. 실패는 이번 패스에서 터진 것만 센다.
     failed_before = {f.get("attachmentId") for f in state.get("findings", [])
                      if f.get("source") == "CLASSIFICATION" and f.get("output", {}).get("error")}
     resolved = [{"source": "CLASSIFICATION", "attachmentId": p["attachmentId"], "found": False,
                  "output": {"tool": "classify_photo", "status": "ok"}}
                 for p in photos
-                if p["attachmentId"] in failed_before and p["kind"] != "OTHER"]
+                if p["attachmentId"] in failed_before - failed_now and not p.get("analyzed")]
     return {"photos": photos, "findings": failures + resolved}
 
 
@@ -143,7 +150,7 @@ def pick_mcps(state: State) -> list[str]:
 async def run_photo_mcp(state, config, kind: str, call, tool: str, agent_type: str, server: str) -> dict:
     """kind 사진마다 MCP를 부르고, Spring에 TOOL_EXECUTED를 알린다. pcb_mcp·mech_mcp가 같이 쓴다."""
     findings = []
-    for p in [p for p in state["photos"] if p["kind"] == kind]:
+    for p in [p for p in state["photos"] if p["kind"] == kind and not p.get("analyzed")]:
         try:
             out = check_image_result(await call(p["path"]), tool)
         except LimitExceeded:
@@ -160,14 +167,17 @@ async def run_photo_mcp(state, config, kind: str, call, tool: str, agent_type: s
         await emit(config, "TOOL_EXECUTED", {"tool": tool, "toolVersion": "1", "agentType": agent_type,
                                              "mcpServer": server, "input": {"path": p["path"]}, "output": out})
         findings.append({"source": kind, "attachmentId": p["attachmentId"], "found": bool(out.get("is_defective")), "output": out})
+    # 해석은 이번에 분석한 사진만이 아니라 지금까지 모인 같은 종류의 결과 전체에서 뽑는다.
+    # 해석 결과는 도구 단위로 교체되므로, 현재 패스 라벨만 넣으면 1차 사진의 해석이 사라진다.
+    collected = findings + [f for f in state.get("findings", []) if f.get("source") == kind]
     if kind == "PCB":
-        labels = sorted({d["type"] for f in findings for d in f["output"].get("defects", [])})
+        labels = sorted({d["type"] for f in collected for d in f["output"].get("defects", [])})
         if labels:
             findings.append(await supplemental(config, "interpret_pcb", "pcb-mcp",
                                                 lambda: enrichment.interpret_pcb(labels, product_type=state.get("product_type", "unknown"))))
     else:
         # [통합] 표면 결함 라벨(crazing 등)을 그대로 해석에 보낸다. 새 Rag_mcp는 옛 dent/부위 형식을 미등록으로 둔다
-        labels = sorted({label for f in findings for label in enrichment.surface_labels(f["output"])})
+        labels = sorted({label for f in collected for label in enrichment.surface_labels(f["output"])})
         if labels:
             findings.append(await supplemental(config, "interpret_damage", "damage-mcp",
                                                 lambda: enrichment.interpret_damage(labels, product_type=state.get("product_type", "unknown"))))
