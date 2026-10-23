@@ -112,7 +112,7 @@ def test_typed_dent_reaches_interpreter(fixture_tools):
     cmd["payload"]["attachments"][0]["target"] = "MOTOR"
     result = asyncio.run(graph.build_graph().ainvoke({"command": cmd},
                          {"configurable": {"emit": AsyncMock()}}))
-    enrichment.interpret_damage.assert_awaited_once_with(["scratches"], product_type="unknown")
+    enrichment.interpret_damage.assert_awaited_once_with(["scratches"], product_type="vacuum")
     assert result["result"]["eventType"] == "DIAGNOSIS_COMPLETED"
 
 

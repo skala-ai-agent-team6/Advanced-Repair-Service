@@ -13,6 +13,7 @@ from test_integration import command, fixture_tools
                                       ('repair','productType'), ('payload','product_type')])
 def test_backend_product_locations_and_java_enum(path,key):
     cmd = command()
+    cmd['payload']['repair'].pop('product_type')  # 예시 명령의 기본값(vacuum)을 빼고 위치별로 확인
     obj = cmd['payload'] if path == 'payload' else cmd['payload']['repair']
     if path == 'snapshot': obj = obj['product_snapshot']
     obj[key] = 'WASHING_MACHINE'
@@ -21,6 +22,7 @@ def test_backend_product_locations_and_java_enum(path,key):
 
 def test_missing_unknown_invalid_and_conflicting_product():
     cmd = command()
+    cmd['payload']['repair'].pop('product_type')  # 값이 없을 때
     assert command_product_type(cmd) == 'unknown'
     cmd['payload']['repair']['product_type'] = 'washer'
     with pytest.raises(ValueError): command_product_type(cmd)
