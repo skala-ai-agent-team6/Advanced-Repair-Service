@@ -107,7 +107,7 @@ def test_prompt_metadata_saved_and_replay_does_not_use_new_version(fixture_tools
             saved = json.loads(path.read_text())
             metadata = saved['execution']['prompts']
             assert set(metadata) == {'split_text', 'write_report'}
-            assert all(v['version'] == '1.0.0' and len(v['schema_sha256']) == 64 for v in metadata.values())
+            assert all(v['version'] in ('1.0.0', '1.1.0') and len(v['schema_sha256']) == 64 for v in metadata.values())
             assert '실행에 사용한 프롬프트' in path.with_suffix('.md').read_text()
             revise(directory, '바뀐 지시 {text}')
             second = await main.handle(cmd, Producer(), journal)

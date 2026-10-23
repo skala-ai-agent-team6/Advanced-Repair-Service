@@ -8,8 +8,14 @@ public final class Inputs {
     public record Intake(@NotNull Long productId,@NotBlank @Size(max=10000) String symptoms,
         @NotNull @Size(max=50) List<@NotBlank @Size(max=100) String> errorCodes,@NotBlank @Size(max=100) String firmware,
         @NotNull Map<String,Object> userInput) {}
-    public record Resume(@NotNull Long requestId,@NotNull UUID submissionKey,@NotEmpty List<@NotNull Long> attachmentIds) {}
-    public record PhotoSubmission(@NotNull UUID submissionKey,@NotEmpty List<@NotNull Long> attachmentIds) {}
+    public record DiagnosisSelection(@NotEmpty List<@NotNull Long> attachmentIds) {}
+    public record Resume(@NotNull Long requestId,@NotNull UUID submissionKey,@NotEmpty List<@NotNull Long> attachmentIds,List<@NotNull Long> excludedAttachmentIds) {
+        public Resume {excludedAttachmentIds=excludedAttachmentIds==null?List.of():List.copyOf(excludedAttachmentIds);}
+        public Resume(Long request,UUID key,List<Long> ids) {this(request,key,ids,List.of());}
+    }
+    public record PhotoSubmission(@NotNull UUID submissionKey,@NotEmpty List<@NotNull Long> attachmentIds,List<@NotNull Long> excludedAttachmentIds) {
+        public PhotoSubmission(UUID key,List<Long> ids) {this(key,ids,List.of());}
+    }
     public record Fault(@NotBlank @Pattern(regexp="PCB|MOTOR|SW|OTHER") String area,Long componentId,Long partId) {}
     public record ReportContent(@NotBlank @Size(max=10000) String actualCause,@NotNull @Valid List<Fault> faults,
         @NotBlank @Size(max=10000) String actualAction,@NotNull @Size(max=10000) String technicianOpinion,@NotNull Boolean repairSuccessful,

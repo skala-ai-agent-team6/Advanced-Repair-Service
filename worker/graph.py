@@ -1,12 +1,14 @@
 """진단 그래프. 위에서 아래로 실행 순서대로 적었다.
 
   classify_photos → split_text → [pcb_mcp, mech_mcp 중 필요한 것 동시에] → rag_mcp → judge
-      judge → report(완료) | request_photo(사진 요청) | fail(실패) → 끝
+      judge → check_parts → report(완료) | request_photo(사진 요청) | fail(실패) → 끝
+  check_parts: GPT가 업무 MCP 조회 도구 중 무엇을 부를지 스스로 고르는 반복(도구 호출 → 결과 보고 → 다시 판단)
 
 노드는 state(바구니)를 읽고, 바꿀 값만 dict로 돌려준다.
 Spring에 진행 상황을 알릴 땐 emit(config, 이벤트종류, 내용)을 부른다.
 """
 
+import json
 import os
 from typing import Annotated, TypedDict
 
@@ -26,7 +28,10 @@ def finding_key(finding: dict):
     source = finding.get("source")
     if source in ("PCB", "MECH", "CLASSIFICATION"):
         return (source, finding.get("attachmentId"))
-    return (source, finding.get("output", {}).get("tool"))
+    output = finding.get("output", {})
+    if source == "BUSINESS":  # 부품 확인 Agent는 같은 도구를 인자만 바꿔 여러 번 부른다
+        return (source, output.get("tool"), json.dumps(output.get("arguments"), sort_keys=True, ensure_ascii=False))
+    return (source, output.get("tool"))
 
 
 def merge_findings(old: list[dict], new: list[dict]) -> list[dict]:
@@ -234,7 +239,60 @@ async def judge(state: State, config) -> dict:
     return {"decision": decide(state["findings"], photo_round)}
 
 
-# ── 5. 끝: 리포트 / 사진 요청 / 실패 ─────────────────────
+# ── 5. 부품 확인: 모델이 업무 MCP 도구를 고른다 ──────────
+
+
+async def check_parts(state: State, config) -> dict:
+    """[통합] GPT가 업무 MCP(business-mcp) 조회 도구를 골라 부르고, 결과를 보고 더 부를지 정한다.
+    결과는 findings(source=BUSINESS)로 리포트 근거에 들어간다. 실패해도 진단은 계속한다(보조 근거)."""
+    import json
+    from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+
+    parts = state["command"]["payload"]["repair"].get("product_snapshot", {}).get("compatibleParts", [])
+    if not C.USE_GPT or not parts:
+        return {}
+    await emit(config, "DIAGNOSIS_PROGRESS", {"stage": "PARTS_CHECK_SYNTHESIS"})
+    try:
+        specs = await tools.business_tool_specs()
+    except Exception as exc:
+        return {"findings": [{"source": "BUSINESS", "attachmentId": None, "found": False,
+                              "output": failure_output("business_tool_specs", exc, required=False)}]}
+    labels = sorted({d["type"] for f in state["findings"] for d in f["output"].get("defects", [])})
+    llm = tools.parts_agent_llm(specs)
+    messages = [SystemMessage(tools.PARTS_AGENT_PROMPT.format(max_calls=C.MAX_PART_TOOL_CALLS)),
+                HumanMessage(f"증상: {state['text']}\n검출 라벨: {labels}\n"
+                             f"호환 부품: {tools.compact([{k: p.get(k) for k in ('id', 'part_number', 'name', 'category')} for p in parts], 3000)}")]
+    findings, calls = [], 0
+    for turn in range(C.MAX_PART_TOOL_CALLS + 1):
+        ai = await tools.ask_parts_agent(llm, messages, turn)
+        messages.append(ai)
+        if not ai.tool_calls or calls >= C.MAX_PART_TOOL_CALLS:
+            break
+        for call in ai.tool_calls:
+            calls += 1
+            name, args = call["name"], call["args"]
+            if calls > C.MAX_PART_TOOL_CALLS:
+                out = {"error": "LimitExceeded", "tool": name, "status": "skipped"}
+            else:
+                try:
+                    out = await tools.call_business_tool(name, args)
+                except LimitExceeded:
+                    raise
+                except Exception as exc:
+                    out = failure_output(name, exc, required=False)
+            await emit(config, "TOOL_EXECUTED", {"tool": name, "toolVersion": "1", "agentType": "BUSINESS",
+                                                 "mcpServer": "business-mcp", "input": args, "output": out})
+            findings.append({"source": "BUSINESS", "attachmentId": None, "found": False,
+                             "output": {"tool": name, "arguments": args, "result": tools.compact(out)}})
+            messages.append(ToolMessage(tools.compact(out, 4000), tool_call_id=call["id"]))
+    note = ai.content if isinstance(ai.content, str) else ""
+    if note.strip() and not ai.tool_calls:
+        findings.append({"source": "BUSINESS", "attachmentId": None, "found": False,
+                         "output": {"tool": "parts_agent", "note": note.strip()[:800], "toolCalls": calls}})
+    return {"findings": findings}
+
+
+# ── 6. 끝: 리포트 / 사진 요청 / 실패 ─────────────────────
 
 
 async def report(state: State, config) -> dict:
@@ -257,6 +315,7 @@ async def report(state: State, config) -> dict:
                           **{k: v for k, v in h.items() if k != "kind"}} for h in f["output"]["hits"]]
     payload = {"summary": r.summary, "modelVersion": C.MODEL_VERSION, "repairMethod": r.repairMethod,
                "candidates": candidates, "recommendedParts": [p.model_dump() for p in r.recommendedParts],
+               "recommendedTools": [t.model_dump() for t in r.recommendedTools],
                "evidence": evidence, "analysisResults": analysis_summary(state)["analysisResults"],
                **(await screen_fields(state, candidates))}
     if not any(e["type"] == "PHOTO" for e in evidence):
@@ -265,7 +324,28 @@ async def report(state: State, config) -> dict:
     note = limitation_note(state["findings"])
     if note:
         payload["summary"] += "\n\n" + note  # LLM이 누락해도 최종 JSON·리포트에 반드시 남긴다.
+    await save_case(state, config, payload)
     return {"result": {"eventType": "DIAGNOSIS_COMPLETED", "payload": payload}}
+
+
+async def save_case(state, config, payload):
+    """[통합] rag-mcp 변경 도구: 이번 진단을 '미확정 사례'로 저장한다. 실패해도 리포트는 그대로 낸다."""
+    if not C.SAVE_REPAIR_CASES or "configurable" not in config:  # 단위 시험은 emit 없이 report만 부른다
+        return
+    cmd = state["command"]
+    case = {"case_id": f"task-{cmd['taskId']}", "repair_id": str(cmd["payload"]["repair"].get("id", "")),
+            "symptom": state["text"][:1000], "summary": payload["summary"][:2000],
+            "causes": [c["cause"] for c in payload["candidates"]][:5],
+            "labels": sorted({d["type"] for f in state["findings"] for d in f["output"].get("defects", [])}),
+            "recommended_part_ids": [p["partId"] for p in payload["recommendedParts"]]}
+    try:
+        out = await tools.save_repair_case(case)
+    except LimitExceeded:
+        raise
+    except Exception as exc:
+        out = failure_output("save_repair_case", exc, required=False)
+    await emit(config, "TOOL_EXECUTED", {"tool": "save_repair_case", "toolVersion": "1", "agentType": "RAG",
+                                         "mcpServer": "rag-mcp", "input": {"case_id": case["case_id"]}, "output": out})
 
 
 async def screen_fields(state, candidates) -> dict:
@@ -361,7 +441,7 @@ async def fail(state: State, config) -> dict:
 
 def build_graph(checkpointer=None):
     g = StateGraph(State)
-    for fn in (classify_photos, split_text, pcb_mcp, mech_mcp, rag_mcp, judge, report,
+    for fn in (classify_photos, split_text, pcb_mcp, mech_mcp, rag_mcp, judge, check_parts, report,
                request_photo, wait_input, fail):
         g.add_node(fn.__name__, observed(fn))
 
@@ -371,8 +451,9 @@ def build_graph(checkpointer=None):
     for mcp in ("pcb_mcp", "mech_mcp"):
         g.add_edge(mcp, "rag_mcp")  # 사진 MCP가 다 끝나면 rag에서 합류 (PCB 라벨을 넘기려고)
     g.add_edge("rag_mcp", "judge")
-    g.add_conditional_edges("judge", lambda s: s["decision"], {"COMPLETE": "report", "PHOTO": "request_photo", "FAIL": "fail"})
-    for end in ("report", "fail"):
+    g.add_conditional_edges("judge", lambda s: s["decision"], {"COMPLETE": "check_parts", "PHOTO": "request_photo", "FAIL": "fail"})
+    g.add_edge("check_parts", "report")
+    for end in ("report", "fail"):  # request_photo의 다음 노드는 체크포인터 유무로 아래에서 정한다
         g.add_edge(end, END)
     if checkpointer is None:
         # 멈춤은 상태를 저장할 수 있을 때만 가능하다. 없으면 기존처럼 결과를 내고 끝낸다.

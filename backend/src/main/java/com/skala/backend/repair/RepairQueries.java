@@ -16,7 +16,7 @@ public class RepairQueries {
         return Map.of("page",page,"size",size,"total",count.get("total"),"items",db.list("SELECT r.*,p.serial_number FROM repair_case r JOIN product p ON p.id=r.product_id"+where+" ORDER BY r.created_at DESC,r.id LIMIT ? OFFSET ?",args.toArray()));
     }
     public Map<String,Object> detail(Long id) {
-        var r=access.repair(id);r.put("attachments",db.list("SELECT id,request_id,original_name,kind,target,mime_type,byte_size,sha256,created_at FROM attachment WHERE case_id=? ORDER BY created_at,id",id));
+        var r=access.repair(id);r.put("attachments",db.list("SELECT id,request_id,original_name,kind,target,mime_type,byte_size,sha256,quality_required,latest_quality_result_id,use_status,replaced_by_id,created_at FROM attachment WHERE case_id=? ORDER BY created_at,id",id));
         r.put("tasks",db.list("SELECT * FROM diagnosis_job WHERE case_id=? ORDER BY created_at DESC",id));r.put("photoRequests",db.list("SELECT p.* FROM photo_request p JOIN diagnosis_job t ON t.id=p.job_id WHERE t.case_id=? ORDER BY round_no",id));
         r.put("reports",db.list("SELECT * FROM repair_report WHERE case_id=?",id));r.put("orders",db.list("SELECT * FROM purchase_order WHERE case_id=? ORDER BY created_at,id",id));return r;
     }

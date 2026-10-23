@@ -15,6 +15,7 @@ for k, v in dotenv_values(ROOT / ".env").items():
 KAFKA = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 COMMANDS_TOPIC = "diagnosis.commands.v2"  # Spring → 우리
 EVENTS_TOPIC = "diagnosis.events.v2"  # 우리 → Spring
+PROCESSING_STATUS_TOPIC = "diagnosis.processing-status.v2"  # 최종 처리 결과 → Spring 아웃박스 상태
 DLT_TOPIC = "diagnosis.commands.v2.dlt"  # 처리 못 한 명령
 GROUP_ID = os.getenv("GROUP_ID", "langgraph-diagnosis-v2")
 
@@ -48,6 +49,8 @@ PCB_MCP_PYTHON = os.getenv("PCB_MCP_PYTHON", PCB_MCP_PYTHON)
 TOOL_TIMEOUT = float(os.getenv("TOOL_TIMEOUT", "90"))
 RUN_TIMEOUT = float(os.getenv("RUN_TIMEOUT", "1800"))
 MAX_TOOL_CALLS = int(os.getenv("MAX_TOOL_CALLS", "2000"))
+MAX_PART_TOOL_CALLS = int(os.getenv("MAX_PART_TOOL_CALLS", "4"))  # [통합] 부품 확인 Agent가 업무 MCP를 부르는 최대 횟수
+SAVE_REPAIR_CASES = os.getenv("SAVE_REPAIR_CASES", "1") == "1"  # [통합] 진단을 rag-mcp에 미확정 사례로 저장
 RECURSION_LIMIT = int(os.getenv("RECURSION_LIMIT", "20"))
 MAX_NODE_EXECUTIONS = int(os.getenv("MAX_NODE_EXECUTIONS", "20"))
 MAX_SAME_INPUT_ATTEMPTS = int(os.getenv("MAX_SAME_INPUT_ATTEMPTS", "3"))

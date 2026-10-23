@@ -16,7 +16,7 @@ from . import config as C
 from .prompts import render
 from .harness import guarded
 from .context_policy import (UsageTracker, masked, prepare_text, prepare_findings, reserve_llm)
-from .tool_policy import check_image_result, check_object, check_response
+from .tool_policy import ToolResponseError, check_image_result, check_object, check_response
 
 # ── 1. 사진 ──────────────────────────────────────────────
 
@@ -135,11 +135,18 @@ class RecommendedPart(BaseModel):
     quantity: int = Field(ge=1, le=100)
 
 
+class RecommendedTool(BaseModel):
+    name: str = Field(description="수리 기사가 준비할 공구 이름")
+    purpose: str = Field(description="이 공구를 사용할 점검·수리 목적")
+    evidence: str = Field(description="진단 근거 또는 수리 방법과 연결되는 이유")
+
+
 class Report(BaseModel):
     summary: str
     repairMethod: str
     candidates: list[Candidate] = Field(min_length=1)
     recommendedParts: list[RecommendedPart] = Field(default_factory=list, max_length=20)
+    recommendedTools: list[RecommendedTool] = Field(default_factory=list, max_length=10)
 
     @field_validator("summary", "repairMethod")
     @classmethod
@@ -222,3 +229,63 @@ async def write_report(text: str, findings: list[dict], compatible_parts=None) -
     if not set(identifiers) <= allowed or len(set(identifiers)) != len(identifiers):
         raise ValueError("Unknown or duplicate recommended part")
     return result
+
+
+# ── 4. 부품 확인 Agent (업무 MCP) / 사례 저장 (rag-mcp) ───────────────
+# [통합] 평가표 "모델이 도구를 선택" + "business-mcp를 Agent가 호출". 조회 도구만 연다. 발주 초안은 Spring이 만든다.
+
+BUSINESS_READ_TOOLS = ("get_part_availability", "get_product", "search_products", "search_past_orders")
+PARTS_AGENT_PROMPT = (
+    "너는 로봇청소기 수리 부품 담당이다. 진단 근거와 호환 부품 목록을 보고, 교체가 필요해 보이는 부품의 재고·입고 예정을 "
+    "업무 MCP 도구로 직접 확인하라. 어떤 도구를 몇 번 쓸지는 네가 정한다(최대 {max_calls}번). "
+    "part_id는 호환 부품 목록의 id만 써라. 확인이 끝나면 도구 없이 한국어 3줄 이내로 "
+    "'부품 id·이름 / 재고 여부 / 근거 도구'를 정리하라. 교체 근거가 없으면 도구를 쓰지 말고 그렇게 말하라."
+)
+
+
+def compact(value, limit=1500) -> str:
+    text = json.dumps(value, ensure_ascii=False, default=str)
+    return text if len(text) <= limit else text[:limit] + "…"
+
+
+async def business_tool_specs() -> list[dict]:
+    """업무 MCP가 알려 주는 도구 이름·설명·입력 형식을 그대로 GPT 도구로 넘긴다."""
+    async with Client(C.BUSINESS_MCP_URL, timeout=15) as c:
+        listed = await c.list_tools()
+    return [{"type": "function", "function": {"name": t.name, "description": t.description or "",
+                                               "parameters": t.inputSchema}}
+            for t in listed if t.name in BUSINESS_READ_TOOLS]
+
+
+@guarded(name_arg="name")
+async def call_business_tool(name: str, arguments: dict) -> dict:
+    if name not in BUSINESS_READ_TOOLS:
+        raise ToolResponseError(name)
+    async with Client(C.BUSINESS_MCP_URL, timeout=30) as c:
+        r = check_response(await c.call_tool(name, arguments), name)
+    data = r.structured_content
+    if data is None:
+        data = {"result": json.loads(r.content[0].text)}
+    return check_object(data, name)
+
+
+async def ask_parts_agent(llm, messages, turn: int):
+    """GPT 한 차례. 메시지 객체는 하네스 지문에 못 넣어 차례 번호로 구분한다."""
+    async def parts_agent_turn(turn: int):
+        return await llm.ainvoke(messages)
+    return await guarded()(parts_agent_turn)(turn)
+
+
+def parts_agent_llm(specs):
+    from langchain_openai import ChatOpenAI
+
+    return ChatOpenAI(model=C.GPT_MODEL, temperature=0, timeout=C.TOOL_TIMEOUT, max_retries=0,
+                      max_completion_tokens=C.MAX_OUTPUT_TOKENS, callbacks=[UsageTracker()]).bind_tools(specs)
+
+
+@guarded()
+async def save_repair_case(case: dict) -> dict:
+    """rag-mcp save_repair_case(변경 도구): AI 진단을 '미확정 사례'로 저장. 검색 색인에는 넣지 않는다."""
+    async with Client(C.RAG_MCP_URL, timeout=30) as c:
+        r = check_response(await c.call_tool("save_repair_case", {"case": case}), "save_repair_case")
+    return check_object(r.structured_content, "save_repair_case")

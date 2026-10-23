@@ -115,7 +115,8 @@ def test_worker_emits_pause_event_then_resumes_on_next_command(fixture_tools, tm
     first, second, producer = asyncio.run(run())
     assert first["eventType"] == "PHOTO_REQUESTED" and first["payload"]["requestKey"]
     assert second["eventType"] == "DIAGNOSIS_COMPLETED"
-    assert [e["eventType"] for e in producer.events].count("DIAGNOSIS_COMPLETED") == 1
+    # 처리 상태 토픽 메시지(eventType 없음)도 같은 가짜 producer에 쌓이므로 get으로 센다
+    assert [e.get("eventType") for e in producer.events].count("DIAGNOSIS_COMPLETED") == 1
 
 
 def test_finished_job_leaves_no_checkpoint_but_paused_one_remains(fixture_tools, tmp_path):

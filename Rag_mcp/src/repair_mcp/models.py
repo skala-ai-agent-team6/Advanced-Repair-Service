@@ -26,3 +26,14 @@ class SearchRequest(StrictModel):
     min_score: float = Field(default=0.75, ge=-1, le=1)
     repair_status: Literal["Fixed", "Repairable", "End of life", "Unknown", "Not fixed", "No fault found"] | None = None
     use_bilingual_hints: bool = True
+
+
+class AgentCase(StrictModel):
+    """[통합] 에이전트가 저장하는 미확정 사례 (save_repair_case 입력)."""
+    case_id: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_.:-]+$")
+    repair_id: str = Field(default="", max_length=50)
+    symptom: str = Field(default="", max_length=2000)
+    summary: str = Field(default="", max_length=4000)
+    causes: list[Annotated[str, Field(max_length=300)]] = Field(default_factory=list, max_length=10)
+    labels: list[Annotated[str, Field(max_length=100)]] = Field(default_factory=list, max_length=30)
+    recommended_part_ids: list[Annotated[str, Field(max_length=20)]] = Field(default_factory=list, max_length=20)
