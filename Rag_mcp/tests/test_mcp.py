@@ -51,7 +51,6 @@ class EmptyStore:
 
 
 async def test_rag_protocol_empty_result_honest(monkeypatch):
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations", lambda *args: {"observations": []})
     async with Client(create_server("rag", EmptyStore())) as client:
         result = await client.call_tool("retrieve_repair_context", {"request": {"product_type": "vacuum","raw_text": "전원이 안 켜져요"}})
         assert result.data["case_search_status"] == "no_candidates"
@@ -59,8 +58,6 @@ async def test_rag_protocol_empty_result_honest(monkeypatch):
 
 
 async def test_rag_protocol_accepts_missing_model_results(monkeypatch):
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations", lambda text, *args: {
-        "raw_text": text, "observations": [], "unmapped_fragments": [text]})
     async with Client(create_server("rag", EmptyStore())) as client:
         result = (await client.call_tool("retrieve_repair_context", {"request": {"product_type": "vacuum",
             "raw_text": "청소기가 멈춰요", "pcb_labels": None,
@@ -78,8 +75,6 @@ async def test_rag_combines_cases_and_exact_surface_guidance_without_inventing_l
             assert "crazing: " in query
             return [{"document_id": "case:known", "source_repair_status": "Fixed"}] if group == "repair_cases" else []
 
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations", lambda *args: {
-        "raw_text": "전원이 안 켜집니다", "observations": []})
     async with Client(create_server("rag", EvidenceStore())) as client:
         result = (await client.call_tool("retrieve_repair_context", {"request": {"product_type": "vacuum",
             "raw_text": "전원이 안 켜집니다", "pcb_labels": ["mouse bite", "mouse_bite"],
@@ -143,8 +138,6 @@ def test_label_only_report_shows_inspection_guidance_without_grade():
 
 
 def test_missing_model_results_still_use_remaining_evidence(monkeypatch):
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations", lambda text, *args: {
-        "raw_text": text, "observations": [], "unmapped_fragments": [text]})
     result = retrieve_context(SearchRequest(product_type="vacuum", raw_text="청소기가 멈춥니다", pcb_labels=None,
                                             damage_labels=["crazing"]), EmptyStore())
     assert result["pcb"]["input_state"] == "result_unavailable"
@@ -155,8 +148,6 @@ def test_missing_model_results_still_use_remaining_evidence(monkeypatch):
 
 
 def test_missing_both_models_keeps_technician_report(monkeypatch):
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations", lambda text, *args: {
-        "raw_text": text, "observations": [], "unmapped_fragments": [text]})
     result = retrieve_context(SearchRequest(product_type="vacuum", raw_text="전원이 켜지지 않아요"), EmptyStore())
     assert result["pcb"]["input_state"] == "result_unavailable"
     assert result["damage"]["input_state"] == "result_unavailable"

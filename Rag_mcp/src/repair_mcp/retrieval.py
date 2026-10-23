@@ -1,4 +1,4 @@
-"""Multilingual dense retrieval. No generation or business-database writes."""
+"""Dense retrieval and final opinion; observation extraction belongs to observation MCP."""
 import hashlib
 import json
 import os
@@ -12,7 +12,6 @@ from .config import RUNTIME
 from .corpus import load_documents
 from .labels import interpret_damage_labels, interpret_pcb_labels
 from .models import SearchRequest
-from .normalize import normalize_observations
 from .guidance import retrieve_guidance, integrate_evidence
 from .opinion import generate_final_opinion
 from .internal_cases import InternalCasesMixin
@@ -143,11 +142,14 @@ class DenseStore(InternalCasesMixin):
 
 
 def prepare_query(request: SearchRequest):
-    observation = normalize_observations(request.raw_text, request.origin, request.technician_confirmed, request.product_type
-        ) if request.raw_text.strip() else {
-            "raw_text": request.raw_text, "origin": request.origin,
-            "technician_confirmed": request.technician_confirmed,
-            "observations": [], "unmapped_fragments": [], "diagnosis_confirmed": False}
+    # Never re-extract here: reuse a validated response, or search remaining raw evidence.
+    observation = request.normalized_observation.model_dump(mode="json") if request.normalized_observation is not None else {
+        "raw_text": request.raw_text, "origin": request.origin,
+        "technician_confirmed": request.technician_confirmed,
+        "engine": "raw_text_only", "model": None,
+        "observations": [],
+        "unmapped_fragments": [request.raw_text] if request.raw_text.strip() else [],
+        "diagnosis_confirmed": False}
     observation["product_type"] = request.product_type
     pcb = interpret_pcb_labels(request.pcb_labels or [])
     damage = interpret_damage_labels(request.damage_labels or [])
@@ -157,6 +159,8 @@ def prepare_query(request: SearchRequest):
     damage["input_state"] = ("result_unavailable" if request.damage_labels is None else
                              "no_detections" if not request.damage_labels else "labels_received")
     components = [request.raw_text.strip()]
+    if request.error_codes:
+        components.append("에러코드 " + ", ".join(request.error_codes))
     components += [o["label_ko"] + (" (의심)" if o["certainty"] == "suspected" else " (관찰 보고)")
                    for o in observation["observations"] if o["polarity"] == "present"]
     if request.use_bilingual_hints:
@@ -167,6 +171,8 @@ def prepare_query(request: SearchRequest):
     components += [d["label"] + ": " + d["description_ko"] for d in pcb["detections"]]
     components += [d["label"] + ": " + d["description_ko"] for d in damage["detections"]]
     warnings = ["검색 점수는 고장 확률이 아닙니다. 검색 문서는 근거 후보이며 원인 확정이 필요합니다."]
+    if request.normalized_observation is None and request.raw_text.strip():
+        warnings.append("표준 소견 결과가 없어 원문과 전달된 모델 라벨로 검색했습니다. RAG에서 소견을 재변환하지 않았습니다.")
     if request.product_type == "unknown":
         warnings.append("제품 종류가 없어 제품별 수리 사례 검색을 생략했습니다.")
     if damage["detections"]:
@@ -229,7 +235,7 @@ def retrieve_context(request: SearchRequest, store: DenseStore):
         warnings.append("일부 인식된 라벨의 점검 지침이 없습니다. 해당 라벨의 조치를 추정하지 않습니다.")
     assessment = integrate_evidence(cases, references, guidance, observation, pcb, damage)
     if query.strip():
-        opinion = generate_final_opinion(observation, pcb, damage, cases, guidance)
+        opinion = generate_final_opinion({**observation, "error_codes": request.error_codes}, pcb, damage, cases, guidance)
     else:
         opinion = {"text": "입력된 소견이나 모델 결과가 없어 점검 대상을 제시할 수 없습니다.",
                    "supporting_case_ids": [], "engine": "no_evidence", "model": None}
@@ -237,7 +243,7 @@ def retrieve_context(request: SearchRequest, store: DenseStore):
     assessment["final_opinion_case_ids"] = opinion["supporting_case_ids"]
     assessment["final_opinion_engine"] = opinion["engine"]
     assessment["final_opinion_model"] = opinion["model"]
-    return {"product_type": request.product_type, "query": query, "observation": observation, "pcb": pcb, "damage": damage,
+    return {"product_type": request.product_type, "query": query, "error_codes": request.error_codes, "observation": observation, "pcb": pcb, "damage": damage,
             "repair_cases": cases, "case_briefs": brief_cases(cases),
             "label_definitions": definitions, "pcb_references": references,
             **guidance,

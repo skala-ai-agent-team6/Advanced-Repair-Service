@@ -50,6 +50,7 @@ class State(TypedDict, total=False):
     command: dict  # Kafka로 받은 명령 원문
     product_type: str  # Spring 접수의 제품 종류
     text: str  # 증상 + 기사 설명
+    normalized_observation: dict | None  # 소견 MCP 성공 결과; RAG에서 재변환하지 않는다
     photos: list[dict]  # [{attachmentId, path, kind: PCB|MECH|OTHER}]
     clues: dict  # {pcb: [], mech: [], sw: [], errorCodes: []}
     findings: Annotated[list[dict], merge_findings]  # MCP 결과. 같은 대상은 최신 결과로 교체한다
@@ -109,7 +110,10 @@ async def split_text(state: State, config) -> dict:
     clues["errorCodes"] = repair.get("error_codes") or []
     observation = await supplemental(config, "normalize_observation", "observation-mcp",
                                      lambda: enrichment.normalize_observation(text, product_type=product_type))
-    return {"product_type": product_type, "text": text, "clues": clues, "findings": [observation]}
+    output = observation["output"]
+    normalized = {k: v for k, v in output.items() if k != "tool"} if not output.get("error") else None
+    return {"product_type": product_type, "text": text, "clues": clues,
+            "normalized_observation": normalized, "findings": [observation]}
 
 
 async def supplemental(config, name, server, call):
@@ -188,7 +192,7 @@ async def rag_mcp(state: State, config) -> dict:
     """사진 MCP가 끝난 뒤 실행: 증상 글 + PCB가 찾은 라벨로 과거 사례 검색."""
     await emit(config, "DIAGNOSIS_PROGRESS", {"stage": "SIMILAR_CASE_SEARCH"})  # [통합] 프론트 진행 화면 단계 이름
     codes = state["clues"]["errorCodes"]
-    text = state["text"] + (f" 에러코드 {', '.join(codes)}" if codes else "")
+    text = state["text"]  # 원문을 유지하고 에러코드는 별도 전달해 소견 근거 일치를 보존한다.
     pcb_labels = sorted({d["type"] for f in state.get("findings", []) if f["source"] == "PCB"
                          for d in f["output"].get("defects", [])})
     # [통합] 기계 MCP 표면 결함도 RAG 검색에 넘긴다 (새 Rag_mcp가 지원)
@@ -196,7 +200,8 @@ async def rag_mcp(state: State, config) -> dict:
                             for label in enrichment.surface_labels(f["output"])})
     try:
         out = check_object(await tools.call_rag_mcp(
-            text, pcb_labels, damage_labels, product_type=state.get("product_type", "unknown")), "retrieve_repair_context")
+            text, pcb_labels, damage_labels, product_type=state.get("product_type", "unknown"),
+            normalized_observation=state.get("normalized_observation"), error_codes=codes), "retrieve_repair_context")
     except LimitExceeded:
         raise
     except Exception as e:  # 보조 검색 실패는 기록하고 리포트에도 누락을 명시한다.

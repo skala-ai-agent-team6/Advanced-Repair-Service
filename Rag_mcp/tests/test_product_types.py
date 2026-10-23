@@ -137,14 +137,16 @@ async def test_mcp_categories_and_scoped_retrieval_with_models_missing(monkeypat
     seen = []
     def normalize(text, origin, confirmed, product_type):
         seen.append(product_type)
-        return {'raw_text': text, 'observations': [], 'unmapped_fragments': [text]}
-    monkeypatch.setattr('repair_mcp.retrieval.normalize_observations', normalize)
+        return {'raw_text': text, 'product_type': product_type, 'origin': origin,
+                'technician_confirmed': confirmed, 'engine': 'openai-structured-output-v1', 'model': 'test',
+                'observations': [], 'unmapped_fragments': [text], 'diagnosis_confirmed': False}
     monkeypatch.setattr('repair_mcp.servers.normalize_observations', normalize)
     def opinion(observation, pcb, damage, cases, guidance):
         assert observation['product_type'] == 'washing_machine'
         assert {c['product_type'] for c in cases} == {'washing_machine'}
         return {'text': '보고된 증상을 점검합니다.', 'supporting_case_ids': [], 'engine': 'test', 'model': 'test'}
     monkeypatch.setattr('repair_mcp.retrieval.generate_final_opinion', opinion)
+    normalized = None
     for service, tool, payload in [
         ('observation', 'normalize_observation', {'raw_text': 'motor'}),
         ('pcb', 'interpret_pcb', {'labels': ['open_circuit']}),
@@ -153,7 +155,9 @@ async def test_mcp_categories_and_scoped_retrieval_with_models_missing(monkeypat
         async with Client(create_server(service)) as client:
             result = (await client.call_tool(tool, {**payload, 'product_type': 'washing_machine'})).data
             # Normalization is stubbed above; real output propagation is tested separately.
-            if service != 'observation':
+            if service == 'observation':
+                normalized = result
+            else:
                 assert result['product_type'] == 'washing_machine'
     store = store_at()
     public_index(store)
@@ -162,6 +166,7 @@ async def test_mcp_categories_and_scoped_retrieval_with_models_missing(monkeypat
         async with Client(create_server('rag', store)) as client:
             result = (await client.call_tool('retrieve_repair_context', {'request': {
                 'product_type': 'washing_machine', 'raw_text': 'motor',
+                'normalized_observation': normalized,
                 'pcb_labels': None, 'damage_labels': None}})).data
             assert result['product_type'] == 'washing_machine'
             assert result['pcb']['input_state'] == 'result_unavailable'
@@ -172,6 +177,6 @@ async def test_mcp_categories_and_scoped_retrieval_with_models_missing(monkeypat
             unknown = (await client.call_tool('search_repair_cases', {'query': 'motor'})).data
             assert unknown['case_search_status'] == 'product_type_required'
             assert unknown['repair_cases'] == []
-        assert seen == ['washing_machine', 'washing_machine']
+        assert seen == ['washing_machine']
     finally:
         store.close()
