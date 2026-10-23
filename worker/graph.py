@@ -18,6 +18,7 @@ from langgraph.types import interrupt
 from . import config as C
 from . import tools
 from . import enrichment
+from .products import command_product_type
 from .harness import LimitExceeded, observed
 from .tool_policy import (check_image_result, check_object,
                           failure_output, limitation_note)
@@ -47,6 +48,7 @@ def merge_findings(old: list[dict], new: list[dict]) -> list[dict]:
 
 class State(TypedDict, total=False):
     command: dict  # Kafka로 받은 명령 원문
+    product_type: str  # Spring 접수의 제품 종류
     text: str  # 증상 + 기사 설명
     photos: list[dict]  # [{attachmentId, path, kind: PCB|MECH|OTHER}]
     clues: dict  # {pcb: [], mech: [], sw: [], errorCodes: []}
@@ -102,11 +104,12 @@ async def split_text(state: State, config) -> dict:
     await emit(config, "DIAGNOSIS_PROGRESS", {"stage": "SPLITTING_TEXT"})
     repair = state["command"]["payload"]["repair"]
     text = f"{repair.get('symptom') or ''} {repair.get('user_input', {}).get('customerDescription', '')}".strip()
-    clues = (await tools.split_text(text)).model_dump()
+    product_type = command_product_type(state["command"])
+    clues = (await tools.split_text(text, product_type=product_type)).model_dump()
     clues["errorCodes"] = repair.get("error_codes") or []
     observation = await supplemental(config, "normalize_observation", "observation-mcp",
-                                     lambda: enrichment.normalize_observation(text))
-    return {"text": text, "clues": clues, "findings": [observation]}
+                                     lambda: enrichment.normalize_observation(text, product_type=product_type))
+    return {"product_type": product_type, "text": text, "clues": clues, "findings": [observation]}
 
 
 async def supplemental(config, name, server, call):
@@ -161,13 +164,13 @@ async def run_photo_mcp(state, config, kind: str, call, tool: str, agent_type: s
         labels = sorted({d["type"] for f in findings for d in f["output"].get("defects", [])})
         if labels:
             findings.append(await supplemental(config, "interpret_pcb", "pcb-mcp",
-                                                lambda: enrichment.interpret_pcb(labels)))
+                                                lambda: enrichment.interpret_pcb(labels, product_type=state.get("product_type", "unknown"))))
     else:
         # [통합] 표면 결함 라벨(crazing 등)을 그대로 해석에 보낸다. 새 Rag_mcp는 옛 dent/부위 형식을 미등록으로 둔다
         labels = sorted({label for f in findings for label in enrichment.surface_labels(f["output"])})
         if labels:
             findings.append(await supplemental(config, "interpret_damage", "damage-mcp",
-                                                lambda: enrichment.interpret_damage(labels)))
+                                                lambda: enrichment.interpret_damage(labels, product_type=state.get("product_type", "unknown"))))
     return {"findings": findings}
 
 
@@ -192,13 +195,15 @@ async def rag_mcp(state: State, config) -> dict:
     damage_labels = sorted({label for f in state.get("findings", []) if f["source"] == "MECH"
                             for label in enrichment.surface_labels(f["output"])})
     try:
-        out = check_object(await tools.call_rag_mcp(text, pcb_labels, damage_labels), "retrieve_repair_context")
+        out = check_object(await tools.call_rag_mcp(
+            text, pcb_labels, damage_labels, product_type=state.get("product_type", "unknown")), "retrieve_repair_context")
     except LimitExceeded:
         raise
     except Exception as e:  # 보조 검색 실패는 기록하고 리포트에도 누락을 명시한다.
         out = {"hits": [], **failure_output("retrieve_repair_context", e, required=False)}
     await emit(config, "TOOL_EXECUTED", {"tool": "retrieve_repair_context", "toolVersion": "1", "agentType": "RAG",
-                                         "mcpServer": "rag-mcp", "input": {"text": text, "pcbLabels": pcb_labels}, "output": out})
+                                         "mcpServer": "rag-mcp", "input": {"text": text, "pcbLabels": pcb_labels,
+                                         "product_type": state.get("product_type", "unknown")}, "output": out})
     return {"findings": [{"source": "RAG", "attachmentId": None, "found": False, "output": out}]}
 
 
@@ -297,7 +302,8 @@ async def check_parts(state: State, config) -> dict:
 
 async def report(state: State, config) -> dict:
     parts = state["command"]["payload"]["repair"].get("product_snapshot", {}).get("compatibleParts", [])
-    r = await tools.write_report(state["text"], state["findings"], parts)
+    r = await tools.write_report(state["text"], state["findings"], parts,
+                                 product_type=state.get("product_type", "unknown"))
     # [통합] 점수 높은 순으로 순위를 다시 매긴다. GPT가 준 순서 그대로면 0.79가 1순위, 0.95가 2순위가 되기도 했다
     ranked = sorted((c.model_dump() for c in r.candidates), key=lambda c: -c["confidence"])
     candidates = [{"rank": i + 1, **c} for i, c in enumerate(ranked)]
@@ -313,7 +319,7 @@ async def report(state: State, config) -> dict:
         if f["source"] == "RAG":
             evidence += [{"type": "MANUAL" if h["kind"] in ("LABEL", "REFERENCE") else "CASE",
                           **{k: v for k, v in h.items() if k != "kind"}} for h in f["output"]["hits"]]
-    payload = {"summary": r.summary, "modelVersion": C.MODEL_VERSION, "repairMethod": r.repairMethod,
+    payload = {"product_type": state.get("product_type", "unknown"), "summary": r.summary, "modelVersion": C.MODEL_VERSION, "repairMethod": r.repairMethod,
                "candidates": candidates, "recommendedParts": [p.model_dump() for p in r.recommendedParts],
                "recommendedTools": [t.model_dump() for t in r.recommendedTools],
                "evidence": evidence, "analysisResults": analysis_summary(state)["analysisResults"],
@@ -333,7 +339,7 @@ async def save_case(state, config, payload):
     if not C.SAVE_REPAIR_CASES or "configurable" not in config:  # 단위 시험은 emit 없이 report만 부른다
         return
     cmd = state["command"]
-    case = {"case_id": f"task-{cmd['taskId']}", "repair_id": str(cmd["payload"]["repair"].get("id", "")),
+    case = {"product_type": state.get("product_type", "unknown"), "case_id": f"task-{cmd['taskId']}", "repair_id": str(cmd["payload"]["repair"].get("id", "")),
             "symptom": state["text"][:1000], "summary": payload["summary"][:2000],
             "causes": [c["cause"] for c in payload["candidates"]][:5],
             "labels": sorted({d["type"] for f in state["findings"] for d in f["output"].get("defects", [])}),
@@ -371,11 +377,13 @@ async def screen_fields(state, candidates) -> dict:
                                         "x": d["box_xyxy"][0] / w, "y": d["box_xyxy"][1] / h,
                                         "width": (d["box_xyxy"][2] - d["box_xyxy"][0]) / w,
                                         "height": (d["box_xyxy"][3] - d["box_xyxy"][1]) / h} for d in defects if d.get("box_xyxy")]})
-    cases = [{"caseId": h["citation"], "origin": "EXTERNAL", "sourceUri": h.get("sourceUri"), "summaryKo": h["excerpt"],
-              "similarity": h.get("score", 0)} for f in state["findings"] if f["source"] == "RAG"
+    cases = [{"caseId": h["citation"], "origin": h.get("origin", "EXTERNAL"), "sourceUri": h.get("sourceUri"), "summaryKo": h["excerpt"],
+              "similarity": h.get("score", 0), "sourceLabel": h.get("sourceLabel"),
+              "isDemo": h.get("isDemo", False)} for f in state["findings"] if f["source"] == "RAG"
              for h in f["output"].get("hits", []) if h["kind"] == "CASE"]
     for c, ko in zip(cases, await tools.translate_cases([c["summaryKo"] for c in cases])):
-        c["originalText"], c["summaryKo"] = c["summaryKo"], ko
+        c["originalText"] = c["summaryKo"]
+        c["summaryKo"] = ("[가상 데모 사례] " + ko if c["isDemo"] and not ko.startswith("[가상 데모 사례]") else ko)
     return {"topCause": candidates[0]["cause"] if candidates else None, "agents": agents, "similarCases": cases}
 
 

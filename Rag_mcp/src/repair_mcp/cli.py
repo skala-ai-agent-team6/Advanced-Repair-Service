@@ -6,8 +6,11 @@ def main():
     parser = argparse.ArgumentParser(description="Repair RAG MCP")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("index", help="Offline indexing; does not modify business data")
+    commands.add_parser("seed-demo-cases", help="Insert 6 explicitly synthetic appliance reports into the RAG index")
     normalize = commands.add_parser("normalize", help="Convert one observation with OpenAI; no vector index needed")
     normalize.add_argument("text", help="기사의 한국어 소견")
+    normalize.add_argument("--product-type", choices=["vacuum", "washing_machine", "air_conditioner", "unknown"],
+                           default="unknown")
     serve = commands.add_parser("serve")
     serve.add_argument("service", choices=["observation", "pcb", "damage", "rag"])
     serve.add_argument("--transport", choices=["stdio", "http"], default="stdio")
@@ -17,14 +20,16 @@ def main():
     if args.command == "normalize":
         from .normalize import normalize_observations
         try:
-            print(json.dumps(normalize_observations(args.text), ensure_ascii=False, indent=2))
+            print(json.dumps(normalize_observations(args.text, product_type=args.product_type), ensure_ascii=False, indent=2))
         except (ValueError, RuntimeError) as error:
             parser.exit(1, f"{error}\n")
-    elif args.command == "index":
+    elif args.command in {"index", "seed-demo-cases"}:
         from .retrieval import DenseStore
         store = DenseStore()
         try:
-            print(json.dumps(store.index(), ensure_ascii=False, indent=2))
+            from .demo_cases import seed_demo_cases
+            result = store.index() if args.command == "index" else seed_demo_cases(store)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
         finally:
             store.close()
     else:

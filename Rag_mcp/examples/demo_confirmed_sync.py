@@ -46,7 +46,7 @@ async def main():
                 evidence["public_index"] = indexed["counts"]
                 async with Client(create_server("rag", store, sync), timeout=300) as client:
                     async def search():
-                        return (await client.call_tool("search_repair_cases", {"query": query, "top_k": 3})).data
+                        return (await client.call_tool("search_repair_cases", {"query": query, "top_k": 3, "product_type": fixture["product_type"]})).data
 
                     async def immediate():
                         for _ in range(100):

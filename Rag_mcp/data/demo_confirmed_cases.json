@@ -1,0 +1,96 @@
+{
+  "synthetic": true,
+  "description": "시연용으로 작성한 가상 최종 보고서 6건. 실제 제조사 수리 이력 또는 검증된 진단 지침이 아님.",
+  "reports": [
+    {
+      "demo_id": "washer-drain",
+      "report_id": 900101,
+      "case_id": 900101,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-23T03:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁이 끝났는데 물이 빠지지 않고 통 안에 남아 있습니다.",
+        "actualCause": "배수 필터에 이물이 쌓여 배수 흐름이 제한됨",
+        "actualAction": "배수 필터의 이물을 제거한 뒤 배수 시험에서 정상 배수 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-spin",
+      "report_id": 900102,
+      "case_id": 900102,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-23T03:00:00Z",
+      "content": {
+        "technicianOpinion": "탈수할 때 진동이 크고 세탁기가 흔들립니다.",
+        "actualCause": "설치 수평 불량으로 탈수 중 흔들림 발생",
+        "actualAction": "수평 조절 후 빈 통 및 시험 세탁물로 탈수 동작 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-door",
+      "report_id": 900103,
+      "case_id": 900103,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-23T03:00:00Z",
+      "content": {
+        "technicianOpinion": "문을 닫아도 문 열림 표시가 나오고 시작되지 않습니다.",
+        "actualCause": "도어 걸쇠 주변 이물로 문이 완전히 닫히지 않음",
+        "actualAction": "걸쇠 주변 이물을 제거하고 문 닫힘 인식 및 세탁 시작 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-cooling",
+      "report_id": 900104,
+      "case_id": 900104,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-23T03:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 바람이 약하고 실내가 잘 시원해지지 않습니다.",
+        "actualCause": "흡입 필터에 먼지가 누적되어 공기 흐름이 제한됨",
+        "actualAction": "필터 청소 후 재장착하고 송풍 및 냉방 동작 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-leak",
+      "report_id": 900105,
+      "case_id": 900105,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-23T03:00:00Z",
+      "content": {
+        "technicianOpinion": "냉방 중 실내기 아래에서 물이 떨어집니다.",
+        "actualCause": "배수 호스 내부 오염으로 응축수 배수가 원활하지 않음",
+        "actualAction": "배수 경로를 청소하고 배수 시험에서 누수 없이 배출 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-power",
+      "report_id": 900106,
+      "case_id": 900106,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-23T03:00:00Z",
+      "content": {
+        "technicianOpinion": "전원이 간헐적으로 꺼지고 표시등도 꺼집니다.",
+        "actualCause": "전원 연결부 접촉 불량이 점검에서 확인됨",
+        "actualAction": "담당 기사가 연결부를 보수한 후 시험 운전에서 전원 유지 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    }
+  ]
+}

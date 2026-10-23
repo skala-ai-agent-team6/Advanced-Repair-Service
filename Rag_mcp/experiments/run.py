@@ -28,7 +28,7 @@ async def main():
     try:
         async with Client(create_server("rag", store), timeout=180) as client:
             for scenario in INPUTS:
-                request = {k: v for k, v in scenario.items() if k != "name"}
+                request = {"product_type": "vacuum", **{k: v for k, v in scenario.items() if k != "name"}}
                 baseline = {**request, "pcb_labels": [], "damage_labels": []}
                 korean = (await client.call_tool("retrieve_repair_context", {
                     "request": {**baseline, "use_bilingual_hints": False}})).data

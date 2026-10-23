@@ -2,7 +2,7 @@
 
 ## 담당 범위
 
-서비스는 청소기 전용이다. 요청에서 제품 종류를 선택하지 않으며 `product_domain` 입력 항목은 제거했다. 기존 요청에 이 항목이 있다면 삭제한다.
+입력에 `product_type`을 전달한다: `vacuum`(청소기), `washing_machine`(세탁기), `air_conditioner`(에어컨). 누락하면 `unknown`으로 처리하고 제품별 사례 검색을 생략한다. `product_domain` 입력은 지원하지 않는다. [제품 종류·연동 규격](product_types.md).
 
 팀원이 실행한 모델의 **라벨 결과**를 받는다. 사진이나 모델 가중치를 받지 않는다.
 
@@ -41,7 +41,7 @@ OPENAI_OBSERVATION_MODEL=gpt-4.1-mini
 
 ```bash
 uv sync --locked --python 3.11
-uv run repair-mcp normalize "흡입구에 먼지가 많은 것 같아요. 필터는 막히지 않았어요."
+uv run repair-mcp normalize --product-type vacuum "흡입구에 먼지가 많은 것 같아요. 필터는 막히지 않았어요."
 ```
 
 전체 검색 실행:
@@ -88,6 +88,7 @@ LangGraph 쪽에서는 이 주소들을 MCP Client에 등록한다. Docker 안�
 ```json
 {
   "request": {
+    "product_type": "vacuum",
     "raw_text": "청소기가 간헐적으로 멈춰요. 외장 표면에 가는 금이 보이고, 필터에는 막힘이 보이지 않아요.",
     "origin": "technician",
     "technician_confirmed": true,
@@ -194,7 +195,7 @@ OpenAI 전환 후 검증: SDK HTTP 응답을 모의하여 요청 스키마·출�
 `.env`보다 기존 터미널의 `OPENAI_API_KEY` 환경변수가 우선한다. 오래된 키가 터미널에 남아 있다면 macOS/Linux에서 아래처럼 해당 실행에 한해 환경변수를 제외하고 `.env`의 키를 사용한다.
 
 ```bash
-env -u OPENAI_API_KEY uv run repair-mcp normalize "흡입구에 먼지가 많은 것 같아요."
+env -u OPENAI_API_KEY uv run repair-mcp normalize --product-type vacuum "흡입구에 먼지가 많은 것 같아요."
 env -u OPENAI_API_KEY uv run python examples/call_mcp.py
 ```
 

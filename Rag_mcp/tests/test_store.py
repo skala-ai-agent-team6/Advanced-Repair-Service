@@ -21,15 +21,15 @@ class Encoder:
 def test_index_filter_source_and_no_duplicates():
     store = DenseStore(client=QdrantClient(":memory:"), encoder=Encoder())
     store.documents = {"repair_cases": [
-        {"document_id": "case:1", "text": "motor " * 200, "source_repair_status": "Fixed",
+        {"document_id": "case:1", "text": "motor " * 200, "product_type": "vacuum", "source_repair_status": "Fixed",
          "source_url": "https://example.org/source/1"},
-        {"document_id": "case:2", "text": "filter", "source_repair_status": "End of life"}]}
+        {"document_id": "case:2", "text": "filter", "product_type": "vacuum", "source_repair_status": "End of life"}]}
     with pytest.raises(RuntimeError, match="Index"):
         store.search("repair_cases", "motor")
     result = store.index()
     assert result["counts"]["repair_cases"]["chunks"] > 2
-    found = store.search("repair_cases", "motor", repair_status="Fixed")
+    found = store.search("repair_cases", "motor", product_type="vacuum", repair_status="Fixed")
     assert len(found) == 1 and found[0]["document_id"] == "case:1"
     assert found[0]["source_url"] == "https://example.org/source/1"
-    assert store.search("repair_cases", "motor", repair_status="End of life") == []
+    assert store.search("repair_cases", "motor", product_type="vacuum", repair_status="End of life") == []
     store.close()

@@ -34,7 +34,7 @@ def revise(directory, text, version='1.0.1'):
 def test_prompt_inputs_with_braces_are_not_interpreted_as_template():
     text = '소견 {findings} / {__class__} / $HOME / {{text}}'
     result = prompts.render('split_text', tools.Clues, text=text)
-    assert result == '로봇청소기 고장 증상을 단서별로 나눠라. 없으면 빈 목록.\n증상: ' + text
+    assert result == '입력된 제품의 고장 증상을 단서별로 나눠라. 없으면 빈 목록.\n증상: ' + text
     with pytest.raises(prompts.PromptConfigError):
         prompts.render('write_report', tools.Clues, text=text)
 
@@ -72,6 +72,7 @@ def test_invalid_bundle_fails_before_model_and_writes_failure(tmp_path, monkeypa
 def test_prompt_snapshot_stays_fixed_during_execution(tmp_path, monkeypatch):
     directory = copy_bundle(tmp_path, monkeypatch)
     original = prompts.render('split_text', tools.Clues, text='소견')
+    version = json.loads((directory/'manifest.json').read_text())['prompts']['split_text']['version']
     class Graph:
         async def ainvoke(self, *args, **kwargs):
             revise(directory, '새 지시 {text}')
@@ -79,7 +80,7 @@ def test_prompt_snapshot_stays_fixed_during_execution(tmp_path, monkeypatch):
             return {'result': 'ok'}
     metrics = {}
     asyncio.run(harness.invoke(Graph(), command(), AsyncMock(), metrics))
-    assert metrics['prompts']['split_text']['version'] == '1.0.0'
+    assert metrics['prompts']['split_text']['version'] == version
     assert prompts.render('split_text', tools.Clues, text='소견') == '새 지시 소견'
 
 
@@ -107,7 +108,8 @@ def test_prompt_metadata_saved_and_replay_does_not_use_new_version(fixture_tools
             saved = json.loads(path.read_text())
             metadata = saved['execution']['prompts']
             assert set(metadata) == {'split_text', 'write_report'}
-            assert all(v['version'] in ('1.0.0', '1.1.0') and len(v['schema_sha256']) == 64 for v in metadata.values())
+            manifest = json.loads((directory/'manifest.json').read_text())
+            assert all(v['version'] == manifest['prompts'][name]['version'] and len(v['schema_sha256']) == 64 for name,v in metadata.items())
             assert '실행에 사용한 프롬프트' in path.with_suffix('.md').read_text()
             revise(directory, '바뀐 지시 {text}')
             second = await main.handle(cmd, Producer(), journal)

@@ -1,5 +1,5 @@
 {
-  "bundle_version": "1.1.0",
+  "bundle_version": "1.2.0",
   "prompts": {
     "classify_photo": {
       "file": "classify_photo.md",
@@ -9,14 +9,14 @@
     },
     "split_text": {
       "file": "split_text.md",
-      "version": "1.0.0",
-      "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+      "version": "1.2.0",
+      "sha256": "6942bf59f1684361853602c4a3d35ec8ccbdbab50d0467f11529a59ddc91e864",
       "output_schema": "Clues"
     },
     "write_report": {
       "file": "write_report.md",
-      "version": "1.1.0",
-      "sha256": "9cf81e6602a3e60220855d916aa20c37c6ee00f3bf9de546a0dd0dcbc7e86631",
+      "version": "1.2.0",
+      "sha256": "801d02e58330ace2c733ca3bec7982b8e59f85f947c2081b75ea2e04f1a9f2cc",
       "output_schema": "Report"
     }
   }

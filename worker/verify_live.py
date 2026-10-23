@@ -18,9 +18,13 @@ class LocalOutput:
     """브로커에 발행하지 않고 같은 이벤트를 파일 검증용으로 수집."""
     def __init__(self):
         self.events = []
+        self.processing_statuses = []
 
     async def send_and_wait(self, topic, body, **kwargs):
         event = json.loads(body)
+        if topic == C.PROCESSING_STATUS_TOPIC:
+            self.processing_statuses.append(event)
+            return
         VALIDATOR.validate(event)
         self.events.append(event)
         print(event["eventType"], event["payload"].get("stage") or event["payload"].get("tool") or "", flush=True)
