@@ -81,13 +81,16 @@ async def call_pcb_mcp(path: str) -> dict:
 
 
 @guarded()
-async def call_rag_mcp(text: str, pcb_labels: list[str] | None, damage_labels: list[str] | None = (), *, product_type: str = "unknown") -> dict:
+async def call_rag_mcp(text: str, pcb_labels: list[str] | None, damage_labels: list[str] | None = (), *,
+                       product_type: str = "unknown", normalized_observation: dict | None = None,
+                       error_codes: list[str] | None = None) -> dict:
     """Rag_mcp(retrieve_repair_context): 증상 글 + PCB 라벨로 과거 수리 사례·라벨 정의를 찾는다.
 
     [통합] 10/21부터 기계 MCP 표면 결함 6종도 보낸다. 찌그러짐(자동차 라벨)은 여전히 보내지 않는다.
     """
     product_type = normalize_product_type(product_type)
     request = {"product_type": product_type, "raw_text": prepare_text(text, "rag_query"), "origin": "technician", "technician_confirmed": True,
+               "normalized_observation": normalized_observation, "error_codes": [prepare_text(code, "rag_error_code") for code in (error_codes or [])],
                "pcb_labels": pcb_labels, "damage_labels": list(damage_labels) if damage_labels is not None else None, "top_k": 3}  # [통합] 표면 결함 라벨 전달
     async with Client(C.RAG_MCP_URL, timeout=60) as c:
         d = check_object(check_response(
@@ -103,6 +106,7 @@ async def call_rag_mcp(text: str, pcb_labels: list[str] | None, damage_labels: l
               **({"sourceUri": x["source_url"]} if x.get("source_url") else {})}
              for x in d.get("pcb_references", [])]
     return {"product_type": product_type, "hits": hits, "status": d["case_search_status"],
+            "observation": d.get("observation", {}),
             "warnings": d.get("warnings", []), "integrated_assessment": d.get("integrated_assessment", {})}
 
 

@@ -43,7 +43,13 @@ def fixture_tools(monkeypatch, tmp_path):
         {"attachmentId": a["id"], "path": image, "target": a.get("target", "PCB")}
         for a in cmd["payload"]["attachments"]]))
     monkeypatch.setattr(tools, "split_text", AsyncMock(return_value=tools.Clues(pcb=[], mech=[], sw=[])))
-    monkeypatch.setattr(enrichment, "normalize_observation", AsyncMock(return_value={"observations": []}))
+    async def observation(text, *, product_type="unknown"):
+        from worker.context_policy import prepare_text
+        text = prepare_text(text)
+        return {"raw_text": text, "product_type": product_type, "origin": "technician",
+                "technician_confirmed": True, "engine": "openai-structured-output-v1", "model": "test",
+                "observations": [], "unmapped_fragments": [text], "diagnosis_confirmed": False}
+    monkeypatch.setattr(enrichment, "normalize_observation", AsyncMock(side_effect=observation))
     monkeypatch.setattr(enrichment, "interpret_pcb", AsyncMock(return_value={"detections": []}))
     monkeypatch.setattr(enrichment, "interpret_damage", AsyncMock(return_value={"detections": []}))
     out = {"is_defective": True, "defects": [{"type": "short", "confidence": .3}],

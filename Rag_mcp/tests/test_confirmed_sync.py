@@ -186,8 +186,6 @@ def test_both_sources_and_internal_outcomes_reach_existing_rag(monkeypatch):
     public_index(store)
     store.upsert_confirmed_case(report_document(report()))
     store.upsert_confirmed_case(report_document(report(43, outcome="NOT_FIXED")))
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations",
-                        lambda text, *args: {"raw_text": text, "observations": []})
     received = []
     def opinion(observation, pcb, damage, cases, guidance):
         received.extend(cases)

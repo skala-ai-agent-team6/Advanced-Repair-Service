@@ -62,6 +62,7 @@ def generate_final_opinion(observation, pcb, damage, cases, guidance):
         "product_type": observation.get("product_type", "unknown"),
         "product_name": PRODUCT_NAMES[observation.get("product_type", "unknown")],
         "unmapped_fragments": observation.get("unmapped_fragments", []),
+        "error_codes": observation.get("error_codes", []),
         "reported_symptoms": [
             {"label_ko": item["label_ko"], "certainty": item["certainty"],
              "evidence_text": item.get("evidence_text", "")}

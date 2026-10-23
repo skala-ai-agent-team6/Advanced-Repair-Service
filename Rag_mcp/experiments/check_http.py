@@ -18,7 +18,7 @@ async def main():
     payload = json.loads((root / "examples/search_request.json").read_text())
     calls = [
         ("observation", "normalize_observation", {"raw_text": payload["raw_text"],
-         "origin": payload["origin"], "technician_confirmed": payload["technician_confirmed"]}),
+         "product_type": payload.get("product_type", "unknown"), "origin": payload["origin"], "technician_confirmed": payload["technician_confirmed"]}),
         ("pcb", "interpret_pcb", {"labels": payload["pcb_labels"]}),
         ("damage", "interpret_damage", {"labels": payload["damage_labels"]}),
         ("rag", "retrieve_repair_context", {"request": payload}),
@@ -48,11 +48,13 @@ async def main():
                         raise TimeoutError(service)
                     await asyncio.sleep(0.1)
             async with Client(f"http://127.0.0.1:{port}/mcp", timeout=180) as client:
+                if service == "rag":
+                    arguments["request"]["normalized_observation"] = results["observation"]
                 result = await client.call_tool(tool, arguments)
                 results[service] = result.data
                 assert not result.is_error
                 print(f"{service}: HTTP MCP OK", flush=True)
-        assert results["observation"]["raw_text"] == results["rag"]["observation"]["raw_text"]
+        assert results["observation"] == results["rag"]["observation"]
         assert results["rag"]["repair_cases"]
         assert len(results["rag"]["label_definitions"]) == 2
         assert results["rag"]["damage"]["detections"][0]["label"] == "crazing"
