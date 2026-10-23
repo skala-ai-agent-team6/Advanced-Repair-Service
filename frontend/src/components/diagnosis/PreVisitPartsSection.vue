@@ -7,6 +7,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { PackageCheck, Trash2, Plus, CircleAlert, ShoppingCart, CircleCheck, Warehouse, Package, ChevronDown, Loader2 } from 'lucide-vue-next'
 import AiBadge from '@/components/common/AiBadge.vue'
+import PreparationToolsCard from './PreparationToolsCard.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useOrderStore } from '@/stores/orders'
 import { isCompatible } from '@/utils/parts'
@@ -172,6 +173,7 @@ function add() {
     </div>
     <p v-if="showErrors && error" class="error-text" role="alert">{{ error }}</p>
     <p v-if="!editing && !canOrder && orderHint && rows.some((r) => r.known && !r.enough)" id="pv-order-hint" class="faint">{{ orderHint }}</p>
+    <PreparationToolsCard :repair-id="repairId" />
   </section>
 </template>
 

@@ -13868,6 +13868,132 @@
         "description": "TECHNICIAN: 부품 예약·취소·만료·출고 이력 (최근 50건)\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
       }
     },
+    "/api/repairs/{id}/preparation-report": {
+      "get": {
+        "summary": "출장 방문 준비 리포트: 원인·증상 요약, 준비 공구·부품·재고, 고장 위치 (업무 MCP). 연결 실패 시 report_status=UNAVAILABLE",
+        "operationId": "get__api_repairs__id__preparation_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "출장 방문 준비 리포트: 원인·증상 요약, 준비 공구·부품·재고, 고장 위치 (업무 MCP). 연결 실패 시 report_status=UNAVAILABLE\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
     "/api/repairs/{id}/warranty": {
       "get": {
         "summary": "보증 기간 기반 무상/유상 제안과 기사 확정",

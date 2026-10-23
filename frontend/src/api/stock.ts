@@ -49,3 +49,15 @@ export async function getStockHistory(partId: string): Promise<StockHistoryEntry
   guard()
   return (await http.get<StockHistoryEntry[]>(`/parts/${partId}/stock-history`)).data
 }
+
+/** [출장] 출장 방문 준비 리포트 (업무 MCP get_repair_preparation_report). Mock 에는 없다 → null */
+export interface PreparationReport {
+  report_status: string
+  symptom_summary?: string
+  recommended_tools?: { name: string; purpose: string; evidence?: string }[]
+  warnings?: string[]
+}
+export async function getPreparationReport(repairId: number): Promise<PreparationReport | null> {
+  if (USE_MOCK) return null
+  return (await http.get<PreparationReport>(`/repairs/${repairId}/preparation-report`)).data
+}

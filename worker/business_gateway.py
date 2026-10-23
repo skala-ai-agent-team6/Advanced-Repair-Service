@@ -1,4 +1,5 @@
-"""Spring inventory.lookup → 팀 업무 MCP get_part_availability 변환. 발주는 Spring 승인 흐름 유지."""
+"""Spring inventory.lookup → 팀 업무 MCP get_part_availability 변환. 발주는 Spring 승인 흐름 유지.
+[출장] preparation.report → 업무 MCP get_repair_preparation_report (출장 전 방문 준비 리포트)."""
 import hmac
 import os
 
@@ -31,12 +32,23 @@ class Params(BaseModel):
     arguments: Arguments
 
 
+class ReportArguments(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    repairId: int = Field(ge=1)
+
+
+class ReportParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: Literal["preparation.report"]
+    arguments: ReportArguments
+
+
 class RPCRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     jsonrpc: Literal["2.0"]
     id: str
     method: Literal["tools/call"]
-    params: Params
+    params: Params | ReportParams
 
 
 async def lookup(part_ids):
@@ -74,7 +86,12 @@ async def rpc(request: Request):
     except (ValueError, ValidationError):
         return JSONResponse({"error": "Invalid RPC request"}, status_code=400)
     try:
-        result = await lookup(data.params.arguments.partIds)
+        if isinstance(data.params, ReportParams):
+            # 같은 DB를 읽으므로 번호 변환 없음. 파일 경로는 서버 내부라 Spring에 넘기지 않는다
+            raw = await call(C.BUSINESS_MCP_URL, "get_repair_preparation_report", {"repair_id": data.params.arguments.repairId})
+            result = {k: v for k, v in raw.items() if k != "report_path"}
+        else:
+            result = await lookup(data.params.arguments.partIds)
         body = {"result": {"isError": False, "structuredContent": result}}
     except Exception:
         body = {"error": {"code": -32000, "message": "Business MCP lookup failed"}}

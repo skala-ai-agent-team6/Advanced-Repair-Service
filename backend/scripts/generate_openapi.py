@@ -242,6 +242,7 @@ add('/api/stock/reservations','post','TECHNICIAN: 출장 부품 재고 예약(24
 for action,summary in [('cancel','예약 취소: 가용 재고로 복구'),('release','출고: 보유·예약 차감')]:
     add('/api/stock/reservations/{id}/'+action,'post','TECHNICIAN: '+summary,free)
 add('/api/parts/{id}/stock-history','get','TECHNICIAN: 부품 예약·취소·만료·출고 이력 (최근 50건)',array(free))
+add('/api/repairs/{id}/preparation-report','get','출장 방문 준비 리포트: 원인·증상 요약, 준비 공구·부품·재고, 고장 위치 (업무 MCP). 연결 실패 시 report_status=UNAVAILABLE',free)
 add('/api/repairs/{id}/warranty','get','보증 기간 기반 무상/유상 제안과 기사 확정',free)
 add('/api/repairs/{id}/warranty/decision','post','TECHNICIAN: 무상/유상 확정. 제안과 다르면 사유 필수',free,obj({'result':string(enum=['FREE','PAID']),'reason':string(maxLength=1000)},['result']))
 add('/internal/rag/confirmed-changes','get','RAG: 고정 high-water mark와 단조 cursor로 확정 변경분 조회',ref('RagPage'),params=[query('after',integer(minimum=0,format='int64',default=0)),query('until',integer(minimum=0,format='int64')),query('size',integer(minimum=1,maximum=500,default=100))],internal=True)

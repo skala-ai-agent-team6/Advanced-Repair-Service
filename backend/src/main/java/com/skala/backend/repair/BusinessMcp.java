@@ -12,6 +12,8 @@ import java.util.*;
 public interface BusinessMcp {
     // Normalized tool result: stocks [{partId,warehouseId,onHand,reserved,available}], factories [{partId,factoryId,region,contact}].
     Map<String,Object> lookup(List<Long> partIds);
+    /** [출장] 업무 MCP get_repair_preparation_report: 방문 준비 리포트(원인·증상 요약, 공구·부품, 재고, 고장 위치). 없으면 UNAVAILABLE */
+    default Map<String,Object> preparation(Long repairId) {return Map.of("report_status","UNAVAILABLE");}
 }
 @Component
 @Profile("(!dev & !test) | realmcp") // [통합] dev에서도 realmcp 프로필을 붙이면 실제 업무 MCP(게이트웨이 경유)를 쓴다
@@ -21,6 +23,13 @@ class HttpBusinessMcp implements BusinessMcp {
         var factory=new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build());
         factory.setReadTimeout(Duration.ofSeconds(10));
         client=RestClient.builder().baseUrl(url).requestFactory(factory).defaultHeader("Authorization","Bearer "+token).build();
+    }
+    @Override public Map<String,Object> preparation(Long repairId) {
+        var response=client.post().body(Map.of("jsonrpc","2.0","id",UUID.randomUUID().toString(),"method","tools/call","params",Map.of("name","preparation.report","arguments",Map.of("repairId",repairId))))
+            .retrieve().body(String.class);
+        var rpc=Json.object(response);
+        if(rpc.containsKey("error") || !(rpc.get("result") instanceof Map<?,?> result) || !(result.get("structuredContent") instanceof Map<?,?> data)) throw new IllegalStateException("MCP_TOOL_FAILED");
+        @SuppressWarnings("unchecked") var out=(Map<String,Object>)data;return out;
     }
     @Override public Map<String,Object> lookup(List<Long> ids) {
         // Team contract: stateless JSON-RPC tools/call HTTP endpoint (JSON response, no LLM).

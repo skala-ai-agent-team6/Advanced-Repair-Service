@@ -11,8 +11,8 @@ import java.util.*;
 @Service
 public class FieldService {
     static final ZoneId KST=ZoneId.of("Asia/Seoul");
-    final Store db;final Access access;final WarrantyService warranty;final Catalog catalog;
-    public FieldService(Store db,Access access,WarrantyService warranty,Catalog catalog){this.db=db;this.access=access;this.warranty=warranty;this.catalog=catalog;}
+    final Store db;final Access access;final WarrantyService warranty;final Catalog catalog;final BusinessMcp business;
+    public FieldService(Store db,Access access,WarrantyService warranty,Catalog catalog,BusinessMcp business){this.db=db;this.access=access;this.warranty=warranty;this.catalog=catalog;this.business=business;}
 
     // ---------- 방문 일정 ----------
     public List<Map<String,Object>> visits(LocalDate from){
@@ -120,6 +120,13 @@ public class FieldService {
             m.put("warehouse",h.get("warehouse_name"));m.put("actor",Objects.requireNonNullElse(h.get("actor_name"),"시스템"));m.put("repairId",h.get("case_id"));out.add(m);
         }
         return out;
+    }
+
+    // ---------- 출장 준비 리포트 (박진영 업무 MCP get_repair_preparation_report) ----------
+    public Map<String,Object> preparation(Long id){
+        access.repair(id);
+        try {return business.preparation(id);}
+        catch(RuntimeException e){return Map.of("report_status","UNAVAILABLE","warnings",List.of("업무 MCP에 연결하지 못했습니다. 진단 리포트의 추천 부품을 확인하세요."));}
     }
 
     // ---------- 보증 (무상/유상) ----------
