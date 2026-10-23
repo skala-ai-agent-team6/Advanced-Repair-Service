@@ -212,12 +212,13 @@ class V2ServiceTests {
         }
         assertThat(db.list("SELECT * FROM reprocess_attempt")).hasSize(1);assertThat(db.list("SELECT * FROM diagnosis_candidate")).hasSize(1);
     }
-    @Test void otherApplianceCanBeRegisteredWithoutPretendingAnAiModelExists(){
+    @Test void otherApplianceUsesUnknownProductMetadata(){
         db.update("UPDATE product_model SET appliance_type='REFRIGERATOR' WHERE id=2");
         try{
             var input=new V2Inputs.ConsumerIntake("개발용 다른 가전 접수",WarrantyService.today().minusDays(1),"NEW-APPLIANCE-TEST","R2",1L,"CENTER",null,null,null);
-            var c=consumer.create(input,List.of(photo()));error(()->repairs.start(caseId(c),null,List.of(attachment(c))),"APPLIANCE_DIAGNOSIS_UNSUPPORTED");
-            assertThat(db.list("SELECT * FROM diagnosis_job")).isEmpty();
+            var c=consumer.create(input,List.of(photo()));Long task=start(c);
+            var payload=(Map<?,?>)db.one("SELECT payload FROM outbox_event WHERE job_id=? AND topic IS NOT NULL",task).get("payload");
+            assertThat(((Map<?,?>)((Map<?,?>)payload.get("payload")).get("repair")).get("product_type")).isEqualTo("unknown");
         }finally{db.update("UPDATE product_model SET appliance_type='VACUUM_CLEANER' WHERE id=2");}
     }
     @Test void finalFailureKeepsCollectedSummaryForTechnicianWithoutStartingProcurement(){
@@ -234,6 +235,47 @@ class V2ServiceTests {
         db.update("DELETE FROM rag_case_change WHERE report_id=?",report);rag.changes(0,null,100);
         var rows=db.list("SELECT document->>'outcome' AS outcome FROM rag_case_change WHERE report_id=? ORDER BY revision",report);
         assertThat(rows.stream().map(r->r.get("outcome"))).containsExactly("NOT_FIXED","FIXED");
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"STAFF,VACUUM_CLEANER,vacuum","STAFF,WASHING_MACHINE,washing_machine","STAFF,AIR_CONDITIONER,air_conditioner","STAFF,REFRIGERATOR,unknown","CONSUMER,VACUUM_CLEANER,vacuum","CONSUMER,WASHING_MACHINE,washing_machine","CONSUMER,AIR_CONDITIONER,air_conditioner","CONSUMER,REFRIGERATOR,unknown"})
+    void productTypeSurvivesIntakeResumeRetryReplayAndConfirmedQueries(String source,String appliance,String expected)throws Exception{
+        db.update("UPDATE product_model SET appliance_type=? WHERE id=1",appliance);
+        try{
+            Map<String,Object> c;
+            if(source.equals("CONSUMER"))c=intake();
+            else{
+                var saved=repairs.create(new Inputs.Intake(1L,"증상으로 제품을 추측하지 않음",List.of(),"1",Map.of()),List.of(photo()));
+                Long id=(Long)saved.get("repairId");Long a=(Long)((Map<?,?>)((List<?>)saved.get("attachments")).getFirst()).get("attachmentId");
+                c=Map.of("caseNumber",db.one("SELECT case_number FROM repair_case WHERE id=?",id).get("case_number"),"attachmentIds",List.of(a));
+            }
+            assertThat(db.one("SELECT intake_source,product_type FROM repair_case WHERE id=?",caseId(c))).containsEntry("intake_source",source).containsEntry("product_type",expected);
+            // A later catalog correction must not change this reception's commands or historical report.
+            db.update("UPDATE product_model SET appliance_type='CHANGED_AFTER_INTAKE' WHERE id=1");
+            Long task=start(c);var requested=db.one("SELECT payload FROM outbox_event WHERE job_id=? AND event_type='DIAGNOSIS_REQUESTED'",task);
+            assertCommandType(requested.get("payload"),expected);
+            var photoEvent=new LinkedHashMap<String,Object>(event(c,1,Map.of("requestKey",UUID.randomUUID(),"round",1,"bodyPart","GENERAL","description","추가 사진","checkpoint","cp")));
+            photoEvent.put("eventType","PHOTO_REQUESTED");events.receive(Json.write(photoEvent));
+            Long request=(Long)db.one("SELECT id FROM photo_request WHERE job_id=?",task).get("id");
+            Long extra=(Long)repairs.upload(caseId(c),request,photo()).get("attachmentId");worker.runOnce();
+            await().atMost(Duration.ofSeconds(10)).until(()->db.one("SELECT status FROM photo_quality_result WHERE attachment_id=?",extra).get("status").equals("COMPLETED"));
+            repairs.resume(caseId(c),new Inputs.Resume(request,UUID.randomUUID(),List.of(extra)));
+            assertCommandType(db.one("SELECT payload FROM outbox_event WHERE job_id=? AND event_type='DIAGNOSIS_RESUMED'",task).get("payload"),expected);
+            db.update("UPDATE diagnosis_job SET status='FAILED',error_code='SERVICE_UNAVAILABLE' WHERE id=?",task);repairs.retryFailedDiagnosis(task);
+            var retry=db.one("SELECT * FROM outbox_event WHERE topic IS NOT NULL ORDER BY id DESC LIMIT 1");assertCommandType(retry.get("payload"),expected);
+            db.update("UPDATE app_user SET operations_enabled=true WHERE email='tech1'");db.update("UPDATE outbox_event SET terminal_failure=true WHERE id=?",retry.get("id"));
+            assertThat(ops.retry((UUID)retry.get("event_key"),"OUTBOX",new V2Inputs.Reprocess(UUID.randomUUID())).get("state")).isEqualTo("SUCCEEDED");
+            var replay=db.one("SELECT payload FROM outbox_event WHERE id=?",retry.get("id"));assertThat(replay.get("payload")).isEqualTo(retry.get("payload"));assertCommandType(replay.get("payload"),expected);
+            confirm(draft(caseId(c)));
+            assertThat(queries.confirmedCases(0,100).getFirst().get("product_type")).isEqualTo(expected);
+            mvc.perform(get("/internal/confirmed-cases").header("Authorization","Bearer test-service-secret-at-least-32-characters")).andExpect(status().isOk()).andExpect(jsonPath("$[0].product_type").value(expected));
+            var page=rag.changes(0,null,100);var item=(Map<?,?>)((List<?>)page.get("items")).getFirst();assertThat(item.get("product_type")).isEqualTo(expected);assertThat(((Map<?,?>)item.get("document")).get("product_type")).isEqualTo(expected);
+            // Pre-PR6 journals are enriched in the response without rewriting receipts or stored documents.
+            db.update("UPDATE rag_case_change SET document=document-'product_type'");
+            item=(Map<?,?>)((List<?>)rag.changes(0,null,100).get("items")).getFirst();assertThat(((Map<?,?>)item.get("document")).get("product_type")).isEqualTo(expected);
+        }finally{db.update("UPDATE product_model SET appliance_type='VACUUM_CLEANER' WHERE id=1");}
+    }
+    void assertCommandType(Object body,String expected){
+        var repair=(Map<?,?>)((Map<?,?>)((Map<?,?>)body).get("payload")).get("repair");assertThat(repair.get("product_type")).isEqualTo(expected);assertThat(((Map<?,?>)repair.get("product_snapshot")).get("product_type")).isEqualTo(expected);
     }
     @Test void publicRateLimiterHasHardBoundAndMinuteReset(){var limiter=new PublicRateLimit(2);assertThat(limiter.allow("127.0.0.1",1)).isTrue();assertThat(limiter.allow("127.0.0.1",1)).isTrue();assertThat(limiter.allow("127.0.0.1",1)).isFalse();assertThat(limiter.allow("127.0.0.1",2)).isTrue();}
 }

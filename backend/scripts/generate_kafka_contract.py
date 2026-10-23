@@ -18,7 +18,8 @@ evidence=obj({'type':T,'attachmentId':U,'annotation':{'type':'object'},'citation
 evidence['anyOf']=[{'required':['attachmentId']},{'required':['citation']},{'required':['sourceUri']}]
 evidence['properties']['sourceUri']=T
 attachment=obj({'id':U,'request_id':{'anyOf':[U,{'type':'null'}]},'mime_type':T,'byte_size':I,'sha256':T,'downloadPath':T})
-command=obj({'repair':{'type':'object'},'task':{'type':'object'},'attachments':arr(attachment),'attachmentIds':arr(U),'addedAttachmentIds':arr(U),'requestId':{'anyOf':[U,{'type':'null'}]},'requestKey':{'anyOf':[K,{'type':'null'}]},'round':{'type':'integer','minimum':0,'maximum':3},'checkpoint':{'type':['string','null']}})
+product_type={'type':'string','enum':['vacuum','washing_machine','air_conditioner','unknown']}
+command=obj({'repair':obj({'product_type':product_type}),'task':{'type':'object'},'attachments':arr(attachment),'attachmentIds':arr(U),'addedAttachmentIds':arr(U),'requestId':{'anyOf':[U,{'type':'null'}]},'requestKey':{'anyOf':[K,{'type':'null'}]},'round':{'type':'integer','minimum':0,'maximum':3},'checkpoint':{'type':['string','null']}})
 command['properties'].update({'selectedAttachmentIds':arr(U),'excludedAttachmentIds':arr(U),'explicitlyExcludedAttachmentIds':arr(U)})
 payloads={
  'DIAGNOSIS_REQUESTED':command, 'DIAGNOSIS_RESUMED':command,
@@ -33,7 +34,7 @@ Path('docs/kafka-event.schema.json').write_text(json.dumps(schema,ensure_ascii=F
 base={'eventId':'a0000000-0000-0000-0000-000000000001','eventType':'DIAGNOSIS_REQUESTED','schemaVersion':2,'occurredAt':'2026-10-20T01:00:00Z','repairId':'1','taskId':'1','correlationId':'90000000-0000-0000-0000-000000000001','inputRevision':1,'executionId':'a0000000-0000-0000-0000-000000000003','sequence':0}
 a='1';b='2';request='c0000000-0000-0000-0000-000000000001'
 photo={'id':a,'request_id':None,'mime_type':'image/png','byte_size':1024,'sha256':'0'*64,'downloadPath':'/internal/attachments/'+a}
-source={'repair':{'id':base['repairId'],'product_snapshot':{'id':'1','serial_number':'ROBOT-SEOUL-001','model_id':'1','model_code':'R1','information':{'manufacturer':'Demo'},'components':[]},'symptom':'바퀴 고장 원문','error_codes':['E01','E02'],'firmware_version':'1.2','user_input':{'customerDescription':'기사 원문'}},'task':{'id':base['taskId']},'attachments':[photo],'attachmentIds':[a],'addedAttachmentIds':[],'requestId':None,'requestKey':None,'round':0,'checkpoint':None}
+source={'repair':{'id':base['repairId'],'product_type':'vacuum','product_snapshot':{'id':'1','serial_number':'ROBOT-SEOUL-001','model_id':'1','model_code':'R1','information':{'manufacturer':'Demo'},'components':[]},'symptom':'바퀴 고장 원문','error_codes':['E01','E02'],'firmware_version':'1.2','user_input':{'customerDescription':'기사 원문'}},'task':{'id':base['taskId']},'attachments':[photo],'attachmentIds':[a],'addedAttachmentIds':[],'requestId':None,'requestKey':None,'round':0,'checkpoint':None}
 examples=[dict(base,payload=source)]
 for n,(kind,payload) in enumerate([
  ('DIAGNOSIS_STARTED',{'stage':'STARTED'}),('DIAGNOSIS_PROGRESS',{'stage':'INSPECTING_PHOTOS'}),('TOOL_EXECUTED',{'tool':'photo-inspector','toolVersion':'1','modelVersion':'team-model-version','output':{'note':'example'}}),('PHOTO_REQUESTED',{'requestKey':request,'round':1,'bodyPart':'MOTOR','description':'바퀴 하부 사진','checkpoint':'langgraph-thread:checkpoint'})],start=1):

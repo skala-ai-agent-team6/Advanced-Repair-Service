@@ -38,7 +38,7 @@ public class RepairQueries {
     public Long taskRepairId(Long task) {return (Long)db.one("SELECT case_id FROM diagnosis_job WHERE id=?",task).get("case_id");}
     public List<Map<String,Object>> confirmedCases(int page,int size) {
         if(page<0 || page>100000 || size<1 || size>500) throw ApiError.bad("PAGE");
-        var rows=db.list("SELECT p.id AS report_id,p.case_id,p.confirmed_revision,rr.content,rr.confirmed_at FROM repair_report p JOIN repair_report_revision rr ON rr.report_id=p.id AND rr.revision=p.confirmed_revision ORDER BY p.id LIMIT ? OFFSET ?",size,page*size);
+        var rows=db.list("SELECT p.id AS report_id,p.case_id,c.product_type,p.confirmed_revision,rr.content,rr.confirmed_at FROM repair_report p JOIN repair_case c ON c.id=p.case_id JOIN repair_report_revision rr ON rr.report_id=p.id AND rr.revision=p.confirmed_revision ORDER BY p.id LIMIT ? OFFSET ?",size,page*size);
         for(var row:rows){var raw=(Map<?,?>)row.get("content");var contacts=db.list("SELECT contact_name,contact_phone,visit_address FROM consumer_access WHERE case_id=?",row.get("case_id"));var privateData=contacts.isEmpty()?Map.<String,Object>of():contacts.getFirst();
             var content=new LinkedHashMap<String,Object>();content.put("actualCause",rag.clean(raw.get("actualCause"),privateData));content.put("actualAction",rag.clean(raw.get("actualAction"),privateData));content.put("repairSuccessful",raw.get("repairSuccessful"));content.put("outcome",raw.get("outcome"));content.put("replacedParts",raw.getOrDefault("replacedParts",null));row.put("content",content);}
         return rows;
