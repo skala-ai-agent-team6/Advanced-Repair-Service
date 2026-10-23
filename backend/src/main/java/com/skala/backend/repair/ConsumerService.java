@@ -21,7 +21,7 @@ public class ConsumerService {
         long bytes=0;for(var f:uploads){bytes+=f.getSize();if(bytes>50L*1024*1024) throw ApiError.bad("REQUEST_SIZE");validation.validate(f);if(!Set.of("image/png","image/jpeg").contains(f.getContentType())) throw ApiError.bad("PHOTO_REQUIRED");}
     }
     public Map<String,Object> create(V2Inputs.ConsumerIntake input,List<MultipartFile> uploads) {
-        if(input.purchaseDate()==null || input.purchaseDate().isAfter(WarrantyService.today())) throw ApiError.bad("INVALID_PURCHASE_DATE");
+        if(input.purchaseDate()!=null && input.purchaseDate().isAfter(WarrantyService.today())) throw ApiError.bad("INVALID_PURCHASE_DATE");
         validatePhotos(uploads);
         byte[] secret=new byte[32];random.nextBytes(secret);String key=Base64.getUrlEncoder().withoutPadding().encodeToString(secret);
         return tx.execute(status->{
@@ -65,6 +65,10 @@ public class ConsumerService {
         String state=switch((String)r.get("status")){case "CLOSED"->"COMPLETED";case "CANCELLED"->"CANCELLED";case "RECEIVED"->"RECEIVED";case "REPAIRING"->"REPAIRING";default->"UNDER_REVIEW";};
         var published=db.list("SELECT version,kind,cause_summary,planned_work,published_at FROM customer_report WHERE case_id=? AND status='PUBLISHED'",id);
         var response=new LinkedHashMap<String,Object>();response.put("caseNumber",number);response.put("status",state);response.put("warranty",warranty.latest(id));response.put("report",published.isEmpty()?null:published.getFirst());
+        // [출장] 고객 진행 조회 화면용: 제품명·접수일·담당 기사·방문 일정·기사가 확정한 무상/유상 (개인정보·AI 초안은 넣지 않음)
+        var info=db.one("SELECT r.created_at,r.visit_at,m.name AS product_name,u.name AS technician_name FROM repair_case r JOIN product p ON p.id=r.product_id JOIN product_model m ON m.id=p.model_id LEFT JOIN app_user u ON u.id=coalesce(r.assigned_technician_id,r.technician_id) WHERE r.id=?",id);
+        response.put("productName",info.get("product_name"));response.put("receivedAt",info.get("created_at"));response.put("technicianName",info.get("technician_name"));response.put("visitAt",info.get("visit_at"));
+        var decision=db.list("SELECT result FROM warranty_decision WHERE case_id=? ORDER BY id DESC LIMIT 1",id);response.put("warrantyDecision",decision.isEmpty()?null:decision.getFirst().get("result"));
         response.put("photos",db.list("SELECT a.id,coalesce(q.status,CASE WHEN a.quality_required THEN 'PENDING' ELSE 'LEGACY_UNCHECKED' END) AS status,q.verdict,q.issues FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? ORDER BY a.id",id));
         return response;
     }

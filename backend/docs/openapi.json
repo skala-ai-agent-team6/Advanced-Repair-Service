@@ -17460,9 +17460,16 @@
             "maxLength": 10000
           },
           "purchaseDate": {
-            "type": "string",
-            "format": "date",
-            "description": "구매일; 미래 날짜 거부"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "description": "구매일; 미래 날짜 거부, 모르면 null"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "serialNumber": {
             "type": "string",
@@ -17520,7 +17527,6 @@
         },
         "required": [
           "symptoms",
-          "purchaseDate",
           "serialNumber",
           "modelCode",
           "centerId",

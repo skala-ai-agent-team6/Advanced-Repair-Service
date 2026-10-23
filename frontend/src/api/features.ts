@@ -30,9 +30,11 @@ export const FEATURES = {
   // [출장] 백엔드 FieldController 추가로 켬: trip-parts · stock/reservations · stock-history
   stockReservation: true,
   /** 소비자용 수리 진행 조회 (/track) — 실서버 API 없음 → false 면 조회 화면에 준비 중 안내, 접수 완료 화면의 링크 숨김 */
-  customerReport: USE_MOCK,
+  // [출장] 백엔드 /public/cases 연결로 켬
+  customerReport: true,
   /** 고객(비회원) 고장 접수 /service/request — 실서버 API 없음 → false 면 안내만 보이고 접수 버튼 비활성 */
-  customerIntake: USE_MOCK,
+  // [출장] 백엔드 /public/cases 연결로 켬
+  customerIntake: true,
   /** 회원가입 (실서버 API 없음 → false 면 회원가입 화면에 안내만, 가입 버튼 비활성) */
   signup: USE_MOCK,
   /** 출장 일정(오늘의 출장) API — 실서버에 아직 없음 → false 면 출장 API 를 호출하지 않고 0건으로 표시 */

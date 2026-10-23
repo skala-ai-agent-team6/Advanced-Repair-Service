@@ -7,7 +7,7 @@ import java.util.*;
 
 public final class V2Inputs {
     public record ConsumerIntake(@NotBlank @Size(max=10000) String symptoms,
-        @NotNull LocalDate purchaseDate, @NotBlank @Size(max=100) String serialNumber,
+        LocalDate purchaseDate, @NotBlank @Size(max=100) String serialNumber,  // [출장] 구매일 모르면 비움 → 보증 UNKNOWN
         @NotBlank @Size(max=100) String modelCode, @NotNull @Positive Long centerId,
         @NotBlank @Pattern(regexp="CENTER|FIELD") String serviceType,
         @Size(max=100) String contactName,@Size(max=40) String contactPhone,@Size(max=500) String visitAddress) {}
