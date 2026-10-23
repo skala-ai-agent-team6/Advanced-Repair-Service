@@ -1,6 +1,7 @@
 /* 접수 · 진단 · 추가 사진 · 리포트 API
  * Mock: src/mocks/handlers.ts / 실서버: 백엔드 API v2 (응답은 src/api/adapters 에서 프론트 타입으로 변환) */
 import { FEATURES } from './features'
+import { canViewRepair, getWorkScope, inCenterList } from '@/utils/workScope'
 import { ApiError, http, mockDelay, USE_MOCK } from './http'
 import * as mock from '@/mocks/handlers'
 import { partApi } from './parts'
@@ -58,7 +59,10 @@ const fetchTools = (id: number) =>
 async function realGet(id: number, fresh = false): Promise<Repair> {
   const [d, execs] = await Promise.all([fetchDetail(id, fresh), fetchTools(id)])
   const report = d.reports?.length ? await fetchReport(id) : null
-  return toRepairDetail(d, report ? toRepairReport(report) : undefined, toTools(execs))
+  const repair = toRepairDetail(d, report ? toRepairReport(report) : undefined, toTools(execs))
+  // 기사는 자기 담당 건만 (백엔드에 담당 필터가 없어 프론트 데이터 레이어에서 막음)
+  if (!canViewRepair(repair, getWorkScope())) throw new ApiError(404, '수리 건을 찾을 수 없습니다.', 'NOT_FOUND')
+  return repair
 }
 
 /** 목록 요약 카운트 (화면 상단 카드) */
@@ -84,7 +88,10 @@ async function realList(q: RepairQuery): Promise<RepairListResponse> {
   const status = q.status && q.status !== 'ALL' ? toBeRepairStatus(q.status) : undefined
   const get = (st?: string) => http.get<BeRepairPage>('/repairs', { params: { page: 0, size: PAGE_SIZE, status: st, serial } }).then((r) => r.data.items.map((x) => toRepair(x)))
   // 상단 카운트는 상태 필터 없이, 목록은 상태 필터(백엔드)로 조회
-  const [all, byStatus] = await Promise.all([get(), status ? get(status) : Promise.resolve(null)])
+  // 기사 업무 범위 (CENTER: 자기 담당 건 · FIELD: 0건) — 카운트와 목록 모두 같은 기준
+  const scope = getWorkScope()
+  const inScope = (list: Repair[]) => list.filter((r) => inCenterList(r, scope))
+  const [all, byStatus] = await Promise.all([get().then(inScope), status ? get(status).then(inScope) : Promise.resolve(null)])
   let items = q.status && q.status !== 'ALL' ? (status ? byStatus! : []) : all
   if (q.group && (!q.status || q.status === 'ALL')) {
     const g = STATUS_GROUPS.find((x) => x.key === q.group)

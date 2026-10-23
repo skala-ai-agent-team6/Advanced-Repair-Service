@@ -25,6 +25,7 @@ import type {
   User,
   Warranty,
   WarrantyPeriod,
+  FieldVisit,
 } from '@/types'
 import type {
   AdditionalInfoRequest,
@@ -35,16 +36,21 @@ import type {
   LoginResponse,
   OrderDecisionRequest,
   ConfirmReportRequest,
+  CustomerIntakeRequest,
+  CustomerIntakeResponse,
   ReanalysisRequest,
   SaveReportDraftRequest,
   UploadImageRequest,
+  SignupRequest,
 } from '@/types/api'
 import { ApiError } from '@/api/http'
 import { FAULT_AREA_LABEL, STATUS_GROUPS } from '@/constants/status'
-import { productFromSerial, stagesFor, USERS, type DefectRecord } from './data'
+import { MODELS, productFromSerial, stagesFor, USERS, type DefectRecord } from './data'
 import { approvedRecords, baseDefectRecords, db, nextId, persist } from './db'
 import { restartAnalysis, runAnalysis } from './engine'
 import { uid } from '@/utils/format'
+import { canViewRepair, inCenterList } from '@/utils/workScope'
+import { categoryOf } from '@/constants/products'
 
 let currentUser: User | null = null
 export function setMockUser(u: User | null) {
@@ -78,12 +84,45 @@ function toImage(req: UploadImageRequest): RepairImage {
 
 /* ---------------- 인증 ---------------- */
 export function login(req: LoginRequest): LoginResponse {
-  const u = USERS.find((x) => x.employeeId === req.username.trim().toUpperCase())
-  if (!u || u.password !== req.password) throw new ApiError(401, '사번 또는 비밀번호가 올바르지 않습니다.')
+  const id = req.username.trim().toUpperCase()
+  const u = [...USERS, ...(db.users ?? [])].find((x) => x.employeeId === id)
+  if (!u || u.password !== req.password) throw new ApiError(401, '아이디 또는 비밀번호가 올바르지 않습니다.')
   const { password: _pw, ...user } = u
   void _pw
   currentUser = user
   return { token: `mock-token-${user.employeeId}`, user }
+}
+
+/** Mock 계정 정보 (비밀번호 제외) — 저장된 세션에 없는 필드(기사 유형 등) 채우기용 */
+export function findMockUser(employeeId: string): User | undefined {
+  const u = [...USERS, ...(db.users ?? [])].find((x) => x.employeeId === employeeId)
+  if (!u) return undefined
+  const { password: _pw, ...user } = u
+  void _pw
+  return user
+}
+
+/** 회원가입 (Mock) — 아이디는 대문자로 저장(로그인 시 대소문자 구분 없음). 역할은 그대로 저장되며 로그인 응답에 담긴다
+ *  ※ Mock 은 브라우저 저장소에 비밀번호를 그대로 둔다 (데모 전용) */
+export function signup(req: SignupRequest): void {
+  const id = req.username.trim().toUpperCase()
+  if (!/^[A-Z0-9._-]{3,30}$/.test(id)) throw new ApiError(422, '아이디는 영문·숫자 3~30자로 입력해 주세요.')
+  if (req.password.length < 8 || !/[A-Za-z]/.test(req.password) || !/\d/.test(req.password)) throw new ApiError(422, '비밀번호는 영문과 숫자를 섞어 8자 이상으로 입력해 주세요.')
+  if (!req.name.trim()) throw new ApiError(422, '이름을 입력해 주세요.')
+  if (req.role !== 'TECHNICIAN' && req.role !== 'QUALITY_MANAGER') throw new ApiError(422, '담당 역할을 선택해 주세요.')
+  if (req.role === 'TECHNICIAN' && req.technicianType !== 'FIELD' && req.technicianType !== 'CENTER') throw new ApiError(422, '기사 유형을 선택해 주세요.')
+  db.users ??= []
+  if ([...USERS, ...db.users].some((x) => x.employeeId === id)) throw new ApiError(409, '이미 사용 중인 아이디예요.')
+  db.users.push({
+    employeeId: id,
+    password: req.password,
+    name: req.name.trim(),
+    role: req.role,
+    // 데모 데이터가 보이도록 기본 소속 지정 (실서버는 소속을 관리자가 지정)
+    branch: req.role === 'TECHNICIAN' ? '강남 서비스센터' : '본사 품질혁신팀',
+    technicianType: req.role === 'TECHNICIAN' ? (req.technicianType ?? 'CENTER') : undefined,
+  })
+  persist()
 }
 
 /* ---------------- 제품 조회 ---------------- */
@@ -96,8 +135,8 @@ export function getProduct(serial: string) {
 /* ---------------- 수리 목록 ---------------- */
 export function listRepairs(q: RepairQuery): Page<Repair> & { counts: RepairSummaryCounts; statusCounts: RepairStatusCounts } {
   const u = me()
-  // 기사는 본인 지점 건만, 본사 품질 담당자는 전체
-  let items = db.repairs.filter((r) => (u.role === 'TECHNICIAN' ? r.branch === u.branch : true))
+  // 품질 담당자는 전체, 기사는 센터 수리 목록 기준 (CENTER: 자기 담당 건 · FIELD: 0건)
+  let items = db.repairs.filter((r) => inCenterList(r, u))
   const scope = items
   if (q.model) items = items.filter((r) => r.product.model === q.model)
   if (q.keyword) {
@@ -138,6 +177,8 @@ export function listRepairs(q: RepairQuery): Page<Repair> & { counts: RepairSumm
 
 export function getRepair(id: number) {
   const r = repairOr404(id)
+  // 기사는 자기 담당 건만 (다른 기사 건은 없는 건처럼)
+  if (!canViewRepair(r, me())) throw new ApiError(404, '수리 건을 찾을 수 없습니다.')
   if (['RECEIVED', 'QUEUED', 'ANALYZING'].includes(r.status)) void runAnalysis(id)
   return r
 }
@@ -757,13 +798,25 @@ export function getCustomerReport(receiptNo: string, phoneLast4: string): Custom
   const phone = r?.visitInfo?.phone.replace(/\D/g, '') ?? ''
   // 접수번호 없음 · 연락처 없음 · 뒷자리 불일치 모두 같은 응답
   if (!r || last4.length !== 4 || !phone || !phone.endsWith(last4)) throw new ApiError(404, CUSTOMER_NOT_FOUND, 'NOT_FOUND')
+  return customerReportOf(r)
+}
 
+/** 조회 링크 토큰으로 조회 (고객 직접 접수 건) */
+export function getCustomerReportByToken(token: string): CustomerReport {
+  const r = token ? db.repairs.find((x) => x.customerToken === token) : undefined
+  if (!r) throw new ApiError(404, CUSTOMER_NOT_FOUND, 'NOT_FOUND')
+  return customerReportOf(r)
+}
+
+/** 고객에게 보여 줄 내용만 골라 만든다 (미확정 AI 진단·점수·재고·생산 공장·MCP·내부 코멘트 없음) */
+function customerReportOf(r: Repair): CustomerReport {
   const d = latestDiagnosis(r.id)
   const diagConfirmed = d?.technicianDecision.state === 'APPROVED'
   const visit = { preferredDate: r.visitInfo?.preferredDate, confirmedDate: r.visitInfo?.confirmedDate }
   let stage: CustomerReport['stage'] = 'RECEIVED'
   let notice: string | undefined
-  let summary: string | undefined
+  let cause: string | undefined
+  let result: string | undefined
 
   switch (r.status) {
     case 'DRAFT':
@@ -802,14 +855,16 @@ export function getCustomerReport(receiptNo: string, phoneLast4: string): Custom
   if (stage === 'COMPLETED' && r.report) {
     const c = r.report.content
     const area = AREA_WORD[c.faults[0]?.area ?? 'OTHER']
-    summary =
+    cause = c.outcome === 'NO_FAULT_FOUND' ? '점검 결과 고장 난 곳을 찾지 못했어요.' : `${area}에 문제가 있었어요.`
+    result =
       c.outcome === 'FIXED'
-        ? `${area}에 문제가 있어 수리를 마쳤어요.`
+        ? '고장 난 부분을 수리해 정상적으로 작동해요.'
         : c.outcome === 'NOT_FIXED'
           ? '수리 후에도 증상이 남아 있어 기사님이 추가로 확인할 예정이에요.'
-          : '점검 결과 고장 난 곳을 찾지 못했어요. 같은 증상이 다시 생기면 알려 주세요.'
+          : '같은 증상이 다시 생기면 다시 접수해 주세요.'
   } else if ((stage === 'DIAGNOSED' || stage === 'VISIT_SCHEDULED') && d && diagConfirmed) {
-    summary = `기사님이 확인한 결과 ${plainArea(d.topCause)}에 문제가 있어요. ${d.parts.length ? '방문해서 해당 부품을 교체해 드릴 예정이에요.' : '방문해서 점검·수리해 드릴 예정이에요.'}`
+    cause = `${plainArea(d.topCause)}에 문제가 있어요.`
+    notice ??= d.parts.length ? '방문해서 해당 부품을 교체해 드릴 예정이에요.' : '방문해서 점검·수리해 드릴 예정이에요.'
   }
 
   return {
@@ -818,12 +873,73 @@ export function getCustomerReport(receiptNo: string, phoneLast4: string): Custom
     receivedAt: r.receivedAt,
     stage,
     notice,
-    summary,
+    // 담당 기사: 배정된 경우만
+    technicianName: r.technicianId ? r.technician : undefined,
+    cause,
+    result,
     // 기사가 확정한 결과만 (AI 제안은 보내지 않음)
     warranty: db.warranty?.[r.id]?.decision?.result ?? null,
     visit,
     cancelled: r.status === 'CANCELLED' || undefined,
   }
+}
+
+/* ---------------- 고객(비회원) 고장 접수 ----------------
+ * 직원 계정·로그인과 무관. 접수 건은 기사 배정 전(technicianId 비움)으로 강남 서비스센터 목록에 들어가고,
+ * 고객이 찍은 사진은 외관(기계) 사진으로 분류해 AI 분석을 시작한다 (고객은 내부 PCB 를 찍을 수 없음) */
+export function customerIntake(req: CustomerIntakeRequest, photos: { name: string; dataUrl: string }[]): CustomerIntakeResponse {
+  const name = req.customerName.trim()
+  const phone = req.phone.trim()
+  if (!name || !/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(phone)) throw new ApiError(422, '이름과 휴대폰 번호를 확인해 주세요.')
+  const cat = categoryOf(req.category)
+  if (!cat) throw new ApiError(422, '제품 종류를 선택해 주세요.')
+  if (!req.manufacturer?.trim() || !req.model?.trim()) throw new ApiError(422, '제조사와 제품 모델명을 입력해 주세요.')
+  if (req.symptom.trim().length < 5) throw new ApiError(422, '고장 증상을 5자 이상 적어 주세요.')
+  if (!photos.length) throw new ApiError(422, '제품 사진을 1장 이상 올려 주세요.')
+  if (!req.consent?.agreed) throw new ApiError(422, '개인정보 수집·이용에 동의해 주세요.')
+  const serial = req.serial?.trim().toUpperCase()
+  const model = req.model.trim()
+  // 로봇청소기 기존 모델이면 기존 제품 데이터(시리얼 조회·모델 정보)를 그대로 사용
+  const fromSerial = serial ? productFromSerial(serial) : null
+  const meta = MODELS[model]
+  const base: Repair['product'] =
+    fromSerial && fromSerial.model === model
+      ? fromSerial
+      : meta
+        ? { serialNumber: serial || '미입력', model, modelName: meta.modelName, manufacturedAt: '', factory: meta.factory, warrantyUntil: '', firmware: meta.firmware }
+        : { serialNumber: serial || '미입력', model, modelName: `${cat.label} ${model}`, manufacturedAt: '', factory: '', warrantyUntil: '', firmware: '' }
+  const product: Repair['product'] = { ...base, category: cat.key, manufacturer: req.manufacturer.trim() }
+  const id = nextId()
+  const now = new Date().toISOString()
+  const token = `${uid('trk')}-${Math.random().toString(36).slice(2, 10)}`
+  const r: Repair = {
+    id,
+    receiptNo: `SR-2026-${String(10000 + id * 7).padStart(5, '0')}`,
+    product,
+    symptom: req.symptom.trim(),
+    errorCodes: [],
+    branch: '강남 서비스센터',
+    technician: '배정 대기',
+    technicianId: '',
+    receivedAt: now,
+    updatedAt: now,
+    status: 'RECEIVED',
+    images: photos.slice(0, 5).map((p, i) => ({ id: uid('img'), kind: 'MOTOR' as const, url: p.dataUrl, name: p.name || `photo-${i + 1}.jpg`, uploadedAt: now })),
+    photoRequestCount: 0,
+    stages: stagesFor('RECEIVED'),
+    progress: 0,
+    history: [],
+    visitInfo: { customerName: name, phone, address: req.address.trim(), preferredDate: req.preferredDate, purchaseDate: req.purchaseDate || null },
+    consent: { ...req.consent },
+    customerToken: token,
+    mockScenario: 'NORMAL',
+  }
+  log(r, { target: 'SYSTEM', action: 'CREATED', actor: name, actorRole: 'CUSTOMER', comment: `고객 온라인 접수 · 사진 ${r.images.length}장` })
+  db.repairs.unshift(r)
+  db.notifications.unshift({ id: uid('n'), title: '고객 온라인 접수', body: `수리 #${id} (${cat.label} ${model}) 고객이 직접 접수했습니다.`, at: now, read: false, link: `/repairs/${id}/diagnosis`, roles: ['TECHNICIAN'] })
+  persist()
+  restartAnalysis(r)
+  return { receiptNo: r.receiptNo, token }
 }
 
 /* ---------------- 보증 기간 안내 (접수 화면) ----------------
@@ -859,4 +975,20 @@ export function checkWarrantyPeriod(serial: string, purchaseDate?: string): Warr
   if (!month) return { status: 'UNKNOWN', basis: 'MANUFACTURE_DATE_ESTIMATE' }
   const until = addMonths(`${month}-01`, SHIP_MONTHS + WARRANTY_PERIOD_MONTHS)
   return { status: statusOf(until), until, basis: 'MANUFACTURE_DATE_ESTIMATE' }
+}
+
+/* ---------------- 출장 일정 (출장기사) ----------------
+ * 로그인한 기사에게 배정된 오늘(한국 시간) 이후 방문 일정, 방문 시간 순.
+ * 모델·증상·상태는 수리 건의 최신 값으로 채운다 (센터 수리자는 배정이 없어 빈 목록) */
+export function getMyFieldVisits(today: string): FieldVisit[] {
+  const u = requireRole('TECHNICIAN')
+  return (db.fieldVisits ?? [])
+    // 데모 시드의 'TODAY' 는 오늘(한국 시간)로
+    .map((v) => (v.visitDate === 'TODAY' ? { ...v, visitDate: today } : v))
+    .filter((v) => v.technicianId === u.employeeId && v.visitDate >= today)
+    .map((v) => {
+      const r = db.repairs.find((x) => x.id === v.repairId)
+      return r ? { ...v, model: r.product.model, symptom: r.symptom, status: r.status } : v
+    })
+    .sort((a, b) => `${a.visitDate} ${a.visitTime}`.localeCompare(`${b.visitDate} ${b.visitTime}`))
 }

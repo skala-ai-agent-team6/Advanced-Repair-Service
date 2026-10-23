@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Search, X, Camera, UserCheck, FileCheck2, CircleCheck, RefreshCw } from 'lucide-vue-next'
+import { Search, X, Camera, UserCheck, FileCheck2, CircleCheck, RefreshCw, Plus, Filter } from 'lucide-vue-next'
 import StatCard from '@/components/common/StatCard.vue'
 import StateView from '@/components/common/StateView.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/auth'
 import { STATUS_GROUPS, STATUS_META, STATUS_ORDER } from '@/constants/status'
 import { MODELS } from '@/mocks/data'
 import { formatRelative } from '@/utils/format'
+import { isPreset, PRESET_LABEL } from '@/utils/repairPresets'
 import type { RepairQuery, RepairStatus, StatusGroupKey } from '@/types'
 
 const store = useRepairListStore()
@@ -27,6 +28,18 @@ function syncFromRoute() {
   store.query.group = store.query.status === 'ALL' ? STATUS_GROUPS.find((x) => x.key === g)?.key : undefined
   store.query.keyword = typeof route.query.q === 'string' ? route.query.q : ''
   keyword.value = store.query.keyword
+  // 기사 대시보드 카드에서 넘어온 필터 (상태·그룹 필터와는 같이 쓰지 않음)
+  const p = route.query.preset
+  store.preset = isPreset(p) ? p : null
+  if (store.preset) {
+    store.query.status = 'ALL'
+    store.query.group = undefined
+  }
+}
+function clearPreset() {
+  store.preset = null
+  void router.replace({ query: { ...route.query, preset: undefined } })
+  void store.fetch()
 }
 
 onMounted(() => {
@@ -50,14 +63,16 @@ watch(keyword, (v) => {
 function setStatus(s: RepairQuery['status']) {
   store.query.status = s
   store.query.group = undefined
-  void router.replace({ query: { ...route.query, status: s === 'ALL' ? undefined : s, group: undefined } })
+  store.preset = null
+  void router.replace({ query: { ...route.query, status: s === 'ALL' ? undefined : s, group: undefined, preset: undefined } })
   void store.fetch()
 }
 /** 그룹 이름 클릭 → 그 그룹의 상태를 한 번에 필터링 */
 function setGroup(g: StatusGroupKey) {
   store.query.status = 'ALL'
   store.query.group = g
-  void router.replace({ query: { ...route.query, status: undefined, group: g } })
+  store.preset = null
+  void router.replace({ query: { ...route.query, status: undefined, group: g, preset: undefined } })
   void store.fetch()
 }
 // 서버가 statusCounts 를 주지 않거나 비어 있으면 건수를 모르는 것으로 보고 숫자·흐림 표시를 하지 않는다
@@ -73,27 +88,38 @@ function clearAll() {
   void router.replace({ query: {} })
   void store.fetch()
 }
-const filtered = computed(() => store.query.status !== 'ALL' || !!store.query.group || !!store.query.keyword || !!store.query.model)
+const filtered = computed(() => store.query.status !== 'ALL' || !!store.query.group || !!store.query.keyword || !!store.query.model || !!store.preset)
+const isTech = computed(() => auth.role === 'TECHNICIAN')
 </script>
 
 <template>
   <div class="page">
     <div class="page-head">
       <div>
-        <h1>수리 목록</h1>
+        <h1>{{ isTech ? '수리 접수 관리' : '수리 목록' }}</h1>
         <p class="sub">
-          {{ auth.role === 'TECHNICIAN' ? `${auth.user?.branch} 접수 건` : '전체 서비스센터 접수 건' }}
+          {{ isTech ? '내게 배정된 센터 수리 건' : '전체 서비스센터 접수 건' }}
           <span v-if="store.loadedAt" class="faint"> · {{ formatRelative(store.loadedAt) }} 갱신 · 실시간 반영 중</span>
         </p>
       </div>
-      <button class="btn" type="button" :disabled="store.loading" @click="store.fetch()"><RefreshCw :size="18" :class="{ spin: store.loading }" /> 새로고침</button>
+      <div class="row">
+        <button class="btn" type="button" :disabled="store.loading" @click="store.fetch()"><RefreshCw :size="18" :class="{ spin: store.loading }" /> 새로고침</button>
+        <!-- 기사 메뉴에 '수리 접수'가 없어 신규 접수는 여기서 -->
+        <RouterLink v-if="isTech" to="/repairs/new" class="btn btn-primary"><Plus :size="18" /> 새 접수</RouterLink>
+      </div>
     </div>
 
+    <p v-if="store.preset" class="preset-chip">
+      <Filter :size="16" aria-hidden="true" /> 대시보드 필터: <b>{{ PRESET_LABEL[store.preset] }}</b>
+      <button type="button" class="btn btn-sm btn-ghost" @click="clearPreset"><X :size="16" /> 해제</button>
+    </p>
+
     <div class="grid-4">
-      <StatCard label="추가 사진 필요" :value="store.counts.needPhoto" :icon="Camera" tone="warning" :active="store.query.status === 'ADDITIONAL_INFO_NEEDED'" @select="setStatus('ADDITIONAL_INFO_NEEDED')" />
-      <StatCard label="진단 확인 대기" :value="store.counts.technicianReview" :icon="UserCheck" tone="ai" :active="store.query.status === 'DIAGNOSIS_COMPLETED'" @select="setStatus('DIAGNOSIS_COMPLETED')" />
-      <StatCard label="리포트 확정 대기" :value="store.counts.reportPending" :icon="FileCheck2" tone="warning" :active="store.query.status === 'TECHNICIAN_REVIEW'" @select="setStatus('TECHNICIAN_REVIEW')" />
-      <StatCard label="수리 완료" :value="store.counts.completed" :icon="CircleCheck" tone="success" :active="store.query.status === 'CLOSED'" @select="setStatus('CLOSED')" />
+      <!-- 통계 정보 카드 (필터는 아래 상태 칩 하나로 — 같은 필터 버튼을 두 곳에 두지 않음) -->
+      <StatCard info label="추가 사진 필요" :value="store.counts.needPhoto" :icon="Camera" tone="warning" />
+      <StatCard info label="진단 확인 대기" :value="store.counts.technicianReview" :icon="UserCheck" tone="ai" />
+      <StatCard info label="리포트 확정 대기" :value="store.counts.reportPending" :icon="FileCheck2" tone="warning" />
+      <StatCard info label="수리 완료" :value="store.counts.completed" :icon="CircleCheck" tone="success" />
     </div>
 
     <section class="card">
@@ -157,9 +183,13 @@ const filtered = computed(() => store.query.status !== 'ALL' || !!store.query.gr
 
       <div v-if="store.loading && !store.items.length" class="card-body"><SkeletonBlock :lines="6" :height="44" /></div>
       <StateView v-else-if="store.error" state="error" :message="store.error" @retry="store.fetch()" />
-      <StateView v-else-if="!store.items.length" state="empty" :title="filtered ? '조건에 맞는 수리 건이 없습니다' : '접수된 수리 건이 없습니다'" :message="filtered ? '검색어나 상태 필터를 바꿔 보세요.' : undefined">
-        <button v-if="filtered" class="btn" type="button" @click="clearAll">필터 초기화</button>
-      </StateView>
+      <!-- 필터 초기화는 위 필터 줄의 버튼 하나만 -->
+      <StateView
+        v-else-if="!store.items.length"
+        state="empty"
+        :title="filtered ? '조건에 맞는 수리 건이 없습니다' : isTech ? '현재 배정된 센터 수리 건이 없어요.' : '접수된 수리 건이 없습니다'"
+        :message="filtered ? '검색어나 상태 필터를 바꿔 보세요. (위의 필터 초기화)' : undefined"
+      />
       <template v-else>
         <p class="faint count" aria-live="polite">{{ store.items.length }}건</p>
         <RepairTable :items="store.items" :role="auth.role" :class="{ dim: store.loading }" />
@@ -169,6 +199,18 @@ const filtered = computed(() => store.query.status !== 'ALL' || !!store.query.gr
 </template>
 
 <style scoped>
+.preset-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  padding: 4px 6px 4px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--blue-50);
+  color: var(--primary);
+  font-size: var(--fs-sm);
+}
 .filters {
   display: flex;
   gap: 12px;

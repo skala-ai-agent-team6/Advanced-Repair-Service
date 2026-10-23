@@ -2,8 +2,8 @@
 import { createDefectRecords, createSeed, type DefectRecord, type MockDbState } from './data'
 import type { RepairEvent } from '@/types'
 
-const KEY = 'robotcare-mock-db-v10'
-const KEY_RECORDS = 'robotcare-mock-approved-v10'
+const KEY = 'robotcare-mock-db-v13'
+const KEY_RECORDS = 'robotcare-mock-approved-v13'
 
 function load(): MockDbState {
   try {

@@ -78,7 +78,13 @@
   --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.14);
 
   --gap: 20px;
+  /* 고장 접수 · 회원가입 폼 공통 (같은 너비·여백·간격) */
+  --form-max-w: 900px;
+  --form-pad: 32px;
+  --field-gap: 20px;
   --sidebar-w: 248px;
+  /* 기사용 세로 메뉴(아이콘 위 · 글자 아래) 폭 */
+  --rail-w: 104px;
   --topbar-h: 68px;
   --tap: 48px;
   --focus: 0 0 0 3px rgba(37, 99, 235, 0.3);

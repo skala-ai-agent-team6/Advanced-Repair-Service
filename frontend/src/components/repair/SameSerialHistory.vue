@@ -7,7 +7,8 @@ import { repairApi } from '@/api'
 import type { Repair } from '@/types'
 import { formatDate, repairId } from '@/utils/format'
 
-const props = defineProps<{ serial: string; excludeId?: number; compact?: boolean; newTab?: boolean }>()
+/** standalone: 단독 화면(수리 이력)에서 쓸 때 불러오는 중·결과 없음도 표시 (기본은 결과가 있을 때만 보임) */
+const props = defineProps<{ serial: string; excludeId?: number; compact?: boolean; newTab?: boolean; standalone?: boolean }>()
 
 const items = ref<Repair[]>([])
 const loading = ref(false)
@@ -37,7 +38,9 @@ const others = computed(() =>
 </script>
 
 <template>
-  <section v-if="!loading && others.length" class="same-serial" :class="compact ? 'compact' : 'card card-pad'" aria-labelledby="same-serial-title">
+  <p v-if="standalone && loading" class="card card-pad faint" role="status">수리 이력을 찾고 있어요…</p>
+  <p v-else-if="standalone && !others.length" class="card card-pad faint" role="status">{{ serial }} 의 수리 이력이 없어요.</p>
+  <section v-else-if="!loading && others.length" class="same-serial" :class="compact ? 'compact' : 'card card-pad'" aria-labelledby="same-serial-title">
     <h3 id="same-serial-title" class="title">
       <History :size="18" /> 같은 시리얼의 다른 수리 건 <span class="badge tone-neutral">{{ others.length }}건</span>
     </h3>

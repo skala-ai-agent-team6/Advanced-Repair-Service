@@ -7,12 +7,17 @@
 /** 백엔드 Role enum 과 동일 */
 export type Role = 'TECHNICIAN' | 'QUALITY_MANAGER'
 
+/** 기사 유형: 출장 기사 / 센터 엔지니어 */
+export type TechnicianType = 'FIELD' | 'CENTER'
+
 export interface User {
   /** 로그인 식별자 — Mock: 사번, 실서버: 이메일 */
   employeeId: string
   name: string
   role: Role
   branch: string // 소속 (서비스센터 / 본사)
+  /** 기사 유형 (TECHNICIAN 만). 로그인 응답의 값을 쓰고, 없으면 CENTER 로 취급 */
+  technicianType?: TechnicianType
   /** 실서버 GET /api/auth/me 값 (bigint 십진수 문자열) */
   id?: string
   email?: string
@@ -48,6 +53,10 @@ export interface RepairImage {
 }
 
 export interface ProductInfo {
+  /** 제품 종류 (고객 접수: ROBOT_VACUUM · WASHER …). 기존 로봇청소기 데이터는 없음 = 로봇청소기 */
+  category?: string
+  /** 제조사 (고객 접수) */
+  manufacturer?: string
   /** 실서버 product.id (접수 시 productId 로 전송) */
   id?: string
   serialNumber: string
@@ -94,6 +103,8 @@ export interface Repair {
   /** 출장 방문 정보 · 개인정보 동의 (Mock 전용 저장, 실서버는 FEATURES.visitInfo 로 켬) */
   visitInfo?: VisitInfo
   consent?: PrivacyConsent
+  /** 고객 조회 링크용 토큰 (Mock 전용 · 고객 직접 접수 건) */
+  customerToken?: string
   /** 데모 시나리오 제어용 (Mock 전용) */
   mockScenario?: 'NORMAL' | 'NEED_PHOTO' | 'FAIL'
 }
@@ -114,6 +125,27 @@ export interface VisitInfo {
   confirmedDate?: string
 }
 
+/* ---------------- 출장 일정 (출장기사 FIELD) ----------------
+ * 출장기사에게 배정된 방문 일정. 주소는 구·동까지만 담는다 */
+export interface FieldVisit {
+  repairId: number
+  /** 배정된 기사 (Mock: 사번) */
+  technicianId: string
+  /** 방문일 (YYYY-MM-DD, 한국 시간) */
+  visitDate: string
+  /** 방문 시간 (HH:mm, 한국 시간) */
+  visitTime: string
+  customerName: string
+  district: string
+  neighborhood: string
+  model: string
+  symptom: string
+  /** 수리 건 상태 */
+  status: RepairStatus
+  /** 방문 진행: 예정 / 방문 완료 */
+  visitStatus: 'SCHEDULED' | 'DONE'
+}
+
 /* ---------------- 소비자용 수리 진행 조회 ----------------
  * 고객에게는 기사가 확정한 내용만 쉬운 말로 보여 준다.
  * AI 초안·판단 점수·부품번호·재고 정보는 이 응답에 담지 않는다 (서버에서 걸러서 내려줌) */
@@ -126,8 +158,12 @@ export interface CustomerReport {
   stage: CustomerStage
   /** 지금 단계에 대한 안내 한 줄 (예: 추가 사진 요청, 접수 취소) */
   notice?: string
-  /** 기사가 확정한 진단·수리 결과를 쉬운 말로 1~2문장. 확정 전이면 없음 */
-  summary?: string
+  /** 담당 기사 (배정 전이면 없음) */
+  technicianName?: string
+  /** 기사가 확정한 고장 원인 (쉬운 말). 확정 전이면 없음 */
+  cause?: string
+  /** 최종 수리 결과 (수리 완료 후). 그 전이면 없음 */
+  result?: string
   /** 기사가 확정한 무상/유상. 확정 전이면 null */
   warranty: 'FREE' | 'PAID' | null
   visit: { preferredDate?: string; confirmedDate?: string }
@@ -521,7 +557,8 @@ export interface ApprovalRecord {
   target: ApprovalTarget
   action: ApprovalAction
   actor: string // 'AI Orchestrator' 또는 사람 이름
-  actorRole: Role | 'AI'
+  /** CUSTOMER: 고객 직접 접수 (직원 역할 아님) */
+  actorRole: Role | 'AI' | 'CUSTOMER'
   at: string
   comment?: string
 }

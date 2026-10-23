@@ -1,20 +1,27 @@
 <script setup lang="ts">
-/* 홈 = 마이페이지 겸 오늘의 업무 목록. 역할별로 "지금 처리해야 할 일" 을 먼저 보여준다. */
+/* 홈
+ *  기사: 대시보드 — 숫자 카드(오늘 접수·수리 중·부품 대기·완료, 출장 기사는 맨 앞에 오늘의 출장) + 최근 작업
+ *        숫자는 기존 수리 목록·발주 목록 API 결과를 프론트에서 세어 계산 (카드를 누르면 같은 필터의 수리 접수 관리)
+ *  본사 품질 담당자: 발주 승인 · 고장 통계 (기존 그대로) */
 import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Camera, UserCheck, FileCheck2, CircleCheck, ClipboardCheck, Package, BarChart3, ArrowRight } from 'lucide-vue-next'
+import { ClipboardCheck, Package, BarChart3, ArrowRight } from 'lucide-vue-next'
 import StatCard from '@/components/common/StatCard.vue'
 import StateView from '@/components/common/StateView.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
-import RepairTable from '@/components/repair/RepairTable.vue'
-import RepairStatusBadge from '@/components/common/RepairStatusBadge.vue'
+import MetricCard from '@/components/common/MetricCard.vue'
+import TechProgressCharts from '@/components/dashboard/TechProgressCharts.vue'
+import FieldTripSection from '@/components/field/FieldTripSection.vue'
+import ProgressDonut from '@/components/dashboard/ProgressDonut.vue'
+import { useFieldVisits } from '@/composables/useFieldVisits'
+import { approvalProgress, centerProgress, fieldProgress } from '@/utils/techStats'
+import RecentWorkList from '@/components/repair/RecentWorkList.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRepairListStore } from '@/stores/repairs'
 import { useOrderStore } from '@/stores/orders'
 import { ROLE_LABEL } from '@/constants/status'
-import { nextAction, repairLink } from '@/utils/repairFlow'
 import { formatRelative, repairId } from '@/utils/format'
-import type { RepairStatus } from '@/types'
+import { matchPreset, partsWaitingIds, type RepairPreset } from '@/utils/repairPresets'
 
 const auth = useAuthStore()
 const list = useRepairListStore()
@@ -29,19 +36,36 @@ onMounted(() => {
     list.resetQuery()
     void list.fetch()
     list.startLive()
-  } else {
-    void orders.fetchAll()
   }
+  // 기사: 부품 대기 계산용 발주 목록 / 품질 담당자: 발주 승인 대기
+  void orders.fetchAll()
 })
 onBeforeUnmount(() => list.stopLive())
 
-const ACTION_STATUSES: RepairStatus[] = ['ADDITIONAL_INFO_NEEDED', 'DIAGNOSIS_COMPLETED', 'TECHNICIAN_REVIEW', 'REJECTED']
-const todo = computed(() => list.items.filter((r) => ACTION_STATUSES.includes(r.status) || r.analysisError))
-const recent = computed(() => list.items.slice(0, 6))
-
-function goList(status: RepairStatus) {
-  void router.push({ path: '/repairs', query: { status } })
+/* ---------- 기사 대시보드 ---------- */
+const waiting = computed(() => partsWaitingIds(orders.orders))
+const countOf = (p: RepairPreset) => list.items.filter((r) => matchPreset(r, p, waiting.value)).length
+/** 센터 수리 업무 숫자 카드 (출장 관련 숫자는 위의 오늘의 출장 영역) */
+const cards: { preset: RepairPreset; label: string }[] = [
+  { preset: 'TODAY', label: '오늘 접수' },
+  { preset: 'IN_REPAIR', label: '수리 중' },
+  { preset: 'PARTS_WAITING', label: '부품 대기' },
+  { preset: 'DONE', label: '완료' },
+]
+function goPreset(p: RepairPreset) {
+  void router.push({ path: '/repairs', query: { preset: p } })
 }
+/* ---------- 진행률 (역할별 제목·계산, 한국 시간 기준) ---------- */
+const field = useFieldVisits()
+const progress = computed(() => {
+  if (auth.technicianType === 'FIELD') return { title: '오늘 출장 완료', ...fieldProgress(field.todayVisits.value, list.items) }
+  return { title: '오늘 수리 처리 현황', ...centerProgress(list.items, auth.user) }
+})
+/** 품질 담당자: 오늘 승인 처리 현황 */
+const approval = computed(() => ({ title: '오늘 승인 처리 현황', ...approvalProgress(orders.orders) }))
+
+/** 최근 작업: 최근에 바뀐 순 */
+const recentWork = computed(() => [...list.items].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 6))
 const lowStock = computed(() => orders.parts.filter((p) => p.stocks.reduce((a, s) => a + s.quantity, 0) < 3))
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -59,52 +83,40 @@ const greeting = computed(() => {
       <RouterLink v-if="isQuality" to="/dashboard" class="btn btn-lg"><BarChart3 :size="22" /> 품질 대시보드</RouterLink>
     </div>
 
-    <!-- ===== 서비스센터 기사 ===== -->
+    <!-- ===== 기사 대시보드 ===== -->
     <template v-if="isTech">
-      <div class="grid-4">
-        <StatCard label="추가 사진 필요" :value="list.counts.needPhoto" :icon="Camera" tone="warning" hint="AI 가 사진을 더 요청한 건" @select="goList('ADDITIONAL_INFO_NEEDED')" />
-        <StatCard label="진단 확인 대기" :value="list.counts.technicianReview" :icon="UserCheck" tone="ai" hint="AI 진단 초안 확인" @select="goList('DIAGNOSIS_COMPLETED')" />
-        <StatCard label="리포트 확정 대기" :value="list.counts.reportPending" :icon="FileCheck2" tone="warning" hint="수리 후 리포트 작성·확정" @select="goList('TECHNICIAN_REVIEW')" />
-        <StatCard label="수리 완료" :value="list.counts.completed" :icon="CircleCheck" tone="success" hint="리포트 확정 · 고장 DB 반영" @select="goList('CLOSED')" />
+      <!-- 오늘의 출장 (출장기사·센터 수리자 같은 구조, 센터는 0건) -->
+      <FieldTripSection />
+
+      <!-- 그래프 2개 (오늘 진행률 · 이번 주 처리 건수) — 숫자 카드 위 -->
+      <TechProgressCharts :items="list.items" :user="auth.user" :loading="list.loading || field.loading.value" :progress="progress" />
+
+      <div class="metrics">
+        <MetricCard
+          v-for="c in cards"
+          :key="c.preset"
+          :label="c.label"
+          :value="list.loading && !list.items.length ? '–' : countOf(c.preset)"
+          @select="goPreset(c.preset)"
+        />
       </div>
 
-      <div class="home-grid">
       <section class="card">
         <div class="card-head">
-          <h2>지금 처리할 일 <span class="badge tone-warning">{{ todo.length }}건</span></h2>
+          <h2>최근 작업</h2>
           <RouterLink to="/repairs" class="btn btn-sm">전체 보기 <ArrowRight :size="16" /></RouterLink>
         </div>
         <div v-if="list.loading && !list.items.length" class="card-body"><SkeletonBlock :lines="4" :height="44" /></div>
         <StateView v-else-if="list.error" state="error" :message="list.error" compact @retry="list.fetch()" />
-        <StateView v-else-if="!todo.length" state="empty" title="처리할 일이 없습니다" message="새 건이 들어오면 알림으로 알려 드립니다." compact />
-        <ul v-else class="todo">
-          <li v-for="r in todo" :key="r.id">
-            <RouterLink :to="repairLink(r, auth.role)" class="todo-item">
-              <RepairStatusBadge :status="r.status" :failed="!!r.analysisError" />
-              <span class="t-main">
-                <strong>{{ nextAction(r, auth.role) }}</strong>
-                <span class="faint">수리 {{ repairId(r.id) }} · {{ r.product.model }} · {{ r.symptom }}</span>
-              </span>
-              <span class="faint t-time">{{ formatRelative(r.updatedAt) }}</span>
-              <ArrowRight :size="20" />
-            </RouterLink>
-          </li>
-        </ul>
+        <StateView v-else-if="!recentWork.length" state="empty" title="최근 작업이 없습니다" compact />
+        <RecentWorkList v-else :items="recentWork" />
       </section>
-
-      <section class="card">
-        <div class="card-head">
-          <h2>최근 수리 건</h2>
-        </div>
-        <div v-if="list.loading && !list.items.length" class="card-body"><SkeletonBlock :lines="5" :height="40" /></div>
-        <StateView v-else-if="!recent.length && !list.error" state="empty" title="접수된 수리 건이 없습니다" compact />
-        <RepairTable v-else :items="recent" :role="auth.role" :show-tech="false" />
-      </section>
-      </div>
     </template>
 
     <!-- ===== 본사 품질 담당자: 발주 승인 · 고장 통계 ===== -->
     <template v-else-if="isQuality">
+      <!-- 오늘 승인 처리 현황 (승인 대기 + 오늘 처리한 발주 중 처리한 비율) -->
+      <ProgressDonut class="qm-progress" :title="approval.title" :done="approval.done" :total="approval.total" :loading="orders.loading && !orders.orders.length" />
       <div class="grid-3">
         <StatCard label="발주 승인 대기" :value="orders.pendingApproval.length" :icon="ClipboardCheck" tone="warning" hint="기사가 요청한 발주" @select="router.push('/order-approvals')" />
         <StatCard label="재고 부족 부품" :value="lowStock.length" :icon="Package" tone="danger" hint="전체 창고 합계 3개 미만" @select="router.push('/parts')" />
@@ -143,16 +155,18 @@ const greeting = computed(() => {
 </template>
 
 <style scoped>
-/* 지금 처리할 일 | 최근 수리 건 — 표가 넓어 아주 넓은 화면에서만 2칸, 그 외에는 위아래 */
-.home-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--gap);
-  align-items: start;
+.qm-progress {
+  max-width: 520px;
 }
-@media (min-width: 1600px) {
-  .home-grid {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+/* 기사 숫자 카드: 2열 (휴대폰에서도 2열) */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+@media (max-width: 480px) {
+  .metrics {
+    gap: 12px;
   }
 }
 .dash-link {

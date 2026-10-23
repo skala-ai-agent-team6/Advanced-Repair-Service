@@ -12,6 +12,40 @@ export interface LoginResponse {
   user: User
 }
 
+/** 회원가입 — 역할은 사용자가 고르지만, 서버가 검증·승인해야 한다 (본사 권한을 스스로 고를 수 있으므로) */
+export interface SignupRequest {
+  username: string
+  password: string
+  name: string
+  role: Role
+  /** 기사(TECHNICIAN)만: 출장기사 FIELD / 센터 수리자 CENTER */
+  technicianType?: 'FIELD' | 'CENTER'
+}
+
+/** 고객(비회원) 고장 접수 — 직원 계정·역할과 무관. 사진은 별도로 함께 보낸다 */
+export interface CustomerIntakeRequest {
+  customerName: string
+  phone: string
+  /** 제품 종류 키 (src/constants/products.ts) */
+  category: string
+  manufacturer: string
+  /** 제품 모델명 (목록에서 고르거나 직접 입력) */
+  model: string
+  /** 시리얼 번호 (모르면 비움) */
+  serial?: string
+  symptom: string
+  /** 구매일 (YYYY-MM-DD, 선택) — 무상 수리 여부 확인용 */
+  purchaseDate?: string
+  preferredDate: string
+  address: string
+  consent: PrivacyConsent
+}
+export interface CustomerIntakeResponse {
+  receiptNo: string
+  /** 조회 링크용 토큰 (/service/track/:token) */
+  token: string
+}
+
 /** GET /api/auth/me */
 export interface MeResponse {
   id: string
@@ -21,6 +55,8 @@ export interface MeResponse {
   active: boolean
   role: Role
   centerId: string | null
+  /** 기사 유형 — 로그인 응답에 포함된다고 가정. 없으면 CENTER 로 취급 */
+  technicianType?: 'FIELD' | 'CENTER'
 }
 
 /** POST /api/repairs */

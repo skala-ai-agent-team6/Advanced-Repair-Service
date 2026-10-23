@@ -4,10 +4,12 @@ import { useRoute } from 'vue-router'
 import AppSidebar from './AppSidebar.vue'
 import AppTopbar from './AppTopbar.vue'
 import { useNotificationStore } from '@/stores/notifications'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const navOpen = ref(false)
 const notifications = useNotificationStore()
+const auth = useAuthStore()
 
 watch(() => route.fullPath, () => (navOpen.value = false))
 onMounted(() => notifications.startPolling())
@@ -15,7 +17,7 @@ onBeforeUnmount(() => notifications.stopPolling())
 </script>
 
 <template>
-  <div class="shell" :class="{ 'nav-open': navOpen }">
+  <div class="shell" :class="{ 'nav-open': navOpen, tech: auth.role === 'TECHNICIAN' }">
     <a href="#main" class="skip">본문으로 건너뛰기</a>
     <AppSidebar class="side" @navigate="navOpen = false" />
     <div class="scrim" @click="navOpen = false" />
@@ -35,6 +37,10 @@ onBeforeUnmount(() => notifications.stopPolling())
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
   min-height: 100vh;
+}
+/* 기사: 좁은 세로 메뉴 */
+.shell.tech {
+  grid-template-columns: var(--rail-w) 1fr;
 }
 .side {
   position: sticky;
@@ -67,7 +73,8 @@ main {
   display: none;
 }
 @media (max-width: 1100px) {
-  .shell {
+  .shell,
+  .shell.tech {
     grid-template-columns: 1fr;
   }
   .side {
@@ -82,6 +89,9 @@ main {
   }
   .nav-open .side {
     transform: none;
+  }
+  .tech .side {
+    width: var(--rail-w);
   }
   .nav-open .scrim {
     display: block;

@@ -27,8 +27,8 @@ import { isoAgo } from '@/utils/format'
 
 /* ---------------- 사용자 ---------------- */
 export const USERS: (User & { password: string })[] = [
-  { employeeId: 'T1001', password: '1234', name: '김정훈', role: 'TECHNICIAN', branch: '강남 서비스센터' },
-  { employeeId: 'T1002', password: '1234', name: '박민수', role: 'TECHNICIAN', branch: '부산 서비스센터' },
+  { employeeId: 'T1001', password: '1234', name: '김정훈', role: 'TECHNICIAN', branch: '강남 서비스센터', technicianType: 'CENTER' },
+  { employeeId: 'T1002', password: '1234', name: '박민수', role: 'TECHNICIAN', branch: '부산 서비스센터', technicianType: 'FIELD' },
   { employeeId: 'Q2001', password: '1234', name: '이서연', role: 'QUALITY_MANAGER', branch: '본사 품질혁신팀' },
 ]
 
@@ -395,6 +395,9 @@ const SEEDS: Seed[] = [
   { id: 107, serial: 'RC2025006601', symptom: '소음 후 주행 불가', errorCodes: ['E103'], status: 'CLOSED', tech: KIM, minutesAgo: 60 * 24 * 4, urgency: 'HIGH', diag: 'MOTOR_HOUSING' },
   { id: 112, serial: 'RC2025002205', symptom: '좌측 바퀴 헛돎', errorCodes: ['E210'], status: 'CLOSED', tech: PARK, minutesAgo: 60 * 24 * 6, urgency: 'LOW', diag: 'WHEEL_SENSOR' },
   { id: 108, serial: 'RC2025005502', symptom: '청소 중 정지 후 경고음', errorCodes: ['E103'], status: 'TECHNICIAN_REVIEW', tech: KIM, minutesAgo: 60 * 24 * 3, urgency: 'MEDIUM', diag: 'MOTOR_HOUSING' },
+  // 출장기사(T1002·부산) 오늘의 출장 데모용
+  { id: 115, serial: 'RC2026000815', symptom: '주행 중 덜컹 소리가 나고 멈춤', errorCodes: ['E103'], status: 'TECHNICIAN_REVIEW', tech: PARK, minutesAgo: 60 * 5, urgency: 'MEDIUM', diag: 'MOTOR_HOUSING' },
+  { id: 116, serial: 'RC2026000816', symptom: '충전 후 전원이 바로 꺼짐', errorCodes: ['E501'], status: 'TECHNICIAN_REVIEW', tech: PARK, minutesAgo: 60 * 7, urgency: 'MEDIUM', diag: 'PCB' },
   { id: 109, serial: 'RC2025004403', symptom: '간헐적 전원 꺼짐, 재현 어려움', errorCodes: [], status: 'MANUAL_REVIEW', tech: PARK, minutesAgo: 60 * 24 * 2, urgency: 'MEDIUM', photoRequestCount: 3 },
   // 같은 제품(RC2026000187)의 이전 수리 건: 시리얼은 겹치므로 수리 ID 로 구분
   { id: 98, serial: 'RC2026000187', symptom: '흡입력 약해짐, 브러시 회전 느림', errorCodes: ['E302'], status: 'CLOSED', tech: KIM, minutesAgo: 60 * 24 * 45, urgency: 'LOW', diag: 'WHEEL_SENSOR' },
@@ -502,6 +505,10 @@ export interface MockDbState {
   notifications: Notification[]
   /** 보증 판정: 고장 원인 유형(시드에서 지정할 때만) · 기사 확정 결과 */
   warranty: Record<number, { fault?: { type: import('@/types').WarrantyFaultType; label: string }; decision?: import('@/types').WarrantyDecision }>
+  /** 출장 일정 (출장기사 배정) */
+  fieldVisits?: import('@/types').FieldVisit[]
+  /** 회원가입으로 만든 Mock 계정 (기본 데모 계정은 USERS) */
+  users?: (User & { password: string })[]
   /** 재고 예약 (출장 준비) · 재고 변경 이력 */
   reservations: import('@/types').StockReservation[]
   stockHistory: import('@/types').StockHistoryEntry[]
@@ -620,7 +627,9 @@ export function createSeed(): MockDbState {
     if (r) r.visitInfo = v
   }
   setVisit(101, visit('데모 고객A', '2025-12-01', '0101'))
-  setVisit(113, visit('데모 고객B', '2026-03-15', '0113'))
+  // 출장 기사(T1002·부산) 대시보드의 "오늘의 출장" 데모: 오늘 방문 확정
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+  setVisit(113, visit('데모 고객B', '2026-03-15', '0113', todayStr))
   setVisit(114, visit('데모 고객C', null, '0114'))
   setVisit(104, visit('데모 고객D', '2026-02-10', '0104', '2026-10-24'))
   setVisit(105, visit('데모 고객E', '2026-01-20', '0105', '2026-10-20'))
@@ -641,7 +650,23 @@ export function createSeed(): MockDbState {
     { id: 'SH-SEED-3', partId: 'P-221', at: isoAgo(60 * 26), change: 'RESERVE', delta: -1, quantity: 1, warehouse: '수원 창고', actor: '김정훈', repairId: 104 },
   ]
 
-  return { repairs, diagnoses, photoRequests, orders, parts: structuredClone(PARTS), notifications, warranty, reservations, stockHistory, seq: 200 }
+  /* 오늘의 출장: T1002(출장기사)에게 오늘(한국 시간) 3건 · T1001(센터 수리자)은 0건.
+   * 모델·증상·상태는 조회할 때 수리 건의 최신 값으로 채운다 */
+  const fieldVisit = (repairId: number, visitTime: string, customerName: string, district: string, neighborhood: string, visitStatus: 'SCHEDULED' | 'DONE') => {
+    const r = repairs.find((x) => x.id === repairId)!
+    // visitDate 'TODAY': 데모 일정은 조회하는 날의 오늘로 (저장된 데모 데이터가 날짜가 지나도 3건 유지)
+    return { repairId, technicianId: 'T1002', visitDate: 'TODAY', visitTime, customerName, district, neighborhood, model: r.product.model, symptom: r.symptom, status: r.status, visitStatus }
+  }
+  const fieldVisits: MockDbState['fieldVisits'] = [
+    fieldVisit(113, '13:30', '이○○', '해운대구', '우동', 'SCHEDULED'),
+    fieldVisit(116, '09:00', '김○○', '수영구', '광안동', 'DONE'),
+    fieldVisit(115, '16:00', '최○○', '남구', '대연동', 'SCHEDULED'),
+  ]
+  // 고객 진행 조회와 맞추기: 출장 건의 방문 확정일 = 오늘
+  setVisit(115, visit('데모 고객F', '2026-02-02', '0115', todayStr))
+  setVisit(116, visit('데모 고객G', '2025-12-20', '0116', todayStr))
+
+  return { repairs, diagnoses, photoRequests, orders, parts: structuredClone(PARTS), notifications, warranty, reservations, stockHistory, fieldVisits, seq: 200 }
 }
 
 /* ---------------- 대시보드용: 승인된 고장 레코드 (사내 고장 DB) ---------------- */

@@ -17,6 +17,9 @@ const noti = useNotificationStore()
 const open = ref(false)
 
 const title = computed(() => route.meta.title ?? '')
+/** 기사: 오른쪽에 이름 + 기사 유형 배지만 (로고는 사이드바 맨 위, 품질 담당자는 기존 그대로) */
+const isTech = computed(() => auth.role === 'TECHNICIAN')
+const TYPE_LABEL = { FIELD: '출장', CENTER: '센터' } as const
 
 async function go(id: string, link?: string) {
   await noti.read(id)
@@ -35,7 +38,8 @@ function reset() {
 <template>
   <header class="topbar">
     <button class="btn btn-ghost menu" type="button" aria-label="메뉴 열기" @click="$emit('toggle-nav')"><Menu :size="24" /></button>
-    <h1 class="title">{{ title }}</h1>
+    <!-- 기사: 로고는 사이드바 맨 위로 옮김 → 상단바에는 오른쪽 사용자 정보만 -->
+    <h1 v-if="!isTech" class="title">{{ title }}</h1>
     <div class="spacer" />
 
     <button v-if="USE_MOCK" class="btn btn-ghost btn-sm demo" type="button" title="Mock 데이터 초기화" @click="reset">
@@ -62,18 +66,28 @@ function reset() {
       <div v-if="open" class="click-away" @click="open = false" />
     </div>
 
-    <div class="user">
+    <div v-if="isTech" class="user">
+      <strong class="tech-name">{{ auth.user?.name }}</strong>
+      <span v-if="auth.technicianType" class="badge tech-type" :class="auth.technicianType === 'FIELD' ? 'tone-warning' : 'tone-info'">{{ TYPE_LABEL[auth.technicianType] }}</span>
+    </div>
+    <div v-else class="user">
       <span class="badge tone-info role">{{ auth.user ? ROLE_LABEL[auth.user.role] : '' }}</span>
       <span class="name">
         <strong>{{ auth.user?.name }}</strong>
         <small>{{ auth.user?.branch }}</small>
       </span>
     </div>
-    <button class="btn btn-sm" type="button" @click="logout"><LogOut :size="18" /> 로그아웃</button>
+    <button class="btn btn-sm logout" type="button" aria-label="로그아웃" @click="logout"><LogOut :size="18" /> <span class="lo-txt">로그아웃</span></button>
   </header>
 </template>
 
 <style scoped>
+.tech-name {
+  white-space: nowrap;
+}
+.tech-type {
+  font-size: var(--fs-xs);
+}
 .topbar {
   position: sticky;
   top: 0;
@@ -201,7 +215,16 @@ function reset() {
 }
 /* 휴대폰: 이름이 한 글자씩 줄바꿈되지 않게 숨김 (역할·이름은 홈 화면 인사말에 표시) */
 @media (max-width: 480px) {
-  .name {
+  .name,
+  .tech-name,
+  .lo-txt {
+    display: none;
+  }
+  .logout {
+    padding: 0 12px;
+  }
+  /* 데모 초기화(Mock 전용 도구)는 넓은 화면에서만 */
+  .demo {
     display: none;
   }
   .topbar {

@@ -318,8 +318,7 @@ const detailSummary = computed(() => {
               <!-- 확인 후 다음 단계 -->
               <div v-if="diagnosis.technicianDecision.state === 'APPROVED' && isTech && repair.status === 'TECHNICIAN_REVIEW'" class="callout tone-success next">
                 <CircleCheck :size="24" />
-                <div class="grow"><strong>다음 단계</strong> 필요 부품의 재고를 확인하고, 수리를 마친 뒤 실제 결과를 입력해 주세요.</div>
-                <button type="button" class="btn btn-lg" @click="go(2)">2쪽 {{ PAGES[1].label }} <ArrowRight :size="20" /></button>
+                <div class="grow"><strong>다음 단계</strong> 필요 부품은 위의 2쪽 탭에서 확인하고, 수리를 마친 뒤 실제 결과를 입력해 주세요.</div>
                 <RouterLink :to="`/repairs/${repair.id}/review`" class="btn btn-primary btn-lg">수리 리포트 작성 <ArrowRight :size="20" /></RouterLink>
               </div>
 

@@ -330,7 +330,7 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
       <!-- 고객용 조회 화면 (접수번호는 주소창이 아닌 history state 로 전달) -->
       <p v-if="FEATURES.customerReport && submit.receiptNo" class="track-link">
         고객은 접수번호와 휴대폰 뒷자리로
-        <RouterLink :to="{ path: '/track', state: { receiptNo: submit.receiptNo } }">진행 상황 조회하기 <ArrowRight :size="15" /></RouterLink>
+        <RouterLink :to="{ path: '/service/track', state: { receiptNo: submit.receiptNo } }">진행 상황 조회하기 <ArrowRight :size="15" /></RouterLink>
         에서 확인할 수 있어요.
       </p>
     </section>
