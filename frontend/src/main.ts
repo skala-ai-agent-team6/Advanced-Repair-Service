@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { USE_MOCK } from './api/http'
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './styles/tokens.css'
 import './styles/base.css'
 

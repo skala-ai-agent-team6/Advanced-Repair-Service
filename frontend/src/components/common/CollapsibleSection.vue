@@ -94,6 +94,13 @@ if (group) watch(() => group.command.value.n, () => set(group.command.value.open
   white-space: nowrap;
   max-width: 50%;
 }
+/* 좁은 화면: 요약을 자르지 않고 줄바꿈 */
+@media (max-width: 560px) {
+  .summary {
+    white-space: normal;
+    max-width: 60%;
+  }
+}
 .chev {
   flex: none;
   color: var(--text-3);

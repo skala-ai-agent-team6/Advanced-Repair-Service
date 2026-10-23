@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { CircleAlert, LogIn, Wrench, Building2, Eye, EyeOff } from 'lucide-vue-next'
+import { CircleAlert, CircleCheck, LogIn, Eye, EyeOff, Wrench } from 'lucide-vue-next'
+import AppLogo from '@/components/common/AppLogo.vue'
+import RobotHero from '@/components/common/RobotHero.vue'
 import { useAuthStore } from '@/stores/auth'
 import { toErrorMessage, USE_MOCK } from '@/api'
-import type { Role } from '@/types'
+import { postLoginPath } from '@/utils/roleHome'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -15,21 +17,21 @@ const error = ref<string | null>(null)
 const loading = ref(false)
 const showPw = ref(false)
 
-const DEMO: { id: string; role: Role; label: string; desc: string; icon: unknown }[] = [
-  { id: 'T1001', role: 'TECHNICIAN', label: '서비스센터 기사', desc: '접수 · 사진 · 진단 확인 · 발주 요청 · 리포트 확정', icon: Wrench },
-  { id: 'Q2001', role: 'QUALITY_MANAGER', label: '본사 품질 담당자', desc: '발주 승인 · 고장 통계', icon: Building2 },
-]
+/** 로그인 식별자: 아이디 (Mock 기본 계정은 T1001 같은 사번, 실서버는 tech1 형식 — 이메일 아님) */
+const idLabel = '아이디'
 
-/** 로그인 식별자: Mock 은 데모 사번, 실서버는 아이디(tech1·quality 형식, 이메일 아님) */
-const idLabel = USE_MOCK ? '사번' : '아이디'
-/** 조사: 받침 있는 '사번' → 과/을, 받침 없는 '아이디' → 와/를 */
-const idWa = USE_MOCK ? '사번과' : '아이디와'
-const idEul = USE_MOCK ? '사번을' : '아이디를'
+/** 회원가입 직후 넘어오면 아이디를 채우고 안내 (주소창이 아닌 history state 로 전달) */
+const signedUp = ref(false)
+onMounted(() => {
+  const st = window.history.state as { username?: unknown; signedUp?: unknown } | null
+  if (typeof st?.username === 'string') form.employeeId = st.username
+  signedUp.value = st?.signedUp === true
+})
 
 function validate() {
   const v = form.employeeId.trim()
   // [통합] 이메일 형식 검사 제거: 백엔드 dev 계정 아이디가 tech1·tech2·quality(이메일 아님)라 로그인이 막혔다. 틀린 값은 서버가 401로 거른다
-  errors.employeeId = !v ? `${idEul} 입력해 주세요.` : undefined
+  errors.employeeId = !v ? '아이디를 입력해 주세요.' : undefined
   errors.password = form.password ? undefined : '비밀번호를 입력해 주세요.'
   return !errors.employeeId && !errors.password
 }
@@ -39,9 +41,9 @@ async function submit() {
   if (!validate()) return
   loading.value = true
   try {
-    await auth.login(form.employeeId, form.password)
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
-    void router.replace(redirect)
+    // 역할은 화면에서 고르지 않고, 로그인 응답(서버)의 사용자 역할로 이동할 화면을 정한다
+    const u = await auth.login(form.employeeId, form.password)
+    void router.replace(postLoginPath(router, u.role, route.query.redirect))
   } catch (e) {
     error.value = toErrorMessage(e)
   } finally {
@@ -49,36 +51,26 @@ async function submit() {
   }
 }
 
-function fill(id: string) {
-  form.employeeId = id
-  form.password = '1234'
-  void submit()
-}
 </script>
 
 <template>
   <div class="login">
     <section class="intro">
-      <div class="brand">
-        <svg width="44" height="44" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#fff" /><circle cx="16" cy="16" r="9" fill="none" stroke="#16285a" stroke-width="2.6" /><circle cx="16" cy="12" r="2.3" fill="#16285a" /></svg>
-        <strong>RobotCare AI</strong>
+      <span class="glow g1" aria-hidden="true" />
+      <span class="glow g2" aria-hidden="true" />
+      <!-- 로고: 패널 왼쪽 위 고정 (위 40px · 왼쪽 48px) / 로봇: 패널 가로·세로 가운데 -->
+      <AppLogo class="logo" :height="32" />
+      <div class="hero">
+        <RobotHero />
       </div>
-      <h1>로봇청소기 고장 진단<br />업무 지원 시스템</h1>
-      <ol class="flow">
-        <li><span>1</span>접수 · 사진 등록</li>
-        <li><span>2</span>AI Agent 분석</li>
-        <li><span>3</span>기사 확인 · 승인</li>
-        <li><span>4</span>부품 조회 · 발주</li>
-        <li><span>5</span>수리 리포트 확정</li>
-      </ol>
-      <p class="rule">AI가 만든 결과는 모두 <b>초안</b>입니다. 담당 기사가 확정한 수리 리포트만 고장 데이터베이스에 반영됩니다.</p>
     </section>
 
     <section class="panel">
       <form class="card form" novalidate @submit.prevent="submit">
         <h2>로그인</h2>
-        <p class="muted">{{ idWa }} 비밀번호를 입력하세요. 역할에 맞는 화면으로 이동합니다.</p>
+        <p class="muted">아이디와 비밀번호를 입력하세요. 역할에 맞는 화면으로 이동합니다.</p>
 
+        <div v-if="signedUp && !error" class="callout tone-success" role="status"><CircleCheck :size="20" /> 회원가입이 완료되었어요. 로그인해 주세요.</div>
         <div v-if="error" class="callout tone-danger" role="alert"><CircleAlert :size="20" /> {{ error }}</div>
 
         <div class="field">
@@ -109,17 +101,14 @@ function fill(id: string) {
           <LogIn :size="20" /> {{ loading ? '로그인 중…' : '로그인' }}
         </button>
 
-        <div v-if="USE_MOCK" class="demo">
-          <p class="faint">데모 계정으로 바로 들어가기 (비밀번호 1234)</p>
-          <div class="roles">
-            <button v-for="d in DEMO" :key="d.id" type="button" class="role" :disabled="loading" @click="fill(d.id)">
-              <component :is="d.icon" :size="24" />
-              <span>
-                <strong>{{ d.label }}</strong>
-                <small>{{ d.id }} · {{ d.desc }}</small>
-              </span>
-            </button>
-          </div>
+        <p class="signup-link">계정이 없으신가요? <RouterLink to="/signup">회원가입</RouterLink></p>
+
+        <!-- 비회원 고객 전용 (로그인 여부와 관계없이 고객 화면으로) -->
+        <div class="or" role="separator" aria-label="또는"><span>또는</span></div>
+        <div class="guest">
+          <p>서비스 접수 고객은 로그인 없이 이용할 수 있어요.</p>
+          <RouterLink to="/service" class="btn btn-lg btn-block btn-outline-primary"><Wrench :size="20" /> 고장 접수하기</RouterLink>
+          <p class="track-link">접수한 서비스가 있나요? <RouterLink to="/service/track">접수 내역 조회</RouterLink></p>
         </div>
       </form>
     </section>
@@ -133,72 +122,72 @@ function fill(id: string) {
   grid-template-columns: 1.1fr 1fr;
 }
 .intro {
-  background: var(--navy-900);
-  color: #dbe3f4;
-  padding: 56px 64px;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  justify-content: center;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  color: #fff;
-  font-size: var(--fs-xl);
-}
-h1 {
-  color: #fff;
-  font-size: 2.4rem;
-  line-height: 1.25;
-}
-.flow {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 12px;
-  font-size: var(--fs-lg);
-}
-.flow li {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.flow span {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid #6f84b8;
+  /* 화면 높이에 맞춰 고정 (줄 높이 계산 기준). 오른쪽 폼이 더 길면 스크롤해도 패널은 제자리 */
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: #fff;
+  color: var(--text-2);
+  /* 좌우 48px 여백: 로봇이 패널 끝에 닿아 잘리지 않게 */
+  padding: 0 48px;
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-size: var(--fs-sm);
 }
-.rule {
-  max-width: 460px;
-  padding: 16px 18px;
-  border: 1px dashed #6f84b8;
-  border-radius: var(--radius);
-  color: #c9d3ea;
+.logo {
+  position: absolute;
+  top: 40px;
+  left: 48px;
 }
-.rule b {
-  color: #fff;
+/* 로봇: 패널 가운데, 최대 너비 480px */
+.hero {
+  width: 100%;
+  max-width: 480px;
+  display: grid;
+  justify-items: center;
+}
+/* 그라데이션 빛 (블러 처리된 원) */
+.glow {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--gradient);
+  filter: blur(80px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.g1 {
+  width: 520px;
+  height: 520px;
+  top: -160px;
+  right: -140px;
+}
+.g2 {
+  width: 380px;
+  height: 380px;
+  bottom: -140px;
+  left: -100px;
+  opacity: 0.35;
 }
 .panel {
   display: grid;
   place-items: center;
   padding: 32px;
+  background: var(--bg);
 }
 .form {
   width: min(480px, 100%);
-  padding: 32px;
+  padding: 36px;
   display: grid;
   gap: 18px;
 }
 h2 {
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
+  font-weight: 300;
+  letter-spacing: -0.03em;
 }
 .pw {
   position: relative;
@@ -206,59 +195,80 @@ h2 {
 .pw .input {
   padding-right: 56px;
 }
+/* 또는 구분선 */
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+.or::before,
+.or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+/* 비회원 고객 영역: 가운데 정렬, 로그인 버튼보다 낮은 강조(흰 바탕 · 파란 테두리 · 파란 글자) */
+.guest {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+.guest > p:first-child {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.btn-outline-primary {
+  background: var(--surface);
+  border-color: var(--primary);
+  color: var(--primary);
+  /* 좁은 화면에서 글자가 카드 밖으로 나가지 않게 줄바꿈 허용 */
+  white-space: normal;
+  text-align: center;
+}
+.btn-outline-primary:hover:not(:disabled) {
+  background: var(--blue-50);
+  border-color: var(--primary);
+}
+.track-link {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.track-link a {
+  font-weight: 700;
+}
+.signup-link {
+  text-align: center;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.signup-link a {
+  font-weight: 700;
+}
 .eye {
   position: absolute;
   right: 2px;
   top: 0;
   padding: 0 12px;
 }
-.demo {
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-  display: grid;
-  gap: 10px;
+/* 휴대폰: 카드 여백만 줄여 버튼이 한 줄에 들어가게 (카드 디자인은 그대로) */
+@media (max-width: 480px) {
+  .panel {
+    padding: 16px;
+  }
+  .form {
+    padding: 24px 20px;
+  }
 }
-.roles {
-  display: grid;
-  gap: 8px;
-}
-.role {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-height: 60px;
-  padding: 10px 16px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  cursor: pointer;
-  text-align: left;
-  color: var(--navy-800);
-}
-.role:hover {
-  border-color: var(--navy-700);
-  background: var(--navy-50);
-}
-.role span {
-  display: grid;
-  color: var(--text);
-}
-.role small {
-  color: var(--text-3);
-  font-size: var(--fs-xs);
-}
-@media (max-width: 960px) {
+/* 좁은 화면(1100px 이하): 왼쪽 패널을 숨기고 로그인 폼만 */
+@media (max-width: 1100px) {
   .login {
     grid-template-columns: 1fr;
   }
   .intro {
-    padding: 32px 24px;
-    gap: 20px;
-  }
-  h1 {
-    font-size: var(--fs-2xl);
-  }
-  .flow {
     display: none;
   }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-/* 부품 및 발주 — 본사 품질 담당자: 발주 승인·반려 / 기사: 내 발주 현황 + 재고 조회
- * pendingOnly: '발주 승인 대기' 메뉴용 (승인 대기 목록만 표시) */
+/* 부품 및 재고(품질 담당자) · 부품 관리(기사) — 본사 품질 담당자: 발주 승인·반려 / 기사: 내 발주 현황 + 재고 조회
+ * pendingOnly: '발주 승인' 메뉴용 (승인 대기 목록만 표시). 화면 이름은 constants/menus */
 import { computed, onMounted, ref } from 'vue'
 import { Search, ClipboardCheck, List, Warehouse, RefreshCw } from 'lucide-vue-next'
 import PurchaseApprovalCard from '@/components/parts/PurchaseApprovalCard.vue'
@@ -11,9 +11,10 @@ import { useOrderStore } from '@/stores/orders'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { ORDER_STATUS_META } from '@/constants/status'
-import { toErrorMessage } from '@/api'
+import { ApiError, toErrorMessage } from '@/api'
 import { formatDateTime, repairId } from '@/utils/format'
 import type { OrderStatus, PurchaseOrder } from '@/types'
+import { PAGE_LABEL } from '@/constants/menus'
 
 const props = defineProps<{ pendingOnly?: boolean }>()
 const store = useOrderStore()
@@ -37,7 +38,11 @@ async function decide(o: PurchaseOrder, p: { action: 'APPROVE' | 'REJECT'; comme
     await store.decide(o.id, p)
     toast.success(`${o.partName} 발주를 ${p.action === 'APPROVE' ? '승인' : '반려'}했습니다.`)
   } catch (e) {
-    toast.error(toErrorMessage(e))
+    // 409: 다른 담당자가 먼저 처리함 → 최신 상태로 다시 불러온다
+    if (e instanceof ApiError && e.status === 409) {
+      toast.error('이미 처리된 발주입니다. 최신 상태로 새로고침했습니다.')
+      await store.fetchAll()
+    } else toast.error(toErrorMessage(e))
   }
 }
 </script>
@@ -46,7 +51,7 @@ async function decide(o: PurchaseOrder, p: { action: 'APPROVE' | 'REJECT'; comme
   <div class="page">
     <div class="page-head">
       <div>
-        <h1>{{ pendingOnly ? '발주 승인 대기' : '부품 및 발주' }}</h1>
+        <h1>{{ pendingOnly ? PAGE_LABEL.orderApprovals : canApprove ? PAGE_LABEL.qmParts : PAGE_LABEL.techParts }}</h1>
         <p class="sub">{{ canApprove ? '기사가 확인·요청한 발주를 검토하고 승인합니다.' : '발주 요청 현황과 부품 재고를 확인합니다.' }}</p>
       </div>
       <button class="btn" type="button" :disabled="store.loading" @click="store.fetchAll()"><RefreshCw :size="18" :class="{ spin: store.loading }" /> 새로고침</button>
@@ -65,7 +70,7 @@ async function decide(o: PurchaseOrder, p: { action: 'APPROVE' | 'REJECT'; comme
 
     <!-- 승인 대기 -->
     <template v-else-if="tab === 'pending'">
-      <StateView v-if="!store.pendingApproval.length" state="empty" title="승인 대기 중인 발주가 없습니다" message="기사가 발주를 요청하면 알림으로 알려 드립니다." class="card" />
+      <StateView v-if="!store.pendingApproval.length" state="empty" title="승인이 필요한 발주 요청이 없습니다" message="기사가 발주를 요청하면 알림으로 알려 드립니다." class="card" />
       <div class="stack">
         <div v-for="o in store.pendingApproval" :key="o.id" class="stack pair">
           <PurchaseApprovalCard :order="o" :part="store.partById(o.partId)" :role="auth.role" :busy="store.submittingId === o.id" @decide="decide(o, $event)" />
@@ -171,7 +176,8 @@ async function decide(o: PurchaseOrder, p: { action: 'APPROVE' | 'REJECT'; comme
 }
 @media (max-width: 1180px) {
   .pair {
-    grid-template-columns: 1fr;
+    /* minmax(0, …): 카드 내용 최소 폭 때문에 화면보다 넓어지지 않게 */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

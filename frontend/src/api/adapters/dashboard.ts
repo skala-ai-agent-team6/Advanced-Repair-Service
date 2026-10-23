@@ -5,13 +5,22 @@ import type { BeDashboardGroupBy, BeDashboardRow } from './types'
 
 const AREA_LABEL: Record<string, string> = { PCB: 'PCB', MOTOR: '모터', SW: '소프트웨어', OTHER: '기타', UNKNOWN: '미상' }
 
-const toItems = (rows: BeDashboardRow[], label: (d: string) => string = (d) => d): CountItem[] =>
+/** 집계 행 → 건수 항목 (많은 순) */
+export const toItems = (rows: BeDashboardRow[], label: (d: string) => string = (d) => d): CountItem[] =>
   rows.map((r) => ({ key: r.dimension, label: label(r.dimension), count: r.count })).sort((a, b) => b.count - a.count)
 
 /** 기간: 최근 n개월 1일 ~ 내일 (to 는 미포함 [from, to)) */
 export function dashboardRange(months: number, now = new Date()) {
   const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   const from = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1)
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  return { from: ymd(from), to: ymd(to) }
+}
+
+/** 기간: 최근 n일 (오늘 포함) ~ 내일 (to 는 미포함 [from, to)) */
+export function dayRange(days: number, now = new Date()) {
+  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1))
   const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
   return { from: ymd(from), to: ymd(to) }
 }

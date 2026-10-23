@@ -85,7 +85,9 @@ const hintId = `${useId()}-hint`
   font-weight: 600;
 }
 .lg .val strong {
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-num);
+  font-weight: var(--fw-num);
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 .track {
