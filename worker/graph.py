@@ -181,7 +181,7 @@ async def pcb_mcp(state: State, config) -> dict:
 
 async def mech_mcp(state: State, config) -> dict:
     await emit(config, "DIAGNOSIS_PROGRESS", {"stage": "MOTOR_ANALYSIS"})  # [통합] 프론트 진행 화면 단계 이름
-    return await run_photo_mcp(state, config, "MECH", tools.call_mech_mcp, "detect_surface_defects", "MOTOR", "mechanical-mcp")
+    return await run_photo_mcp(state, config, "MECH", tools.call_mech_mcp, "detect_surface_defects", "SURFACE", "mechanical-mcp")
 
 
 async def rag_mcp(state: State, config) -> dict:
