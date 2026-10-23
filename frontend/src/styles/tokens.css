@@ -82,10 +82,24 @@
   --form-max-w: 900px;
   --form-pad: 32px;
   --field-gap: 20px;
-  --sidebar-w: 248px;
-  /* 기사용 세로 메뉴(아이콘 위 · 글자 아래) 폭 */
-  --rail-w: 104px;
-  --topbar-h: 68px;
+  /* 폼 입력칸 (select · input · textarea 공통) */
+  --control-h: 48px;
+  --control-pad-x: 14px;
+  --control-radius: 12px;
+  --control-fs: 15px;
+  /* 직원 화면 공통 레이아웃 (기사 · 본사 품질 담당자 동일) */
+  --sidebar-w: 228px; /* 펼친 사이드바 (Hover · 포커스 · 메뉴 버튼) */
+  --sidebar-collapsed-w: 88px; /* 기본: 아이콘만 */
+  --sidebar-dur: 200ms;
+  --topbar-h: 60px;
+  --page-pad-x: 28px; /* 상단바 · 본문 공통 좌우 여백 = 왼쪽 기준선 */
   --tap: 48px;
   --focus: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+/* 좁은 화면: 상단바 · 본문 좌우 여백을 함께 줄임 (왼쪽 기준선 유지) */
+@media (max-width: 860px) {
+  :root {
+    --page-pad-x: 16px;
+  }
 }

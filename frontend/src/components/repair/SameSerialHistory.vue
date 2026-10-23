@@ -20,7 +20,8 @@ async function load(serial: string) {
   if (!serial) return
   loading.value = true
   try {
-    const res = await repairApi.list({ keyword: serial })
+    // 기사는 자신에게 배정된 건 중에서 (품질 담당자는 전체)
+    const res = await repairApi.list({ keyword: serial, scope: 'assigned' })
     if (mine !== seq) return
     // 키워드 검색은 부분 일치이므로 시리얼이 정확히 같은 건만 남긴다
     items.value = res.items.filter((r) => r.product.serialNumber === serial)
@@ -39,7 +40,7 @@ const others = computed(() =>
 
 <template>
   <p v-if="standalone && loading" class="card card-pad faint" role="status">수리 이력을 찾고 있어요…</p>
-  <p v-else-if="standalone && !others.length" class="card card-pad faint" role="status">{{ serial }} 의 수리 이력이 없어요.</p>
+  <p v-else-if="standalone && !others.length" class="card card-pad faint" role="status">등록된 수리 이력이 없습니다. <span class="mono">({{ serial }})</span></p>
   <section v-else-if="!loading && others.length" class="same-serial" :class="compact ? 'compact' : 'card card-pad'" aria-labelledby="same-serial-title">
     <h3 id="same-serial-title" class="title">
       <History :size="18" /> 같은 시리얼의 다른 수리 건 <span class="badge tone-neutral">{{ others.length }}건</span>
@@ -104,8 +105,11 @@ const others = computed(() =>
 }
 .sym {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 .nowrap {
   white-space: nowrap;

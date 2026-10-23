@@ -5,7 +5,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { CircleCheck, Copy, Check, Search, Home } from 'lucide-vue-next'
 
-const props = defineProps<{ receiptNo: string }>()
+/** serviceType 이 있으면 수리 방법에 맞는 안내 (방문 수리: 기사 연락 / 센터 방문: 예약일에 센터로) */
+const props = defineProps<{ receiptNo: string; serviceType?: 'VISIT' | 'CENTER'; centerName?: string }>()
 const emit = defineEmits<{ navigate: [] }>()
 const router = useRouter()
 const copied = ref(false)
@@ -42,7 +43,9 @@ function go(to: Parameters<typeof router.push>[0]) {
       <p v-if="copyError" class="faint">복사하지 못했어요. 접수번호를 길게 눌러 직접 복사해 주세요.</p>
     </div>
 
-    <p class="msg">사진을 AI가 먼저 확인한 뒤, 기사님이 연락드릴 거예요.</p>
+    <p v-if="serviceType === 'VISIT'" class="msg">기사님이 방문 전에 연락드릴 거예요.</p>
+    <p v-else-if="serviceType === 'CENTER'" class="msg">예약하신 날짜에 {{ centerName ?? '선택하신 서비스센터' }}로 제품을 가져와 주세요.</p>
+    <p v-else class="msg">사진을 AI가 먼저 확인한 뒤, 기사님이 연락드릴 거예요.</p>
 
     <div class="acts">
       <!-- 접수번호는 주소창이 아닌 history state 로 넘겨 자동 입력 -->

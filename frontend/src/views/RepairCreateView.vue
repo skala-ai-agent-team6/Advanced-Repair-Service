@@ -1,47 +1,74 @@
 <script setup lang="ts">
-/* 신규 수리 접수 — 5단계 스텝 폼
- *  ① 제품 정보 (시리얼 조회 · 라벨 사진은 참고용)  ② 고장 증상 (증상 칩 + 직접 입력 · 에러 코드 · 기사 소견)
- *  ③ 사진 올리기 (촬영 가이드 · 품질 검사)  ④ 방문 정보 (출장 기사가 방문할 고객 정보)
- *  ⑤ 개인정보 동의 · 최종 확인 → 접수 완료 (접수번호 안내)
+/* 신규 수리 접수 (기사 전용 · 직원 레이아웃) — 5단계 스텝 폼. 고객용 고장 접수(/service/request)와는 다른 화면
+ *  ① 제품 정보 (시리얼 조회 · 라벨 사진 인식 · 제품 종류 · 제조사 · 모델명 · 구매일)
+ *  ② 고장 증상 (증상 칩 + 직접 입력 · 발생 시점·조건 · 에러 코드 · 기사 소견)  ③ 사진 올리기 (촬영 가이드 · 품질 검사)
+ *  ④ 고객·방문 정보 (센터/출장 수리 · 고객 · 주소 검색 · 희망 방문일)  ⑤ 확인 및 접수 (최종 확인 · 동의 · 담당 기사) → 접수 완료
+ *  입력값(사진 제외)은 탭을 닫기 전까지 sessionStorage 에 보관 — 새로고침해도 유지, 접수 완료 시 삭제
  * 방문 정보·동의는 고객 개인정보라 AI 입력(userInput)에는 넣지 않는다. Mock 에만 저장, 실서버는 FEATURES.visitInfo 로 켬 */
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
-import { ArrowLeft, ArrowRight, CircleAlert, CircleCheck, Search, Send, X, Loader2, ScanLine, Pencil, Camera, Trash2, ShieldCheck, MapPin, Home, TriangleAlert } from 'lucide-vue-next'
-import BaseModal from '@/components/common/BaseModal.vue'
+import { ArrowLeft, ArrowRight, CircleAlert, CircleCheck, Send, X, Loader2, ScanLine, Pencil, ShieldCheck, MapPin, List, TriangleAlert } from 'lucide-vue-next'
 import StepIndicator from '@/components/repair/StepIndicator.vue'
+import ProductInfoFields from '@/components/repair/ProductInfoFields.vue'
+import AddressSearchField from '@/components/address/AddressSearchField.vue'
+import { DETAIL_ADDRESS_MAX, emptyVisitAddress, normalizeVisitAddress, toAddressLine } from '@/api/adapters/address'
+import { PRODUCT_TYPE_LABEL, type ProductType } from '@/constants/products'
 import ImageUploader from '@/components/repair/ImageUploader.vue'
 import PhotoGuide from '@/components/repair/PhotoGuide.vue'
 import SameSerialHistory from '@/components/repair/SameSerialHistory.vue'
-import WarrantyPeriodNotice from '@/components/repair/WarrantyPeriodNotice.vue'
-import { checkWarrantyPeriod, repairApi, toErrorMessage, USE_MOCK } from '@/api'
-import { FEATURES } from '@/api/features'
+import { repairApi, toErrorMessage, USE_MOCK } from '@/api'
 import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
+import ServiceTypeChangeModal from '@/components/repair/ServiceTypeChangeModal.vue'
+import { SERVICE_TYPE_LABEL, type ServiceType } from '@/constants/serviceType'
 import { PHOTO_KIND_LABEL, PHOTO_LIMIT } from '@/constants/status'
-import type { PhotoKind, PrivacyConsent, ProductInfo, VisitInfo, WarrantyPeriod } from '@/types'
-import type { UploadItem } from '@/types/upload'
+import type { PhotoKind, PrivacyConsent, ProductInfo, VisitAddress, VisitInfo } from '@/types'
+import type { QualitySummary, UploadItem } from '@/types/upload'
 import { formatDate, repairId } from '@/utils/format'
 
 const toast = useToastStore()
-const STEPS = ['제품 정보', '고장 증상', '사진 올리기', '방문 정보', '동의 및 접수']
+const STEPS = ['제품 정보', '고장 증상', '사진 올리기', '고객·방문 정보', '확인 및 접수']
 const LAST = STEPS.length - 1
 const step = ref(0)
 
 const form = reactive({
   serial: '',
+  /** 시리얼 조회 결과 (공장·펌웨어 등 추가 정보). 없어도 아래 칸을 직접 입력해 접수할 수 있다 */
   product: null as ProductInfo | null,
+  productType: '' as ProductType | '',
+  productTypeDetail: '',
+  manufacturer: '',
+  model: '',
   /** 자주 있는 증상 칩 (여러 개 선택) */
   symptomChips: [] as string[],
   /** 직접 입력한 증상 */
   symptomText: '',
+  /** 증상 발생 시점 · 조건 (예: 청소 시작 3분 후 · 물걸레 장착 시) */
+  occurrence: '',
   errorCodes: [] as string[],
   technicianNote: '',
 })
 /** 출장 방문 정보 (고객 개인정보) */
-const visit = reactive<Omit<VisitInfo, 'purchaseDate'>>({ customerName: '', phone: '', address: '', preferredDate: '' })
+const auth = useAuthStore()
+/** 수리 방법: 고객이 고른 값을 이어받는다 — 기사 접수는 접수 기사 유형을 기본값으로 (출장기사 → 방문 수리, 센터 수리자 → 센터 방문)
+ *  입력란 대신 배지로 보여 주고, 바꿀 때만 [수리 방법 변경](사유 필수 · 접수 시 이력 기록) */
+const DEFAULT_SERVICE: ServiceType = auth.technicianType === 'FIELD' ? 'VISIT' : 'CENTER'
+const visit = reactive<Omit<VisitInfo, 'purchaseDate' | 'address'>>({ customerName: '', phone: '', preferredDate: '', serviceType: DEFAULT_SERVICE })
+// 센터 수리자 기본값: 자기 센터
+if (DEFAULT_SERVICE === 'CENTER') visit.centerName = auth.user?.branch
+const serviceChange = ref<{ from: ServiceType; reason: string } | null>(null)
+const serviceModal = ref(false)
+function onServiceChange(v: { serviceType: ServiceType; centerId?: string; centerName?: string; reason: string }) {
+  serviceChange.value = { from: serviceChange.value?.from ?? (visit.serviceType ?? DEFAULT_SERVICE), reason: v.reason }
+  Object.assign(visit, { serviceType: v.serviceType, centerId: v.centerId, centerName: v.centerName })
+  serviceModal.value = false
+}
+/** 방문 주소 (구조화 · 주소 검색) — 서버에는 한 줄 주소(toAddressLine)와 함께 보낸다 */
+const visitAddress = ref<VisitAddress>(emptyVisitAddress())
+watch(() => form.productType, (v) => v !== 'unknown' && (form.productTypeDetail = ''))
 /** 구매일 — 무상 수리 여부 확인용. "모름" 이면 null 로 저장 */
 const purchaseDate = ref('')
 const purchaseUnknown = ref(false)
-watch(purchaseUnknown, (v) => v && (purchaseDate.value = ''))
 const agreed = ref(false)
 
 /** 접수 사진 2종: PCB · 기계·찌그러짐(모터·외관 변형 등). 칸별 5장, 전체 10장 */
@@ -51,77 +78,29 @@ const touched = reactive([false, false, false, false, false])
 const totalPhotos = computed(() => photos.PCB.length + photos.MOTOR.length)
 
 /* ---------- ③ 사진 품질 검사 (FEATURES.photoQualityCheck 가 꺼져 있으면 항상 0) ---------- */
-const quality = reactive<Record<(typeof PHOTO_KINDS)[number], { checking: number; problems: number }>>({ PCB: { checking: 0, problems: 0 }, MOTOR: { checking: 0, problems: 0 } })
+// US-03: PENDING 이면 진단 요청 불가 · FAILED 는 재촬영 · WARNING 은 사진마다 [현재 사진 사용](확인자·시각 기록) 또는 [재촬영]
+const EMPTY_Q: QualitySummary = { checking: 0, problems: 0, failed: 0, unacked: 0, records: {} }
+const quality = reactive<Record<(typeof PHOTO_KINDS)[number], QualitySummary>>({ PCB: { ...EMPTY_Q }, MOTOR: { ...EMPTY_Q } })
 const qChecking = computed(() => quality.PCB.checking + quality.MOTOR.checking)
 const qProblems = computed(() => quality.PCB.problems + quality.MOTOR.problems)
-/** "이대로 제출" 확인을 받았는지. 사진이 바뀌면 다시 묻는다 */
-const problemsAccepted = ref(false)
-const problemDlg = ref(false)
+const qFailed = computed(() => quality.PCB.failed + quality.MOTOR.failed)
+const qUnacked = computed(() => quality.PCB.unacked + quality.MOTOR.unacked)
 const qWait = ref(false)
-watch(photos, () => (problemsAccepted.value = false), { deep: true })
 watch(qChecking, (n) => !n && (qWait.value = false))
-/** 사진 단계를 넘어가도 되는지: 검사 중이면 기다리게, 문제 사진이 있으면 한 번 더 확인 */
+/** 사진 단계를 넘어가도 되는지: 검사 중이면 기다리게, 확인이 필요한 사진이 있으면 사진 칸으로 안내 */
 function photosReady(): boolean {
   if (qChecking.value) {
     qWait.value = true
     return false
   }
-  if (qProblems.value && !problemsAccepted.value) {
-    problemDlg.value = true
+  if (qProblems.value) {
+    void nextTick(() => document.querySelector('.problem')?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
     return false
   }
   return true
 }
-function acceptProblems() {
-  problemsAccepted.value = true
-  problemDlg.value = false
-  if (step.value === 2) next()
-  else void doSubmit()
-}
 
-/* ---------- ① 시리얼 → 제품 자동 조회 ---------- */
-const lookup = reactive({ loading: false, error: null as string | null })
-async function findProduct() {
-  const s = form.serial.trim().toUpperCase()
-  form.serial = s
-  form.product = null
-  lookup.error = null
-  if (!/^RC\d{10}$/.test(s)) {
-    lookup.error = '시리얼 번호는 RC 로 시작하는 12자리입니다. (예: RC2026000187)'
-    return
-  }
-  lookup.loading = true
-  try {
-    form.product = await repairApi.lookupProduct(s)
-  } catch (e) {
-    lookup.error = toErrorMessage(e)
-  } finally {
-    lookup.loading = false
-  }
-}
-watch(
-  () => form.serial,
-  (v) => {
-    if (form.product && v.trim().toUpperCase() !== form.product.serialNumber) form.product = null
-    if (/^RC\d{10}$/i.test(v.trim()) && !lookup.loading && !form.product) void findProduct()
-  },
-)
-
-/** 라벨 사진: 보면서 입력하도록 크게 보여 주기만 한다 (자동 인식 없음 · 접수에 첨부하지 않음) */
-const labelInput = ref<HTMLInputElement | null>(null)
-const labelPhoto = ref<string | null>(null)
-function onLabelPhoto(files: FileList | null) {
-  const f = files?.[0]
-  if (!f || !f.type.startsWith('image/')) return
-  if (labelPhoto.value) URL.revokeObjectURL(labelPhoto.value)
-  labelPhoto.value = URL.createObjectURL(f)
-  if (labelInput.value) labelInput.value.value = ''
-}
-function clearLabelPhoto() {
-  if (labelPhoto.value) URL.revokeObjectURL(labelPhoto.value)
-  labelPhoto.value = null
-}
-onBeforeUnmount(clearLabelPhoto)
+/* ---------- ① 제품 정보: 시리얼 조회 · 라벨 사진 · 보증 기간 안내는 공통 ProductInfoFields 가 처리 ---------- */
 
 /* ---------- ② 증상 · 에러코드 ---------- */
 const SYMPTOMS = ['청소 중 큰 소음', '주행 중 멈춤', '한쪽으로만 회전', '충전 안 됨', '전원 안 켜짐', '흡입력 약함', '물걸레 작동 안 함', '바퀴 헛돎']
@@ -129,7 +108,11 @@ function toggleChip(s: string) {
   form.symptomChips = form.symptomChips.includes(s) ? form.symptomChips.filter((x) => x !== s) : [...form.symptomChips, s]
 }
 /** 서버로 보내는 증상 = 선택한 칩 + 직접 입력 */
-const symptom = computed(() => [...form.symptomChips, form.symptomText.trim()].filter(Boolean).join(', '))
+const symptom = computed(() => {
+  const base = [...form.symptomChips, form.symptomText.trim()].filter(Boolean).join(', ')
+  const when = form.occurrence.trim()
+  return when ? `${base} (발생: ${when})` : base
+})
 
 const codeInput = ref('')
 const codeError = ref<string | null>(null)
@@ -150,49 +133,13 @@ function addCode(c?: string) {
 const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
 const PHONE_RE = /^0\d{1,2}-?\d{3,4}-?\d{4}$/
 
-/* ---------- 보증 기간 안내 (시리얼 입력 후 0.5초 또는 입력칸을 벗어날 때, 구매일이 바뀌면 다시 계산) ---------- */
-const warrantyPeriod = ref<WarrantyPeriod | null>(null)
-/** 오늘 이후가 아닌 구매일만 계산에 사용 ("몰라요"면 제조일 추정) */
-const wpPurchase = computed(() => (!purchaseUnknown.value && purchaseDate.value && purchaseDate.value <= today ? purchaseDate.value : undefined))
-let wpTimer: number | undefined
-let wpSeq = 0
-let wpKey = ''
-async function refreshWarranty() {
-  window.clearTimeout(wpTimer)
-  const serial = form.serial.trim().toUpperCase()
-  if (!FEATURES.warranty || !/^RC\d{10}$/.test(serial)) {
-    warrantyPeriod.value = null
-    wpKey = ''
-    return
-  }
-  const key = `${serial}|${wpPurchase.value ?? ''}`
-  if (key === wpKey) return
-  wpKey = key
-  const seq = ++wpSeq
-  try {
-    const res = await checkWarrantyPeriod(serial, wpPurchase.value)
-    if (seq === wpSeq) warrantyPeriod.value = res
-  } catch {
-    // 안내용이라 실패해도 접수는 계속 (박스만 숨김)
-    if (seq === wpSeq) {
-      warrantyPeriod.value = null
-      wpKey = ''
-    }
-  }
-}
-watch(
-  () => form.serial,
-  () => {
-    window.clearTimeout(wpTimer)
-    wpTimer = window.setTimeout(refreshWarranty, 500)
-  },
-)
-watch(wpPurchase, () => void refreshWarranty())
-onBeforeUnmount(() => window.clearTimeout(wpTimer))
 
 /* ---------- 검증 ---------- */
 const errs = computed(() => ({
-  product: !form.product ? '시리얼 번호로 제품 정보를 조회해 주세요.' : null,
+  serial: !form.serial.trim() ? '시리얼 번호를 입력해 주세요.' : !/^[A-Za-z0-9-]{4,30}$/.test(form.serial.trim()) ? '시리얼 번호는 영문·숫자로 입력해 주세요.' : null,
+  manufacturer: !form.manufacturer.trim() ? '제조사를 입력해 주세요.' : null,
+  model: !form.model.trim() ? '모델명을 입력하거나 시리얼로 조회해 주세요.' : null,
+  typeDetail: form.productType === 'unknown' && !form.productTypeDetail.trim() ? '제품 종류를 입력해 주세요.' : null,
   symptom: !form.symptomChips.length && form.symptomText.trim().length < 5 ? '증상을 하나 이상 고르거나 5자 이상 직접 입력해 주세요.' : null,
   // 에러 코드는 선택. 입력란에 쓰고 [추가]를 안 누른 코드만 확인
   codes: codeInput.value.trim() ? '입력한 에러 코드를 [추가]로 등록하거나 지워 주세요.' : null,
@@ -201,14 +148,27 @@ const errs = computed(() => ({
   photoTotal: totalPhotos.value > PHOTO_LIMIT.total ? `사진은 전체 ${PHOTO_LIMIT.total}장까지 등록할 수 있습니다. (현재 ${totalPhotos.value}장)` : null,
   name: !visit.customerName.trim() ? '고객 이름을 입력해 주세요.' : null,
   phone: !PHONE_RE.test(visit.phone.trim()) ? '연락처를 숫자로 입력해 주세요. (예: 010-1234-5678)' : null,
-  address: visit.address.trim().length < 5 ? '방문할 주소를 입력해 주세요.' : null,
+  address: !visitAddress.value.roadAddress.trim() ? '방문 주소를 검색해 주세요.' : null,
+  detailAddress: !visitAddress.value.roadAddress.trim()
+    ? null
+    : !visitAddress.value.detailAddress.trim()
+      ? '상세주소를 입력해 주세요.'
+      : visitAddress.value.detailAddress.trim().length > DETAIL_ADDRESS_MAX
+        ? `상세주소는 ${DETAIL_ADDRESS_MAX}자 이하로 입력해 주세요.`
+        : null,
   date: !visit.preferredDate ? '희망 방문일을 골라 주세요.' : visit.preferredDate < today ? '오늘 이후 날짜를 골라 주세요.' : null,
   purchase: purchaseUnknown.value ? null : !purchaseDate.value ? '구매일을 골라 주세요. 모르면 "구매일을 몰라요"를 체크해 주세요.' : purchaseDate.value > today ? '오늘 이후 날짜는 고를 수 없어요.' : null,
   consent: !agreed.value ? '개인정보 수집·이용에 동의해 주세요.' : null,
 }))
 const stepValid = computed(() => {
   const e = errs.value
-  return [!e.product, !e.symptom && !e.codes && !e.note, !e.photos.length && !e.photoTotal, !e.name && !e.phone && !e.address && !e.date && !e.purchase, !e.consent]
+  return [
+    !e.serial && !e.manufacturer && !e.model && !e.typeDetail && !e.purchase,
+    !e.symptom && !e.codes && !e.note,
+    !e.photos.length && !e.photoTotal,
+    !e.name && !e.phone && !e.address && !e.detailAddress && !e.date,
+    !e.consent,
+  ]
 })
 
 function next() {
@@ -239,7 +199,6 @@ async function doSubmit() {
     if (bad !== step.value) goStep(bad)
     return
   }
-  if (!form.product) return
   if (!photosReady()) {
     goStep(2)
     return
@@ -247,9 +206,10 @@ async function doSubmit() {
   submit.running = true
   submit.error = null
   const consent: PrivacyConsent = { agreed: true, agreedAt: new Date().toISOString(), version: 'v1' }
-  const visitInfo: VisitInfo = { customerName: visit.customerName.trim(), phone: visit.phone.trim(), address: visit.address.trim(), preferredDate: visit.preferredDate, purchaseDate: purchaseUnknown.value ? null : purchaseDate.value }
+  const addr = normalizeVisitAddress(visitAddress.value)
+  const visitInfo: VisitInfo = { customerName: visit.customerName.trim(), phone: visit.phone.trim(), address: toAddressLine(addr), visitAddress: addr, preferredDate: visit.preferredDate, purchaseDate: purchaseUnknown.value ? null : purchaseDate.value, serviceType: visit.serviceType, centerId: visit.centerId, centerName: visit.centerName }
   try {
-    const req = { product: form.product, symptom: symptom.value, technicianNote: form.technicianNote.trim() || undefined, errorCodes: form.errorCodes, visitInfo, consent }
+    const req = { product: buildProduct(), symptom: symptom.value, technicianNote: form.technicianNote.trim() || undefined, errorCodes: form.errorCodes, visitInfo, consent, ...(serviceChange.value ? { serviceTypeChange: serviceChange.value } : {}) }
     if (!USE_MOCK) {
       // 실서버: 접수 정보 + 사진을 multipart 한 번으로 보내고(202), 서버가 진단 작업까지 만든다
       submit.phase = 'create'
@@ -270,7 +230,7 @@ async function doSubmit() {
       // 재시도 시에도 같은 접수 건에 업로드 (중복 접수 방지)
       for (const kind of PHOTO_KINDS) {
         for (const p of photos[kind]) {
-          await repairApi.uploadImage(submit.repairId, { kind: kind as PhotoKind, file: p.file, dataUrl: p.dataUrl })
+          await repairApi.uploadImage(submit.repairId, { kind: kind as PhotoKind, file: p.file, dataUrl: p.dataUrl, quality: quality[kind].records[p.id] })
           submit.uploaded++
         }
       }
@@ -279,6 +239,7 @@ async function doSubmit() {
     }
     submit.phase = 'done'
     dirty.value = false
+    clearDraft()
     toast.success(`수리 ID ${repairId(submit.repairId!)} 로 접수되었습니다. AI 분석을 시작합니다.`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (e) {
@@ -288,14 +249,64 @@ async function doSubmit() {
   }
 }
 
+/** 접수에 보낼 제품 정보: 조회 결과가 있으면 그 위에, 없으면 직접 입력한 값으로 */
+function buildProduct(): ProductInfo {
+  const model = form.model.trim()
+  const type = form.productType || undefined
+  const typeLabel = form.productType === 'unknown' ? form.productTypeDetail.trim() : form.productType ? PRODUCT_TYPE_LABEL[form.productType] : ''
+  const base: ProductInfo = form.product ?? { serialNumber: '', model, modelName: '', manufacturedAt: '', factory: '', warrantyUntil: '', firmware: '' }
+  return {
+    ...base,
+    serialNumber: form.serial.trim().toUpperCase(),
+    model,
+    modelName: form.product && form.product.model === model ? form.product.modelName : [typeLabel, model].filter(Boolean).join(' '),
+    manufacturer: form.manufacturer.trim(),
+    productType: type,
+    ...(form.productType === 'unknown' ? { productTypeDetail: form.productTypeDetail.trim() } : {}),
+  }
+}
+
+/* ---------- 새로고침해도 입력 유지 (사진 파일은 저장할 수 없어 제외) ---------- */
+const DRAFT_KEY = 'robotcare-intake-draft'
+function restoreDraft() {
+  try {
+    const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? 'null')
+    if (!d) return
+    Object.assign(form, d.form ?? {})
+    Object.assign(visit, d.visit ?? {})
+    visitAddress.value = { ...emptyVisitAddress(), ...(d.visitAddress ?? {}) }
+    purchaseDate.value = d.purchaseDate ?? ''
+    purchaseUnknown.value = !!d.purchaseUnknown
+    step.value = Math.min(LAST, Math.max(0, Number(d.step) || 0))
+  } catch {
+    /* 저장소를 못 쓰면 새로 시작 */
+  }
+}
+function saveDraft() {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ form, visit, visitAddress: visitAddress.value, purchaseDate: purchaseDate.value, purchaseUnknown: purchaseUnknown.value, step: step.value }))
+  } catch {
+    /* noop */
+  }
+}
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY)
+  } catch {
+    /* noop */
+  }
+}
+restoreDraft()
+
 /* ---------- 작성 중 이탈 방지 ---------- */
 const dirty = ref(false)
-watch([form, photos, visit, agreed, purchaseDate, purchaseUnknown], () => (dirty.value = true), { deep: true })
+watch([form, photos, visit, visitAddress, agreed, purchaseDate, purchaseUnknown], () => (dirty.value = true), { deep: true })
+watch([form, visit, visitAddress, purchaseDate, purchaseUnknown, step], () => submit.phase !== 'done' && saveDraft(), { deep: true })
 onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : window.confirm('작성 중인 접수 내용이 사라집니다. 나가시겠습니까?')))
 </script>
 
 <template>
-  <div class="page narrow">
+  <div class="page">
     <div class="page-head">
       <div>
         <h1>신규 수리 접수</h1>
@@ -324,15 +335,9 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
       </dl>
       <p class="faint">고객에게 접수번호를 안내해 주세요.</p>
       <div class="row center">
-        <RouterLink to="/" class="btn btn-lg"><Home :size="20" /> 홈으로</RouterLink>
+        <RouterLink to="/repairs" class="btn btn-lg"><List :size="20" /> 수리 접수 관리로</RouterLink>
         <RouterLink :to="`/repairs/${submit.repairId}/progress`" class="btn btn-primary btn-lg">진행 상황 보기 <ArrowRight :size="20" /></RouterLink>
       </div>
-      <!-- 고객용 조회 화면 (접수번호는 주소창이 아닌 history state 로 전달) -->
-      <p v-if="FEATURES.customerReport && submit.receiptNo" class="track-link">
-        고객은 접수번호와 휴대폰 뒷자리로
-        <RouterLink :to="{ path: '/service/track', state: { receiptNo: submit.receiptNo } }">진행 상황 조회하기 <ArrowRight :size="15" /></RouterLink>
-        에서 확인할 수 있어요.
-      </p>
     </section>
 
     <template v-else>
@@ -341,61 +346,31 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
       <!-- ========== ① 제품 정보 ========== -->
       <section v-show="step === 0" class="card card-pad stack" aria-labelledby="s1">
         <h2 id="s1" class="section-title">① 제품 정보</h2>
-        <div class="field">
-          <label for="serial" class="req">시리얼 번호</label>
-          <div class="row nowrap">
-            <div class="sw">
-              <ScanLine :size="20" class="si" aria-hidden="true" />
-              <input
-                id="serial"
-                v-model="form.serial"
-                class="input mono big"
-                :class="{ invalid: (touched[0] && errs.product) || lookup.error }"
-                placeholder="RC2026000187"
-                autocomplete="off"
-                maxlength="12"
-                :aria-invalid="!!lookup.error || (touched[0] && !!errs.product)"
-                aria-describedby="serial-help"
-                @keydown.enter.prevent="findProduct"
-                @blur="refreshWarranty"
-              />
-            </div>
-            <button class="btn btn-lg" type="button" :disabled="lookup.loading" @click="findProduct">
-              <Loader2 v-if="lookup.loading" :size="20" class="spin" /><Search v-else :size="20" /> 조회
-            </button>
-          </div>
-          <p id="serial-help" class="help">제품 바닥면 라벨의 12자리 번호를 입력하면 모델을 자동으로 조회합니다. (데모: RC2026000187)</p>
-          <p v-if="lookup.error" class="error-text" role="alert"><CircleAlert :size="16" /> {{ lookup.error }}</p>
-          <p v-else-if="touched[0] && errs.product" class="error-text" role="alert"><CircleAlert :size="16" /> {{ errs.product }}</p>
-          <WarrantyPeriodNotice :period="warrantyPeriod" />
-        </div>
+        <ProductInfoFields
+          v-model:serial="form.serial"
+          v-model:product-type="form.productType"
+          v-model:product-type-detail="form.productTypeDetail"
+          v-model:manufacturer="form.manufacturer"
+          v-model:model="form.model"
+          v-model:purchase-date="purchaseDate"
+          v-model:purchase-unknown="purchaseUnknown"
+          v-model:product="form.product"
+          id-prefix="t"
+          :errors="errs"
+          :show-errors="touched[0]"
+          label-ocr
+          demo-hint
+        />
 
-        <!-- 라벨 사진 (참고용) -->
-        <div class="label-photo">
-          <input ref="labelInput" type="file" accept="image/*" capture="environment" class="sr-only" aria-label="제품 라벨 사진 찍기" @change="onLabelPhoto(($event.target as HTMLInputElement).files)" />
-          <template v-if="labelPhoto">
-            <img :src="labelPhoto" alt="제품 라벨 사진" class="label-img" />
-            <div class="stack label-acts">
-              <p class="faint">사진을 보며 시리얼 번호를 입력해 주세요. 라벨 사진은 접수에 첨부되지 않습니다.</p>
-              <div class="row">
-                <button type="button" class="btn btn-sm" @click="labelInput?.click()"><Camera :size="16" /> 다시 찍기</button>
-                <button type="button" class="btn btn-sm btn-ghost" @click="clearLabelPhoto"><Trash2 :size="16" /> 지우기</button>
-              </div>
-            </div>
-          </template>
-          <button v-else type="button" class="btn" @click="labelInput?.click()"><Camera :size="18" /> 라벨을 사진으로 찍어 보며 입력</button>
-        </div>
-
-        <div v-if="lookup.loading" class="prod skeleton" style="height: 150px" />
-        <div v-else-if="form.product" class="prod card" aria-live="polite">
+        <div v-if="form.product" class="prod card" aria-live="polite">
           <div class="row between">
             <strong class="pn">{{ form.product.modelName }}</strong>
             <span class="badge tone-success"><CircleCheck :size="15" /> 제품 확인됨</span>
           </div>
           <dl class="kv cols">
             <div><dt>모델</dt><dd>{{ form.product.model }}</dd></div>
-            <div><dt>생산 공장</dt><dd>{{ form.product.factory }}</dd></div>
-            <div><dt>제조일</dt><dd>{{ formatDate(form.product.manufacturedAt) }}</dd></div>
+            <div><dt>생산 공장</dt><dd>{{ form.product.factory || '-' }}</dd></div>
+            <div><dt>제조일</dt><dd>{{ form.product.manufacturedAt ? formatDate(form.product.manufacturedAt) : '-' }}</dd></div>
             <div><dt>펌웨어</dt><dd>{{ form.product.firmware || '-' }}</dd></div>
           </dl>
         </div>
@@ -406,22 +381,20 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
       <section v-show="step === 1" class="card card-pad stack" aria-labelledby="s2">
         <h2 id="s2" class="section-title">② 고장 증상</h2>
         <div class="field">
-          <span id="chips-label" class="label req">자주 있는 증상</span>
+          <span id="chips-label" class="label req">고객이 설명한 증상</span>
           <div class="chips" role="group" aria-labelledby="chips-label">
-            <button
-              v-for="s in SYMPTOMS"
-              :key="s"
-              type="button"
-              class="chip"
-              :aria-pressed="form.symptomChips.includes(s)"
-              @click="toggleChip(s)"
-            >
+            <button v-for="s in SYMPTOMS" :key="s" type="button" class="chip" :aria-pressed="form.symptomChips.includes(s)" @click="toggleChip(s)">
               <CircleCheck v-if="form.symptomChips.includes(s)" :size="16" aria-hidden="true" /> {{ s }}
             </button>
           </div>
           <label for="symptom" class="sub-label">직접 입력 <span class="faint">(칩에 없는 증상이나 자세한 상황)</span></label>
           <textarea id="symptom" v-model="form.symptomText" class="textarea" :class="{ invalid: touched[1] && errs.symptom }" placeholder="예) 청소 도중 큰 소음이 나고 2~3분 뒤 멈춤" :aria-invalid="touched[1] && !!errs.symptom" />
           <p v-if="touched[1] && errs.symptom" class="error-text"><CircleAlert :size="16" /> {{ errs.symptom }}</p>
+        </div>
+
+        <div class="field">
+          <label for="occurrence">증상 발생 시점 및 조건 <span class="faint">(선택)</span></label>
+          <input id="occurrence" v-model="form.occurrence" class="input" maxlength="200" placeholder="예) 청소 시작 3분 후 · 물걸레 모듈 장착 시 · 매번 발생" />
         </div>
 
         <div class="field">
@@ -465,7 +438,7 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
           </div>
           <div class="stack">
             <PhotoGuide kind="MOTOR" />
-            <ImageUploader v-model="photos.MOTOR" label="기계·찌그러짐 사진" description="모터·하우징·외관 변형 부위가 보이게" required quality-target="MOTOR" example-src="/mock/motor.svg" :max="PHOTO_LIMIT.perKind" :invalid="touched[2] && !photos.MOTOR.length" @quality="quality.MOTOR = $event" />
+            <ImageUploader v-model="photos.MOTOR" label="기계·찌그러짐·외관 사진" description="모터·하우징·외관 변형 부위가 보이게" required quality-target="MOTOR" example-src="/mock/motor.svg" :max="PHOTO_LIMIT.perKind" :invalid="touched[2] && !photos.MOTOR.length" @quality="quality.MOTOR = $event" />
           </div>
         </div>
         <p v-if="touched[2] && errs.photos.length" class="error-text" role="alert">
@@ -475,10 +448,20 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
         <p class="faint">칸별 최대 {{ PHOTO_LIMIT.perKind }}장, 전체 최대 {{ PHOTO_LIMIT.total }}장</p>
       </section>
 
-      <!-- ========== ④ 방문 정보 ========== -->
+      <!-- ========== ④ 고객 · 방문 정보 ========== -->
       <section v-show="step === 3" class="card card-pad stack" aria-labelledby="s4">
-        <h2 id="s4" class="section-title">④ 방문 정보</h2>
-        <p class="muted"><MapPin :size="16" class="inline-ic" /> 출장 기사가 방문할 고객 정보입니다. 이 정보는 AI 분석에 사용되지 않습니다.</p>
+        <h2 id="s4" class="section-title">④ 고객 · 방문 정보</h2>
+        <p class="muted"><MapPin :size="16" class="inline-ic" /> 고객 연락과 방문 일정에 쓰는 정보입니다. 이 정보는 AI 분석에 사용되지 않습니다.</p>
+        <div class="field">
+          <span class="label">수리 방법</span>
+          <div class="row">
+            <span class="badge tone-info">{{ SERVICE_TYPE_LABEL[visit.serviceType ?? DEFAULT_SERVICE] }}</span>
+            <span v-if="visit.serviceType === 'CENTER' && visit.centerName" class="faint">{{ visit.centerName }}</span>
+            <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" @click="serviceModal = true">수리 방법 변경</button>
+          </div>
+          <p v-if="serviceChange" class="help">변경 사유: {{ serviceChange.reason }} (접수하면 처리 이력에 기록)</p>
+        </div>
+        <ServiceTypeChangeModal :open="serviceModal" :current="visit.serviceType ?? DEFAULT_SERVICE" :current-center-id="visit.centerId" :product-type="form.productType" @close="serviceModal = false" @submit="onServiceChange" />
         <div class="grid-2">
           <div class="field">
             <label for="v-name" class="req">고객 이름</label>
@@ -491,81 +474,63 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
             <p v-if="touched[3] && errs.phone" class="error-text"><CircleAlert :size="16" /> {{ errs.phone }}</p>
           </div>
         </div>
-        <div class="field">
-          <label for="v-addr" class="req">주소</label>
-          <input id="v-addr" v-model="visit.address" class="input" :class="{ invalid: touched[3] && errs.address }" maxlength="200" autocomplete="off" placeholder="예) 서울시 강남구 테헤란로 123, 101동 1001호" :aria-invalid="touched[3] && !!errs.address" />
-          <p v-if="touched[3] && errs.address" class="error-text"><CircleAlert :size="16" /> {{ errs.address }}</p>
-        </div>
+        <AddressSearchField v-model="visitAddress" id-prefix="v-addr" :address-error="touched[3] ? errs.address : null" :detail-error="touched[3] ? errs.detailAddress : null" />
         <div class="field date-field">
-          <label for="v-date" class="req">희망 방문일</label>
+          <label for="v-date" class="req">{{ visit.serviceType === 'CENTER' ? '센터 방문 예정일' : '희망 방문일' }}</label>
           <input id="v-date" v-model="visit.preferredDate" class="input" :class="{ invalid: touched[3] && errs.date }" type="date" :min="today" :aria-invalid="touched[3] && !!errs.date" />
           <p v-if="touched[3] && errs.date" class="error-text"><CircleAlert :size="16" /> {{ errs.date }}</p>
         </div>
-        <div class="field date-field">
-          <label for="v-purchase" :class="{ req: !purchaseUnknown }">구매일</label>
-          <p id="purchase-help" class="help">무상 수리 여부 확인에 사용돼요. 영수증이나 앱 구매 내역에서 확인할 수 있어요.</p>
-          <input
-            id="v-purchase"
-            v-model="purchaseDate"
-            class="input"
-            :class="{ invalid: touched[3] && errs.purchase }"
-            type="date"
-            :max="today"
-            :disabled="purchaseUnknown"
-            aria-describedby="purchase-help"
-            :aria-invalid="touched[3] && !!errs.purchase"
-          />
-          <label class="check">
-            <input v-model="purchaseUnknown" type="checkbox" />
-            <span>구매일을 몰라요</span>
-          </label>
-          <p v-if="touched[3] && errs.purchase" class="error-text"><CircleAlert :size="16" /> {{ errs.purchase }}</p>
-        </div>
-        <!-- 구매일이 바뀌면 같은 API 로 다시 계산한 보증 기간 -->
-        <WarrantyPeriodNotice :period="warrantyPeriod" />
       </section>
 
-      <!-- ========== ⑤ 개인정보 동의 · 최종 확인 ========== -->
+      <!-- ========== ⑤ 확인 및 접수 ========== -->
       <section v-show="step === 4" class="stack" aria-labelledby="s5">
         <div class="card card-pad stack">
-          <h2 id="s5" class="section-title">⑤ 개인정보 수집·이용 동의</h2>
+          <h2 id="s5" class="section-title">⑤ 확인 및 접수</h2>
+          <dl class="kv review">
+            <dt>제품</dt>
+            <dd>
+              {{ [form.productType === 'unknown' ? form.productTypeDetail : form.productType ? PRODUCT_TYPE_LABEL[form.productType] : '', form.manufacturer, form.model].filter(Boolean).join(' · ') || '-' }}
+              <span class="mono faint">({{ form.serial || '-' }})</span>
+              <button type="button" class="btn btn-sm btn-ghost" @click="goStep(0)"><Pencil :size="14" /> 수정</button>
+            </dd>
+            <dt>구매일</dt>
+            <dd>{{ purchaseUnknown ? '모름' : formatDate(purchaseDate) }}</dd>
+            <dt>증상</dt>
+            <dd>{{ symptom || '-' }} <button type="button" class="btn btn-sm btn-ghost" @click="goStep(1)"><Pencil :size="14" /> 수정</button></dd>
+            <dt>에러 코드</dt>
+            <dd>{{ form.errorCodes.length ? form.errorCodes.join(', ') : '없음' }}</dd>
+            <dt>기사 소견</dt>
+            <dd class="pre">{{ form.technicianNote.trim() || '없음' }}</dd>
+            <dt>사진</dt>
+            <dd>{{ totalPhotos }}장 (PCB {{ photos.PCB.length }} · 기계·외관 {{ photos.MOTOR.length }}) <button type="button" class="btn btn-sm btn-ghost" @click="goStep(2)"><Pencil :size="14" /> 수정</button></dd>
+            <dt>수리 방식</dt>
+            <dd>{{ visit.serviceType ? SERVICE_TYPE_LABEL[visit.serviceType] : '-' }}<template v-if="visit.serviceType === 'CENTER' && visit.centerName"> · {{ visit.centerName }}</template></dd>
+            <dt>고객 · 방문</dt>
+            <dd>{{ visit.customerName }} · {{ visit.phone }} · {{ toAddressLine(visitAddress) || '-' }} · {{ formatDate(visit.preferredDate) }} <button type="button" class="btn btn-sm btn-ghost" @click="goStep(3)"><Pencil :size="14" /> 수정</button></dd>
+            <dt>접수 담당 기사</dt>
+            <dd>{{ auth.user?.name }} · {{ auth.user?.branch }} · {{ auth.technicianType === 'FIELD' ? '출장기사' : '센터 수리자' }} <span class="mono faint">({{ auth.user?.employeeId }})</span></dd>
+          </dl>
+          <p class="callout tone-ai"><ScanLine :size="20" /> 접수 후 AI 가 필요한 분석(PCB·모터)을 선택합니다. 결과는 <b>AI 초안</b>으로 표시되며 기사님의 확인이 필요합니다.</p>
+        </div>
+
+        <div class="card card-pad stack">
+          <h2 class="section-title">개인정보 수집·이용 동의</h2>
           <div class="notice">
             <dl class="kv">
               <dt>수집 항목</dt>
               <dd>고객 이름, 연락처, 주소, 희망 방문일, 구매일</dd>
               <dt>이용 목적</dt>
-              <dd>출장 수리 방문 일정 안내 및 수리 진행 연락</dd>
+              <dd>수리 방문 일정 안내 및 수리 진행 연락</dd>
               <dt>보유 기간</dt>
               <dd>수리 완료 후 회사 개인정보 처리방침에 따른 기간</dd>
             </dl>
-            <p class="faint">고객은 동의를 거부할 수 있으며, 거부하면 출장 수리 접수가 제한됩니다. 이 정보는 AI 분석에 사용되지 않습니다.</p>
+            <p class="faint">고객은 동의를 거부할 수 있으며, 거부하면 수리 접수가 제한됩니다. 이 정보는 AI 분석에 사용되지 않습니다.</p>
           </div>
           <label class="check" :class="{ invalid: touched[4] && errs.consent }">
             <input v-model="agreed" type="checkbox" :aria-invalid="touched[4] && !!errs.consent" />
             <span><ShieldCheck :size="18" class="inline-ic" /> 고객이 개인정보 수집·이용에 동의했습니다. (필수)</span>
           </label>
           <p v-if="touched[4] && errs.consent" class="error-text" role="alert"><CircleAlert :size="16" /> {{ errs.consent }}</p>
-        </div>
-
-        <div class="card card-pad stack">
-          <h2 class="section-title">최종 확인</h2>
-          <dl class="kv review">
-            <dt>제품</dt>
-            <dd>{{ form.product?.modelName }} <span class="mono faint">({{ form.product?.serialNumber }})</span> <button type="button" class="btn btn-sm btn-ghost" @click="goStep(0)"><Pencil :size="14" /> 수정</button></dd>
-            <dt>증상</dt>
-            <dd>{{ symptom }} <button type="button" class="btn btn-sm btn-ghost" @click="goStep(1)"><Pencil :size="14" /> 수정</button></dd>
-            <dt>에러 코드</dt>
-            <dd>{{ form.errorCodes.length ? form.errorCodes.join(', ') : '없음' }}</dd>
-            <dt>기사 소견</dt>
-            <dd class="pre">{{ form.technicianNote.trim() || '없음' }}</dd>
-            <dt>사진</dt>
-            <dd>{{ totalPhotos }}장 (PCB {{ photos.PCB.length }} · 기계·찌그러짐 {{ photos.MOTOR.length }}) <button type="button" class="btn btn-sm btn-ghost" @click="goStep(2)"><Pencil :size="14" /> 수정</button></dd>
-            <dt>방문 정보</dt>
-            <dd>{{ visit.customerName }} · {{ visit.phone }} · {{ visit.address }} · {{ formatDate(visit.preferredDate) }} <button type="button" class="btn btn-sm btn-ghost" @click="goStep(3)"><Pencil :size="14" /> 수정</button></dd>
-            <dt>구매일</dt>
-            <dd>{{ purchaseUnknown ? '모름' : formatDate(purchaseDate) }}</dd>
-          </dl>
-          <p class="callout tone-ai"><ScanLine :size="20" /> 접수 후 AI 가 필요한 분석(PCB·모터)을 선택합니다. 결과는 <b>AI 초안</b>으로 표시되며 기사님의 확인이 필요합니다.</p>
 
           <div v-if="submit.running || submit.error" class="progress" :class="{ err: submit.error }" role="status" aria-live="polite">
             <template v-if="submit.error">
@@ -585,9 +550,15 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
       <!-- 하단 고정 이동 버튼 -->
       <div class="nav card">
         <p v-if="step === 2 && qChecking && qWait" class="callout tone-info nav-warn" role="status"><Loader2 :size="18" class="spin" /> 사진 검사가 끝날 때까지 잠시 기다려 주세요.</p>
-        <p v-else-if="step === 2 && qProblems" class="callout tone-warning nav-warn" role="alert"><TriangleAlert :size="18" /> 문제 있는 사진이 {{ qProblems }}장 있어요. 다시 찍으면 진단이 더 정확해져요.</p>
+        <p v-else-if="step === 2 && qProblems" class="callout nav-warn" :class="qFailed ? 'tone-danger' : 'tone-warning'" role="alert">
+          <TriangleAlert :size="18" />
+          <span>
+            <template v-if="qFailed">불합격 사진 {{ qFailed }}장은 [재촬영]해야 진단할 수 있어요.</template>
+            <template v-if="qUnacked"> 확인이 필요한 사진 {{ qUnacked }}장: 사진마다 [재촬영] 또는 [현재 사진 사용]을 눌러 주세요.</template>
+          </span>
+        </p>
         <button v-if="step > 0" type="button" class="btn btn-lg" :disabled="submit.running" @click="prev"><ArrowLeft :size="20" /> 이전</button>
-        <RouterLink v-else to="/" class="btn btn-lg btn-ghost">취소</RouterLink>
+        <RouterLink v-else to="/repairs" class="btn btn-lg btn-ghost">취소</RouterLink>
         <span class="spacer" />
         <span class="faint step-count">{{ step + 1 }} / {{ STEPS.length }}<span class="step-word"> 단계</span></span>
         <button v-if="step < LAST" type="button" class="btn btn-primary btn-lg" @click="next">다음 <ArrowRight :size="20" /></button>
@@ -596,21 +567,31 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
         </button>
       </div>
     </template>
-
-    <!-- 문제 있는 사진 → "이대로 제출" 한 번 더 확인 -->
-    <BaseModal :open="problemDlg" title="문제 있는 사진이 있어요" :width="480" @close="problemDlg = false">
-      <p>사진 {{ qProblems }}장에 문제가 있어요. 그대로 제출하면 AI 진단이 부정확하거나 추가 사진을 다시 요청할 수 있어요.</p>
-      <template #footer>
-        <button type="button" class="btn btn-primary" @click="problemDlg = false"><Camera :size="18" /> 다시 찍기</button>
-        <button type="button" class="btn" @click="acceptProblems">이대로 제출</button>
-      </template>
-    </BaseModal>
   </div>
 </template>
 
 <style scoped>
-.narrow {
-  max-width: 1100px;
+.fields {
+  align-items: start;
+}
+.sub-field {
+  margin-top: 12px;
+}
+.date-field {
+  max-width: 320px;
+}
+.opt {
+  min-height: 64px;
+}
+.opt span {
+  display: grid;
+}
+.opt small {
+  font-weight: 500;
+  color: var(--text-3);
+}
+.review dd {
+  overflow-wrap: anywhere;
 }
 .nowrap {
   flex-wrap: nowrap;
@@ -696,12 +677,6 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
   height: 22px;
   accent-color: var(--navy-800);
 }
-.review dd {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
 .progress {
   display: flex;
   align-items: center;
@@ -758,9 +733,6 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
   font-size: var(--fs-sm);
   font-weight: 600;
 }
-.date-field .check {
-  margin-top: 2px;
-}
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -811,9 +783,6 @@ onBeforeRouteLeave(() => (!dirty.value || submit.phase === 'done' ? true : windo
 .inline-ic {
   vertical-align: -3px;
   color: var(--primary);
-}
-.date-field {
-  max-width: 320px;
 }
 .notice {
   display: grid;

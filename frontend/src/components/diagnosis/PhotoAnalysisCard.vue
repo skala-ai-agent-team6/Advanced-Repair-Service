@@ -3,6 +3,8 @@
 import { computed } from 'vue'
 import AnnotatedImage from '@/components/diagnosis/AnnotatedImage.vue'
 import { sourceOrigin } from '@/utils/sources'
+import { PHOTO_QUALITY_META } from '@/constants/status'
+import { formatDateTime } from '@/utils/format'
 import type { AgentResult, DataSource, ImageAnnotation, RepairImage } from '@/types'
 
 const props = defineProps<{ image: RepairImage; index: number; agent?: AgentResult; annotations: ImageAnnotation[]; sources: DataSource[] }>()
@@ -36,6 +38,11 @@ const origins = computed(() => {
     <AnnotatedImage :image="image" :annotations="annotations" :title="`${KIND[image.kind] ?? image.kind} ${index} · 이상 영역`" />
     <div class="desc">
       <p v-if="image.note" class="faint">촬영 부위: {{ image.note }}</p>
+      <p v-if="image.quality" class="faint qline">
+        <span class="badge" :class="`tone-${PHOTO_QUALITY_META[image.quality.status].tone}`">사진 품질 {{ PHOTO_QUALITY_META[image.quality.status].label }}</span>
+        <template v-if="image.quality.acknowledgedBy">현재 사진 사용 확인 · {{ image.quality.acknowledgedBy }} · {{ formatDateTime(image.quality.acknowledgedAt) }}</template>
+        <template v-if="image.quality.history.length"> · 재촬영 {{ image.quality.history.length }}회</template>
+      </p>
       <template v-if="agent">
         <p class="sum">{{ agent.summary }}</p>
         <ul v-if="agent.findings.length" class="findings">
@@ -81,5 +88,11 @@ const origins = computed(() => {
 .src {
   gap: 6px;
   font-size: var(--fs-sm);
+}
+.qline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 </style>

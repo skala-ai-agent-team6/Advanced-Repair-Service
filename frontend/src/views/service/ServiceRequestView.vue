@@ -8,16 +8,21 @@
  *  ※ 기사 소견은 기사용 접수 화면에만 있다 (고객은 "고장 증상" 하나로 적는다)
  *  실서버: 접수 API 가 아직 없어 FEATURES.customerIntake 가 false 면 안내만 보이고 접수 버튼은 비활성
  * ========================================================================= */
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
-import { ArrowLeft, ArrowRight, Camera, CircleAlert, CircleCheck, Info, Loader2, Send, ShieldCheck, TriangleAlert } from 'lucide-vue-next'
-import ImageUploader from '@/components/repair/ImageUploader.vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { ArrowLeft, ArrowRight, Building2, Camera, CircleAlert, CircleCheck, Home, Info, Loader2, Send, ShieldCheck, TriangleAlert } from 'lucide-vue-next'
+import ProductPhotoSlots from '@/components/service/ProductPhotoSlots.vue'
 import PhotoGuide from '@/components/repair/PhotoGuide.vue'
 import WarrantyPeriodNotice from '@/components/repair/WarrantyPeriodNotice.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import ReceiptDone from '@/components/service/ReceiptDone.vue'
 import { checkWarrantyPeriod, submitCustomerRequest, toErrorMessage, USE_MOCK } from '@/api'
 import { FEATURES } from '@/api/features'
-import { categoryOf, PRODUCT_CATEGORIES, symptomsFor } from '@/constants/products'
+import AddressSearchField from '@/components/address/AddressSearchField.vue'
+import { getServiceCenters } from '@/api'
+import { SERVICE_TYPE_DESC, SERVICE_TYPE_LABEL, VISIT_SLOT_LABEL, type ServiceCenter, type ServiceType, type VisitSlot } from '@/constants/serviceType'
+import { DETAIL_ADDRESS_MAX, emptyVisitAddress, normalizeVisitAddress, toAddressLine } from '@/api/adapters/address'
+import type { VisitAddress } from '@/types'
+import { canBringToCenter, modelsFor, PRODUCT_TYPE_DETAIL_MAX, PRODUCT_TYPE_OPTIONS, symptomsFor, type ProductType, type ProductTypeForm } from '@/constants/products'
 import { kstToday } from '@/utils/kst'
 import type { WarrantyPeriod } from '@/types'
 import type { UploadItem } from '@/types/upload'
@@ -27,7 +32,18 @@ const today = kstToday()
 const STEPS = ['제품·증상', '사진', '방문·동의']
 const step = ref(0)
 
-const form = reactive({ category: '', manufacturer: '', model: '', serial: '', purchaseDate: '', symptomText: '', customerName: '', phone: '', address: '', preferredDate: '' })
+const form = reactive({ ...({ productType: '', productTypeDetail: '' } as ProductTypeForm), manufacturer: '', model: '', serial: '', purchaseDate: '', symptomText: '', customerName: '', phone: '', preferredDate: '', serviceType: '' as ServiceType | '', centerId: '', visitSlot: '' as VisitSlot | '' })
+/* ---------- ③ 수리 방법: 방문 수리(주소 · 날짜 · 시간대) / 센터 방문(서비스센터 · 날짜) ---------- */
+const centers = ref<ServiceCenter[]>([])
+onMounted(async () => {
+  centers.value = await getServiceCenters().catch(() => [])
+})
+/** 큰 제품(에어컨·세탁기 등)은 센터 방문 불가 — constants/products 의 설정값 */
+const centerAllowed = computed(() => canBringToCenter(form.productType))
+watch(centerAllowed, (ok) => !ok && form.serviceType === 'CENTER' && (form.serviceType = ''))
+const selectedCenter = computed(() => centers.value.find((c) => c.id === form.centerId))
+/** 방문 주소: 구조화 상태로 유지 (한 줄 주소는 보낼 때 adapters/address 에서 조합). 제품·증상을 바꿔도 그대로 */
+const visitAddress = ref<VisitAddress>(emptyVisitAddress())
 const chips = ref<string[]>([])
 const photos = ref<UploadItem[]>([])
 const agreed = ref(false)
@@ -36,8 +52,13 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 /* ---------- ① 제품: 종류를 고르면 그 제품군의 모델·제조사를 제안 (목록에 없으면 직접 입력) ---------- */
-const category = computed(() => categoryOf(form.category))
-const modelOptions = computed(() => category.value?.models ?? [])
+const modelOptions = computed(() => modelsFor(form.productType))
+/** '기타'(unknown)를 고르면 바로 아래에 제품명 직접 입력. 다른 종류로 바꾸면 숨기고 값을 지운다 */
+const isUnknownType = computed(() => form.productType === 'unknown')
+watch(
+  () => form.productType,
+  (v) => v !== 'unknown' && (form.productTypeDetail = ''),
+)
 const makerOptions = computed(() => [...new Set(modelOptions.value.map((m) => m.manufacturer))])
 watch(
   () => form.model,
@@ -49,7 +70,7 @@ watch(
 )
 
 /* ---------- ① 고장 증상: 제품별 증상 + 공통 증상 칩 + 직접 입력 ---------- */
-const SYMPTOMS = computed(() => symptomsFor(form.category || 'OTHER'))
+const SYMPTOMS = computed(() => symptomsFor(form.productType))
 // 제품 종류를 바꾸면 새 목록에 없는 증상 선택은 지움
 watch(SYMPTOMS, (list) => (chips.value = chips.value.filter((c) => list.includes(c))))
 function toggleChip(s: string) {
@@ -63,6 +84,11 @@ const wpPurchase = computed(() => (form.purchaseDate && form.purchaseDate <= tod
 let wpTimer: number | undefined
 let wpSeq = 0
 let wpKey = ''
+/** 시리얼: 앞뒤 공백 제거 · 영문 대문자로 저장, 그다음 보증 기간 안내 */
+function onSerialBlur() {
+  form.serial = form.serial.trim().toUpperCase()
+  void refreshWarranty()
+}
 async function refreshWarranty() {
   window.clearTimeout(wpTimer)
   const serial = form.serial.trim().toUpperCase()
@@ -122,24 +148,47 @@ function acceptProblems() {
 }
 
 /* ---------- 검증 ---------- */
+/** YYYY-MM-DD 이면서 실제로 있는 날짜인지 (2025-02-30 같은 값 거름) */
+function isValidDate(v: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
+  const [y, m, d] = v.split('-').map(Number)
+  const t = new Date(Date.UTC(y, m - 1, d))
+  return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d
+}
 const errs = computed(() => ({
-  category: !form.category ? '제품 종류를 골라 주세요.' : null,
-  manufacturer: !form.manufacturer.trim() ? '제조사를 입력해 주세요.' : null,
+  productType: !form.productType ? '제품 종류를 선택해 주세요.' : null,
+  productTypeDetail: isUnknownType.value && !form.productTypeDetail.trim() ? '제품 종류를 입력해 주세요.' : null,
   model: !form.model.trim() ? '제품 모델명을 고르거나 입력해 주세요.' : null,
-  serial: form.serial.trim() && !/^[A-Za-z0-9-]{4,30}$/.test(form.serial.trim()) ? '시리얼 번호는 영문·숫자로 입력해 주세요. 모르면 비워 두세요.' : null,
-  purchase: form.purchaseDate && form.purchaseDate > today ? '오늘 이후 날짜는 고를 수 없어요.' : null,
+  serial: !form.serial.trim() ? '시리얼 번호를 입력해 주세요.' : !/^[A-Za-z0-9-]{4,30}$/.test(form.serial.trim()) ? '시리얼 번호는 영문·숫자로 입력해 주세요.' : null,
+  purchase: !form.purchaseDate
+    ? '구매일을 골라 주세요. 정확히 모르면 대략적인 날짜를 골라 주세요.'
+    : !isValidDate(form.purchaseDate)
+      ? '날짜 형식이 올바르지 않아요. (예: 2025-03-14)'
+      : form.purchaseDate > today
+        ? '오늘 이후 날짜는 고를 수 없어요.'
+        : null,
   // '기타'만 고르면 직접 입력이 필요
   symptom: !chips.value.some((c) => c !== '기타') && form.symptomText.trim().length < 5 ? '증상을 하나 이상 고르거나 5자 이상 적어 주세요.' : null,
   photos: !photos.value.length ? '제품 사진을 1장 이상 올려 주세요.' : null,
   name: !form.customerName.trim() ? '이름을 입력해 주세요.' : null,
   phone: !/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(form.phone.trim()) ? '휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)' : null,
-  address: form.address.trim().length < 5 ? '방문할 주소를 입력해 주세요.' : null,
-  date: !form.preferredDate ? '방문 희망일을 골라 주세요.' : form.preferredDate < today ? '오늘 이후 날짜를 골라 주세요.' : null,
+  serviceType: !form.serviceType ? '수리 방법을 골라 주세요.' : null,
+  center: form.serviceType === 'CENTER' && !form.centerId ? '서비스센터를 골라 주세요.' : null,
+  slot: form.serviceType === 'VISIT' && !form.visitSlot ? '방문 시간대를 골라 주세요.' : null,
+  address: form.serviceType !== 'VISIT' ? null : !visitAddress.value.roadAddress.trim() ? '방문 주소를 검색해 주세요.' : null,
+  detailAddress: form.serviceType !== 'VISIT' || !visitAddress.value.roadAddress.trim()
+    ? null
+    : !visitAddress.value.detailAddress.trim()
+      ? '상세주소를 입력해 주세요.'
+      : visitAddress.value.detailAddress.trim().length > DETAIL_ADDRESS_MAX
+        ? `상세주소는 ${DETAIL_ADDRESS_MAX}자 이하로 입력해 주세요.`
+        : null,
+  date: !form.preferredDate ? (form.serviceType === 'CENTER' ? '방문 예정일을 골라 주세요.' : '방문 희망일을 골라 주세요.') : !isValidDate(form.preferredDate) ? '날짜 형식이 올바르지 않아요. (예: 2025-03-14)' : form.preferredDate < today ? '오늘 이후 날짜를 골라 주세요.' : null,
   consent: !agreed.value ? '개인정보 수집·이용에 동의해 주세요.' : null,
 }))
 const stepValid = computed(() => {
   const e = errs.value
-  return [!e.category && !e.manufacturer && !e.model && !e.serial && !e.purchase && !e.symptom, !e.photos, !e.name && !e.phone && !e.address && !e.date && !e.consent]
+  return [!e.productType && !e.productTypeDetail && !e.model && !e.serial && !e.purchase && !e.symptom, !e.photos, !e.serviceType && !e.center && !e.slot && !e.name && !e.phone && !e.address && !e.detailAddress && !e.date && !e.consent]
 })
 
 async function focusFirstError() {
@@ -159,7 +208,7 @@ function prev() {
 }
 
 /* ---------- 접수 → 완료 팝업 (닫아도 페이지에 같은 내용 유지) ---------- */
-const done = ref<{ receiptNo: string } | null>(null)
+const done = ref<{ receiptNo: string; serviceType: ServiceType; centerName?: string } | null>(null)
 const doneDlg = ref(false)
 
 async function submit() {
@@ -176,19 +225,31 @@ async function submit() {
       {
         customerName: form.customerName.trim(),
         phone: form.phone.trim(),
-        category: form.category,
-        manufacturer: form.manufacturer.trim(),
+        // productType 은 항상 Enum 값, 직접 입력한 제품명은 productTypeDetail 로 따로
+        productType: form.productType as ProductType,
+        productTypeDetail: isUnknownType.value ? form.productTypeDetail.trim() : null,
+        // 제조사는 선택: 비어 있으면 보내지 않음
+        ...(form.manufacturer.trim() ? { manufacturer: form.manufacturer.trim() } : {}),
         model: form.model.trim(),
-        serial: form.serial.trim().toUpperCase() || undefined,
+        serial: form.serial.trim().toUpperCase(),
         symptom: symptom.value,
         purchaseDate: wpPurchase.value,
         preferredDate: form.preferredDate,
-        address: form.address.trim(),
+        // 수리 방법 (개인정보와 마찬가지로 AI 입력과 무관한 접수 필드)
+        serviceType: form.serviceType as ServiceType,
+        ...(form.serviceType === 'CENTER'
+          ? { centerId: form.centerId }
+          : {
+              visitSlot: form.visitSlot as VisitSlot,
+              // 기존 계약(한 줄 주소)은 유지하고, 구조화 주소를 함께 보낸다
+              address: toAddressLine(visitAddress.value),
+              visitAddress: normalizeVisitAddress(visitAddress.value),
+            }),
         consent: { agreed: true, agreedAt: new Date().toISOString(), version: 'v1' },
       },
       photos.value.map((p) => ({ file: p.file, dataUrl: p.dataUrl })),
     )
-    done.value = { receiptNo: res.receiptNo }
+    done.value = { receiptNo: res.receiptNo, serviceType: form.serviceType as ServiceType, centerName: selectedCenter.value?.name }
     doneDlg.value = true
     window.scrollTo({ top: 0 })
   } catch (e) {
@@ -202,7 +263,7 @@ async function submit() {
 <template>
   <!-- 접수 완료 후: 팝업을 닫아도 같은 내용이 페이지에 남음 -->
   <section v-if="done" class="card done-page">
-    <ReceiptDone :receipt-no="done.receiptNo" />
+    <ReceiptDone :receipt-no="done.receiptNo" :service-type="done.serviceType" :center-name="done.centerName" />
   </section>
 
   <form v-else class="request" novalidate @submit.prevent="step === STEPS.length - 1 ? submit() : next()">
@@ -224,17 +285,34 @@ async function submit() {
     <section v-show="step === 0" :hidden="step !== 0" class="card form-card form-grid" aria-label="제품·증상">
       <div class="field">
         <label for="c-category" class="req">제품 종류</label>
-        <select id="c-category" v-model="form.category" class="select" :class="{ invalid: touched[0] && errs.category }" :aria-invalid="touched[0] && !!errs.category">
-          <option value="">제품 종류 선택</option>
-          <option v-for="c in PRODUCT_CATEGORIES" :key="c.key" :value="c.key">{{ c.label }}</option>
+        <select id="c-category" v-model="form.productType" class="select" required :class="{ invalid: touched[0] && errs.productType }" :aria-invalid="touched[0] && !!errs.productType">
+          <option value="" disabled>제품 종류 선택</option>
+          <option v-for="o in PRODUCT_TYPE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
         </select>
-        <p v-if="touched[0] && errs.category" class="error-text">{{ errs.category }}</p>
+        <p v-if="touched[0] && errs.productType" class="error-text">{{ errs.productType }}</p>
+        <!-- 기타 선택 시 드롭다운 바로 아래 (같은 칸 안에서 펼쳐져 옆 칸 배치는 그대로) -->
+        <div v-if="isUnknownType" class="field type-detail">
+          <label for="c-type-detail" class="req">제품 종류 직접 입력</label>
+          <input
+            id="c-type-detail"
+            v-model="form.productTypeDetail"
+            class="input"
+            :maxlength="PRODUCT_TYPE_DETAIL_MAX"
+            autocomplete="off"
+            placeholder="예) 전자레인지"
+            aria-required="true"
+            :class="{ invalid: touched[0] && errs.productTypeDetail }"
+            :aria-invalid="touched[0] && !!errs.productTypeDetail"
+            :aria-describedby="touched[0] && errs.productTypeDetail ? 'c-type-detail-err' : undefined"
+            @blur="form.productTypeDetail = form.productTypeDetail.trim()"
+          />
+          <p v-if="touched[0] && errs.productTypeDetail" id="c-type-detail-err" class="error-text">{{ errs.productTypeDetail }}</p>
+        </div>
       </div>
       <div class="field">
-        <label for="c-maker" class="req">제조사</label>
-        <input id="c-maker" v-model="form.manufacturer" class="input" list="c-maker-list" maxlength="40" autocomplete="off" placeholder="예) ROVA, CleanBot" :class="{ invalid: touched[0] && errs.manufacturer }" :aria-invalid="touched[0] && !!errs.manufacturer" />
+        <label for="c-maker">제조사 <span class="faint">(선택)</span></label>
+        <input id="c-maker" v-model="form.manufacturer" class="input" list="c-maker-list" maxlength="40" autocomplete="off" placeholder="예) ROVA, CleanBot" />
         <datalist id="c-maker-list"><option v-for="m in makerOptions" :key="m" :value="m" /></datalist>
-        <p v-if="touched[0] && errs.manufacturer" class="error-text">{{ errs.manufacturer }}</p>
       </div>
       <div class="field">
         <label for="c-model" class="req">제품 모델명</label>
@@ -244,13 +322,23 @@ async function submit() {
         <p v-if="touched[0] && errs.model" class="error-text">{{ errs.model }}</p>
       </div>
       <div class="field">
-        <label for="c-serial">시리얼 번호 <span class="faint">(선택)</span></label>
-        <input id="c-serial" v-model="form.serial" class="input mono" maxlength="30" autocomplete="off" placeholder="제품 라벨의 시리얼 번호" :class="{ invalid: touched[0] && errs.serial }" :aria-invalid="touched[0] && !!errs.serial" @blur="refreshWarranty" />
+        <label for="c-serial" class="req">시리얼 번호</label>
+        <input
+          id="c-serial"
+          v-model="form.serial"
+          class="input"
+          maxlength="30"
+          autocomplete="off"
+          placeholder="제품 라벨의 시리얼 번호"
+          :class="{ invalid: touched[0] && errs.serial }"
+          :aria-invalid="touched[0] && !!errs.serial"
+          @blur="onSerialBlur"
+        />
         <p v-if="touched[0] && errs.serial" class="error-text">{{ errs.serial }}</p>
       </div>
       <WarrantyPeriodNotice v-if="warrantyPeriod" class="span-2" :period="warrantyPeriod" />
       <div class="field">
-        <label for="c-purchase">구매일 <span class="faint">(선택)</span></label>
+        <label for="c-purchase" class="req">구매일</label>
         <input id="c-purchase" v-model="form.purchaseDate" class="input" type="date" :max="today" :class="{ invalid: touched[0] && errs.purchase }" :aria-invalid="touched[0] && !!errs.purchase" />
         <p class="help">무상 수리 여부 확인에 사용돼요. 영수증이나 앱 구매 내역에서 확인할 수 있어요.</p>
         <p v-if="touched[0] && errs.purchase" class="error-text">{{ errs.purchase }}</p>
@@ -272,7 +360,8 @@ async function submit() {
     <section v-show="step === 1" :hidden="step !== 1" class="card form-card stack" aria-label="사진">
       <p class="muted">제품 전체가 보이도록 촬영해 주세요. 올린 사진마다 품질 검사 결과가 표시돼요.</p>
       <PhotoGuide kind="PRODUCT" />
-      <ImageUploader v-model="photos" label="제품 사진" description="제품 전체 + 고장 난 부분 (최대 5장)" required quality-target="MOTOR" example-src="/mock/product.svg" :max="5" :invalid="touched[1] && !photos.length" @quality="quality = $event" />
+      <!-- 가로 3칸: 제품 전체 · 고장 난 부분 · 촬영 예시 (1장 이상, 최대 5장) -->
+      <ProductPhotoSlots v-model="photos" :max="5" :invalid="touched[1] && !photos.length" example-src="/mock/product.svg" @quality="quality = $event" />
       <p v-if="touched[1] && errs.photos" class="error-text" role="alert">{{ errs.photos }}</p>
       <p v-if="quality.checking && qWait" class="callout tone-info"><Loader2 :size="18" class="spin" /> 사진 검사가 끝날 때까지 잠시 기다려 주세요.</p>
       <p v-else-if="quality.problems" class="callout tone-warning" role="alert"><TriangleAlert :size="18" /> 문제 있는 사진이 {{ quality.problems }}장 있어요. 다시 찍으면 더 정확하게 확인할 수 있어요.</p>
@@ -281,6 +370,28 @@ async function submit() {
     <!-- ③ 방문·동의 -->
     <section v-show="step === 2" :hidden="step !== 2" class="stack" aria-label="방문·동의">
       <div class="card form-card form-grid">
+        <!-- 수리 방법 -->
+        <div class="field span-2">
+          <span id="c-svc" class="label req">수리 방법</span>
+          <div class="svc-cards" role="radiogroup" aria-labelledby="c-svc">
+            <button
+              v-for="t in (['VISIT', 'CENTER'] as const)"
+              :key="t"
+              type="button"
+              class="svc-card"
+              role="radio"
+              :aria-checked="form.serviceType === t"
+              :aria-invalid="t === 'VISIT' && touched[2] && !!errs.serviceType"
+              :disabled="t === 'CENTER' && !centerAllowed"
+              @click="form.serviceType = t"
+            >
+              <component :is="t === 'VISIT' ? Home : Building2" :size="28" aria-hidden="true" />
+              <strong>{{ SERVICE_TYPE_LABEL[t] }}</strong>
+              <small>{{ t === 'CENTER' && !centerAllowed ? '이 제품은 방문 수리만 가능해요' : SERVICE_TYPE_DESC[t] }}</small>
+            </button>
+          </div>
+          <p v-if="touched[2] && errs.serviceType" class="error-text">{{ errs.serviceType }}</p>
+        </div>
         <div class="field">
           <label for="c-name" class="req">이름</label>
           <input id="c-name" v-model="form.customerName" class="input" maxlength="30" autocomplete="name" :class="{ invalid: touched[2] && errs.name }" :aria-invalid="touched[2] && !!errs.name" />
@@ -292,16 +403,57 @@ async function submit() {
           <p class="help">접수 내역을 조회할 때 뒷자리 4자리가 필요해요.</p>
           <p v-if="touched[2] && errs.phone" class="error-text">{{ errs.phone }}</p>
         </div>
-        <div class="field span-2">
-          <label for="c-addr" class="req">주소</label>
-          <input id="c-addr" v-model="form.address" class="input" maxlength="200" autocomplete="street-address" placeholder="예) 서울시 강남구 테헤란로 123, 101동 1001호" :class="{ invalid: touched[2] && errs.address }" :aria-invalid="touched[2] && !!errs.address" />
-          <p v-if="touched[2] && errs.address" class="error-text">{{ errs.address }}</p>
-        </div>
-        <div class="field">
-          <label for="c-date" class="req">희망 방문일</label>
-          <input id="c-date" v-model="form.preferredDate" class="input" type="date" :min="today" :class="{ invalid: touched[2] && errs.date }" :aria-invalid="touched[2] && !!errs.date" />
-          <p v-if="touched[2] && errs.date" class="error-text">{{ errs.date }}</p>
-        </div>
+        <!-- 방문 수리: 주소 · 희망 방문일 · 시간대 -->
+        <template v-if="form.serviceType === 'VISIT'">
+          <div class="field span-2">
+            <AddressSearchField
+              v-model="visitAddress"
+              id-prefix="c-addr"
+              :address-error="touched[2] ? errs.address : null"
+              :detail-error="touched[2] ? errs.detailAddress : null"
+            />
+          </div>
+          <div class="field">
+            <label for="c-date" class="req">희망 방문일</label>
+            <input id="c-date" v-model="form.preferredDate" class="input" type="date" :min="today" :class="{ invalid: touched[2] && errs.date }" :aria-invalid="touched[2] && !!errs.date" />
+            <p v-if="touched[2] && errs.date" class="error-text">{{ errs.date }}</p>
+          </div>
+          <div class="field">
+            <span id="c-slot" class="label req">시간대</span>
+            <div class="chips" role="radiogroup" aria-labelledby="c-slot">
+              <button
+                v-for="sl in (['AM', 'PM'] as const)"
+                :key="sl"
+                type="button"
+                class="chip"
+                role="radio"
+                :aria-checked="form.visitSlot === sl"
+                :aria-invalid="sl === 'AM' && touched[2] && !!errs.slot"
+                @click="form.visitSlot = sl"
+              >
+                {{ VISIT_SLOT_LABEL[sl] }}
+              </button>
+            </div>
+            <p v-if="touched[2] && errs.slot" class="error-text">{{ errs.slot }}</p>
+          </div>
+        </template>
+        <!-- 센터 방문: 서비스센터 · 방문 예정일 (주소 입력 없음) -->
+        <template v-else-if="form.serviceType === 'CENTER'">
+          <div class="field">
+            <label for="c-center" class="req">서비스센터</label>
+            <select id="c-center" v-model="form.centerId" class="select" :class="{ invalid: touched[2] && errs.center }" :aria-invalid="touched[2] && !!errs.center">
+              <option value="">서비스센터 선택</option>
+              <option v-for="c in centers" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+            <p v-if="selectedCenter" class="help">{{ selectedCenter.address }}</p>
+            <p v-if="touched[2] && errs.center" class="error-text">{{ errs.center }}</p>
+          </div>
+          <div class="field">
+            <label for="c-date" class="req">방문 예정일</label>
+            <input id="c-date" v-model="form.preferredDate" class="input" type="date" :min="today" :class="{ invalid: touched[2] && errs.date }" :aria-invalid="touched[2] && !!errs.date" />
+            <p v-if="touched[2] && errs.date" class="error-text">{{ errs.date }}</p>
+          </div>
+        </template>
       </div>
 
       <div class="card form-card stack">
@@ -345,7 +497,7 @@ async function submit() {
 
   <!-- 접수 완료 팝업 -->
   <BaseModal :open="doneDlg && !!done" title="접수 완료" :width="440" @close="doneDlg = false">
-    <ReceiptDone v-if="done" :receipt-no="done.receiptNo" @navigate="doneDlg = false" />
+    <ReceiptDone v-if="done" :receipt-no="done.receiptNo" :service-type="done.serviceType" :center-name="done.centerName" @navigate="doneDlg = false" />
   </BaseModal>
 </template>
 
@@ -475,5 +627,60 @@ h1 {
   .chip {
     padding: 0 14px;
   }
+}
+.type-detail {
+  margin-top: var(--field-gap, 16px);
+  animation: type-detail-open 0.18s ease-out;
+}
+@keyframes type-detail-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .type-detail {
+    animation: none;
+  }
+}
+.svc-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.svc-card {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 18px 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+}
+.svc-card svg {
+  color: var(--primary);
+}
+.svc-card small {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+.svc-card[aria-checked='true'] {
+  border-color: var(--primary);
+  background: var(--blue-50);
+}
+.svc-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.svc-card:disabled svg {
+  color: var(--text-3);
+}
+.svc-card:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
 }
 </style>

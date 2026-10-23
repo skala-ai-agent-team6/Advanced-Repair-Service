@@ -28,7 +28,7 @@ function syncFromRoute() {
   store.query.group = store.query.status === 'ALL' ? STATUS_GROUPS.find((x) => x.key === g)?.key : undefined
   store.query.keyword = typeof route.query.q === 'string' ? route.query.q : ''
   keyword.value = store.query.keyword
-  // 기사 대시보드 카드에서 넘어온 필터 (상태·그룹 필터와는 같이 쓰지 않음)
+  // 기사 홈 카드에서 넘어온 필터 (상태·그룹 필터와는 같이 쓰지 않음)
   const p = route.query.preset
   store.preset = isPreset(p) ? p : null
   if (store.preset) {
@@ -79,6 +79,22 @@ function setGroup(g: StatusGroupKey) {
 const hasCounts = computed(() => Object.keys(store.statusCounts).length > 0)
 const countOf = (s: RepairStatus) => store.statusCounts[s] ?? 0
 const allCount = computed(() => Object.values(store.statusCounts).reduce((a, n) => a + (n ?? 0), 0))
+const groupCount = (g: (typeof STATUS_GROUPS)[number]) => g.statuses.reduce((a, s) => a + countOf(s), 0)
+
+/* ---------- 업무 단계 탭 → 그 단계의 세부 상태 ----------
+ * 활성 탭 = 그룹 필터, 또는 고른 세부 상태가 속한 그룹. '전체'면 세부 상태 줄을 숨긴다 */
+const activeGroup = computed(() => store.query.group ?? STATUS_GROUPS.find((g) => (g.statuses as string[]).includes(store.query.status ?? 'ALL'))?.key)
+const activeGroupDef = computed(() => STATUS_GROUPS.find((g) => g.key === activeGroup.value))
+function pickTab(g: StatusGroupKey | 'ALL') {
+  // 다른 단계를 고르면 이전 세부 상태는 지운다 (같은 탭을 다시 눌러도 단계 전체로)
+  if (g === 'ALL') setStatus('ALL')
+  else setGroup(g)
+}
+/** 세부 상태: 다시 누르면 해제 → 단계 전체 */
+function pickStatus(s: RepairStatus) {
+  if (store.query.status === s && activeGroup.value) setGroup(activeGroup.value)
+  else setStatus(s)
+}
 function onSort() {
   void store.fetch()
 }
@@ -110,7 +126,7 @@ const isTech = computed(() => auth.role === 'TECHNICIAN')
     </div>
 
     <p v-if="store.preset" class="preset-chip">
-      <Filter :size="16" aria-hidden="true" /> 대시보드 필터: <b>{{ PRESET_LABEL[store.preset] }}</b>
+      <Filter :size="16" aria-hidden="true" /> 홈 필터: <b>{{ PRESET_LABEL[store.preset] }}</b>
       <button type="button" class="btn btn-sm btn-ghost" @click="clearPreset"><X :size="16" /> 해제</button>
     </p>
 
@@ -123,62 +139,69 @@ const isTech = computed(() => auth.role === 'TECHNICIAN')
     </div>
 
     <section class="card">
-      <div class="filters">
-        <div class="search">
-          <Search :size="20" class="si" aria-hidden="true" />
-          <label for="kw" class="sr-only">검색</label>
-          <input id="kw" v-model="keyword" class="input" type="search" placeholder="수리 ID(#101) · 시리얼 · 모델 · 증상 · 에러코드 · 기사 이름" />
-        </div>
-        <div class="field inline">
-          <label for="model">모델</label>
+      <div class="filter-area">
+        <!-- ① 검색 · 모델 · 정렬 · 초기화 -->
+        <div class="repair-filter-toolbar">
+          <div class="search">
+            <Search :size="20" class="si" aria-hidden="true" />
+            <label for="kw" class="sr-only">검색</label>
+            <input id="kw" v-model="keyword" class="input" type="search" placeholder="수리 ID(#101) · 시리얼 · 모델 · 증상 · 에러코드 · 기사 이름 검색" />
+          </div>
+          <label for="model" class="sr-only">모델</label>
           <select id="model" v-model="store.query.model" class="select" @change="store.fetch()">
-            <option :value="undefined">전체</option>
+            <option :value="undefined">모델: 전체</option>
             <option v-for="m in Object.keys(MODELS)" :key="m" :value="m">{{ m }}</option>
           </select>
-        </div>
-        <div class="field inline">
-          <label for="sort">정렬</label>
+          <label for="sort" class="sr-only">정렬</label>
           <select id="sort" v-model="store.query.sort" class="select" @change="onSort">
             <option value="receivedAt_desc">최근 접수순</option>
             <option value="receivedAt_asc">오래된 접수순</option>
           </select>
+          <button type="button" class="btn reset" :disabled="!filtered" @click="clearAll"><X :size="18" /> 초기화</button>
         </div>
-        <button v-if="filtered" type="button" class="btn btn-ghost" @click="clearAll"><X :size="18" /> 필터 초기화</button>
-      </div>
-      <div class="chips" aria-label="진단 상태 필터" role="group">
-        <div class="chip-row">
-          <span class="group-label" aria-hidden="true" />
-          <div class="chip-list">
-            <button type="button" class="chip" :aria-pressed="store.query.status === 'ALL' && !store.query.group" @click="setStatus('ALL')">
-              전체 <span v-if="hasCounts" class="n">{{ allCount }}</span>
-            </button>
-          </div>
-        </div>
-        <div v-for="g in STATUS_GROUPS" :key="g.key" class="chip-row">
-          <button
-            type="button"
-            class="group-label"
-            :aria-pressed="store.query.group === g.key"
-            :title="`${g.label} 단계 상태 모두 보기`"
-            @click="setGroup(g.key)"
-          >
-            {{ g.label }}
+
+        <!-- ② 업무 단계 탭 -->
+        <div class="stage-tabs" role="group" aria-label="업무 단계">
+          <button type="button" class="stage-tab" :aria-pressed="!activeGroup" @click="pickTab('ALL')">
+            전체 <span v-if="hasCounts" class="n">{{ allCount }}</span>
           </button>
-          <div class="chip-list">
-            <button
-              v-for="s in g.statuses"
-              :key="s"
-              type="button"
-              class="chip"
-              :class="{ zero: hasCounts && !countOf(s), 'in-group': store.query.group === g.key }"
-              :aria-pressed="store.query.status === s"
-              :aria-label="hasCounts ? `${STATUS_META[s].label} ${countOf(s)}건` : STATUS_META[s].label"
-              @click="setStatus(s)"
-            >
-              <component :is="STATUS_META[s].icon" :size="15" aria-hidden="true" /> {{ STATUS_META[s].label }} <span v-if="hasCounts" class="n">{{ countOf(s) }}</span>
-            </button>
-          </div>
+          <button
+            v-for="g in STATUS_GROUPS"
+            :key="g.key"
+            type="button"
+            class="stage-tab"
+            :aria-pressed="activeGroup === g.key"
+            :aria-label="hasCounts ? `${g.label} ${groupCount(g)}건` : g.label"
+            @click="pickTab(g.key)"
+          >
+            {{ g.label }} <span v-if="hasCounts" class="n">{{ groupCount(g) }}</span>
+          </button>
         </div>
+
+        <!-- ③ 선택한 단계의 세부 상태 ('전체'면 숨김) -->
+        <div v-if="activeGroupDef" class="chip-list" role="group" :aria-label="`${activeGroupDef.label} 세부 상태`">
+          <button
+            v-for="s in activeGroupDef.statuses"
+            :key="s"
+            type="button"
+            class="chip"
+            :class="{ zero: hasCounts && !countOf(s) }"
+            :aria-pressed="store.query.status === s"
+            :aria-label="hasCounts ? `${STATUS_META[s].label} ${countOf(s)}건` : STATUS_META[s].label"
+            @click="pickStatus(s)"
+          >
+            <component :is="STATUS_META[s].icon" :size="15" aria-hidden="true" /> {{ STATUS_META[s].label }} <span v-if="hasCounts" class="n">{{ countOf(s) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 목록 헤더: 건수 -->
+      <div v-if="!store.error" class="list-head">
+        <h2>수리 목록</h2>
+        <span class="list-count" aria-live="polite">
+          <template v-if="store.loading && !store.items.length">불러오는 중…</template>
+          <template v-else>{{ filtered ? '검색 결과' : '총' }} <b>{{ store.items.length }}</b>건</template>
+        </span>
       </div>
 
       <div v-if="store.loading && !store.items.length" class="card-body"><SkeletonBlock :lines="6" :height="44" /></div>
@@ -187,11 +210,10 @@ const isTech = computed(() => auth.role === 'TECHNICIAN')
       <StateView
         v-else-if="!store.items.length"
         state="empty"
-        :title="filtered ? '조건에 맞는 수리 건이 없습니다' : isTech ? '현재 배정된 센터 수리 건이 없어요.' : '접수된 수리 건이 없습니다'"
-        :message="filtered ? '검색어나 상태 필터를 바꿔 보세요. (위의 필터 초기화)' : undefined"
+        :title="filtered ? '조건에 맞는 수리 건이 없습니다' : isTech ? (auth.technicianType === 'FIELD' ? '처리할 센터 수리 접수가 없어요' : '현재 배정된 센터 수리 건이 없어요.') : '접수된 수리 건이 없습니다'"
+        :message="filtered ? '검색어나 상태 필터를 바꿔 보세요. (위의 초기화)' : undefined"
       />
       <template v-else>
-        <p class="faint count" aria-live="polite">{{ store.items.length }}건</p>
         <RepairTable :items="store.items" :role="auth.role" :class="{ dim: store.loading }" />
       </template>
     </section>
@@ -211,94 +233,85 @@ const isTech = computed(() => auth.role === 'TECHNICIAN')
   color: var(--primary);
   font-size: var(--fs-sm);
 }
-.filters {
-  display: flex;
+.filter-area {
+  display: grid;
   gap: 12px;
-  padding: 16px 20px 8px;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+/* ① 검색창이 남는 폭을 모두, 나머지는 필요한 만큼 */
+.repair-filter-toolbar {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 180px 180px auto;
+  gap: 12px;
+  align-items: center;
+}
+.repair-filter-toolbar .input,
+.repair-filter-toolbar .select,
+.repair-filter-toolbar .reset {
+  height: 48px;
+  min-height: 48px;
 }
 .search {
   position: relative;
-  flex: 1 1 320px;
+  min-width: 0;
 }
 .search .input {
+  width: 100%;
   padding-left: 44px;
 }
 .si {
   position: absolute;
   left: 14px;
-  top: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-3);
 }
-.field.inline {
-  grid-template-columns: auto 160px;
-  align-items: center;
+.reset {
+  white-space: nowrap;
 }
-.field.inline label {
-  font-size: var(--fs-sm);
+
+/* ② 업무 단계 탭 — 내용 폭만큼 (억지로 같은 폭으로 늘리지 않음) */
+.stage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.stage-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--navy-800);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.stage-tab:hover {
+  background: var(--surface-2);
+}
+.stage-tab[aria-pressed='true'] {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+  color: #fff;
+}
+.stage-tab .n {
   color: var(--text-2);
 }
-.chips {
-  display: grid;
-  gap: 8px;
-  padding: 8px 20px 14px;
-  border-bottom: 1px solid var(--border);
+.stage-tab[aria-pressed='true'] .n {
+  color: #fff;
 }
-.chip-row {
-  display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-}
+
+/* ③ 세부 상태 */
 .chip-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-.group-label {
-  justify-self: start;
-  padding: 4px 0;
-  border: 0;
-  background: none;
-  color: var(--text-3);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-span.group-label {
-  cursor: default;
-}
-button.group-label:hover {
-  color: var(--text-2);
-  text-decoration: underline;
-}
-.group-label[aria-pressed='true'] {
-  color: var(--navy-800);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.n {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  color: var(--text-2);
-}
-.chip.zero {
-  opacity: 0.55;
-}
-/* 그룹 필터 중에는 해당 그룹의 칩에 테두리만 강조 (선택된 칩 배경은 개별 상태 선택에만 사용) */
-.chip.in-group {
-  border-color: var(--navy-800);
-}
-@media (max-width: 860px) {
-  .chip-row {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-  span.group-label {
-    display: none;
-  }
 }
 .chip {
   display: inline-flex;
@@ -321,8 +334,58 @@ button.group-label:hover {
 .chip[aria-pressed='true'] .n {
   color: #fff;
 }
-.count {
-  padding: 10px 20px 0;
+.chip.zero {
+  opacity: 0.55;
+}
+.n {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+/* 목록 헤더 */
+.list-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 16px 20px 4px;
+}
+.list-head h2 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--ink);
+}
+.list-count {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.list-count b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 한 줄(검색 최소 320 + 모델 180 + 정렬 180 + 초기화)이 들어가지 않는 폭: 검색은 위 한 줄, 아래에 모델·정렬·초기화 */
+@media (max-width: 1100px) {
+  .repair-filter-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+  .search {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 480px) {
+  .repair-filter-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .reset {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 860px) {
+  .filter-area {
+    padding: 14px 16px;
+  }
 }
 .dim {
   opacity: 0.6;

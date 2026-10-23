@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/* 기사 작업 목록 한 줄: #ID · 모델 · 증상 한 줄, 오른쪽 > 아이콘. 누르면 수리 작업 상세(진단 리포트)로 */
+/* 기사 작업 목록 한 줄: #ID · 모델 · 증상 한 줄, 오른쪽 > 아이콘. 누르면 수리 작업(진단 리포트)으로 */
 import { ChevronRight } from 'lucide-vue-next'
 import RepairStatusBadge from '@/components/common/RepairStatusBadge.vue'
 import { repairId } from '@/utils/format'
@@ -18,7 +18,7 @@ defineProps<{ items: Repair[]; highlightId?: number | null }>()
             <span class="model">{{ r.product.model }}</span>
             <RepairStatusBadge :status="r.status" :failed="!!r.analysisError" class="st" />
           </span>
-          <span class="sym">{{ r.symptom }}</span>
+          <span class="sym" :title="r.symptom">{{ r.symptom }}</span>
         </span>
         <ChevronRight :size="20" class="chev" aria-hidden="true" />
       </RouterLink>
@@ -75,8 +75,11 @@ defineProps<{ items: Repair[]; highlightId?: number | null }>()
   color: var(--text-2);
   font-size: var(--fs-sm);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 .chev {
   flex: none;

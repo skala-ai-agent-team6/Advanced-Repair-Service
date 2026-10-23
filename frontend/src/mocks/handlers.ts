@@ -26,6 +26,13 @@ import type {
   Warranty,
   WarrantyPeriod,
   FieldVisit,
+  CaseSync,
+  PreVisitReport,
+  PreVisitReview,
+  TechnicianReportEdit,
+  CountItem,
+  RetryAttempt,
+  RetryRecord,
 } from '@/types'
 import type {
   AdditionalInfoRequest,
@@ -42,15 +49,18 @@ import type {
   SaveReportDraftRequest,
   UploadImageRequest,
   SignupRequest,
+  SavePreVisitEditRequest,
+  ChangeServiceTypeRequest,
 } from '@/types/api'
 import { ApiError } from '@/api/http'
 import { FAULT_AREA_LABEL, STATUS_GROUPS } from '@/constants/status'
-import { MODELS, productFromSerial, stagesFor, USERS, type DefectRecord } from './data'
+import { MODELS, productFromSerial, SERVICE_CENTERS, stagesFor, USERS, type DefectRecord } from './data'
 import { approvedRecords, baseDefectRecords, db, nextId, persist } from './db'
 import { restartAnalysis, runAnalysis } from './engine'
 import { uid } from '@/utils/format'
-import { canViewRepair, inCenterList } from '@/utils/workScope'
-import { categoryOf } from '@/constants/products'
+import { canViewRepair, inListScope } from '@/utils/workScope'
+import { canBringToCenter, isProductType, PRODUCT_TYPE_DETAIL_MAX, PRODUCT_TYPE_LABEL } from '@/constants/products'
+import { SERVICE_TYPE_LABEL } from '@/constants/serviceType'
 
 let currentUser: User | null = null
 export function setMockUser(u: User | null) {
@@ -79,7 +89,7 @@ function latestDiagnosis(id: number): Diagnosis | undefined {
   return list?.[list.length - 1]
 }
 function toImage(req: UploadImageRequest): RepairImage {
-  return { id: uid('img'), kind: req.kind, url: req.dataUrl ?? '', name: req.file?.name ?? 'image.jpg', uploadedAt: new Date().toISOString() }
+  return { id: uid('img'), kind: req.kind, url: req.dataUrl ?? '', name: req.file?.name ?? 'image.jpg', uploadedAt: new Date().toISOString(), ...(req.quality ? { quality: req.quality } : {}) }
 }
 
 /* ---------------- 인증 ---------------- */
@@ -135,8 +145,8 @@ export function getProduct(serial: string) {
 /* ---------------- 수리 목록 ---------------- */
 export function listRepairs(q: RepairQuery): Page<Repair> & { counts: RepairSummaryCounts; statusCounts: RepairStatusCounts } {
   const u = me()
-  // 품질 담당자는 전체, 기사는 센터 수리 목록 기준 (CENTER: 자기 담당 건 · FIELD: 0건)
-  let items = db.repairs.filter((r) => inCenterList(r, u))
+  // 품질 담당자는 전체. 기사: 수리 접수 관리(center)는 CENTER 자기 담당 건 · FIELD 0건, 수리 작업·이력(assigned)은 배정된 모든 건
+  let items = db.repairs.filter((r) => inListScope(r, u, q.scope))
   const scope = items
   if (q.model) items = items.filter((r) => r.product.model === q.model)
   if (q.keyword) {
@@ -214,6 +224,9 @@ export function createRepair(req: CreateRepairRequest): Repair {
     mockScenario: scenario,
   }
   log(r, { target: 'SYSTEM', action: 'CREATED', actor: u.name, actorRole: 'TECHNICIAN', comment: '수리 접수 작성' })
+  if (req.serviceTypeChange && req.visitInfo?.serviceType) {
+    log(r, { target: 'SYSTEM', action: 'COMMENTED', actor: u.name, actorRole: 'TECHNICIAN', comment: `수리 방법 변경: ${SERVICE_TYPE_LABEL[req.serviceTypeChange.from]} → ${SERVICE_TYPE_LABEL[req.visitInfo.serviceType]} · 사유: ${req.serviceTypeChange.reason}` })
+  }
   db.repairs.unshift(r)
   persist()
   return r
@@ -252,10 +265,13 @@ export function uploadAdditionalImages(id: number, req: AdditionalInfoRequest): 
   const note = req.note?.trim()
   if (!req.photos.length && !note) throw new ApiError(422, '추가 사진이나 설명 중 하나는 입력해 주세요.')
   const pending = (db.photoRequests[id] ?? []).find((p) => !p.resolved)
-  req.photos.forEach((q) => r.images.push({ ...toImage({ ...q, kind: 'ADDITIONAL' }), note: pending?.target }))
+  // 같은 수리 ID 에 새 입력 개정(inputRevision)을 만든다. 기존 사진은 그대로 두고 새 사진에 몇 차 요청인지 표시
+  const round = pending?.requestNo ?? r.photoRequestCount
+  r.inputRevision = (r.inputRevision ?? 1) + 1
+  req.photos.forEach((q) => r.images.push({ ...toImage({ ...q, kind: 'ADDITIONAL' }), note: pending?.target, round }))
   if (pending) pending.resolved = true
   const what = [req.photos.length ? `추가 사진 ${req.photos.length}장` : '', note ? '추가 설명' : ''].filter(Boolean).join(' · ')
-  log(r, { target: 'PHOTO', action: 'PHOTO_ADDED', actor: u.name, actorRole: 'TECHNICIAN', comment: `${what} 제출 (${pending?.target ?? '추가'})${note ? `\n설명: ${note}` : ''}` })
+  log(r, { target: 'PHOTO', action: 'PHOTO_ADDED', actor: u.name, actorRole: 'TECHNICIAN', comment: `${what} 제출 (${pending?.target ?? '추가'}) · 입력 r${r.inputRevision}${note ? `\n설명: ${note}` : ''}` })
   // 데모: 추가 사진 등록 후 정상 진행
   r.mockScenario = 'NORMAL'
   restartAnalysis(r, 'ANALYSIS')
@@ -361,7 +377,7 @@ export function saveReportDraft(id: number, req: SaveReportDraftRequest): Repair
   const prev = r.report
   let report: RepairReport
   if (!prev) {
-    report = { repairId: id, version: 1, revision: 1, status: 'DRAFT', content, createdBy: u.name, updatedBy: u.name, updatedAt: now, confirmations: [] }
+    report = { id: `RPT-${id}`, repairId: id, version: 1, revision: 1, status: 'DRAFT', content, createdBy: u.name, updatedBy: u.name, updatedAt: now, confirmations: [] }
   } else {
     const reopened = prev.status === 'CONFIRMED'
     report = {
@@ -398,6 +414,8 @@ export function confirmReport(id: number, req: ConfirmReportRequest): Repair {
   const now = new Date().toISOString()
   Object.assign(rep, { status: 'CONFIRMED', version: rep.version + 1, confirmedBy: u.name, confirmedAt: now, updatedBy: u.name, updatedAt: now })
   rep.confirmations.push({ revision: rep.revision, confirmedBy: u.name, confirmedAt: now })
+  // 사내 사례 동기화 대기열에 올림 (US-08 · Mock 시뮬레이션)
+  db.caseSyncs = { ...(db.caseSyncs ?? {}), [id]: { revision: rep.revision, queuedAt: now } }
   r.status = 'CLOSED'
 
   // ★ 확정본만 고장 DB 에 반영. 같은 수리 건의 이전 확정본은 교체
@@ -477,7 +495,8 @@ export function listRepairOrders(id: number): PurchaseOrder[] {
 
 export function listOrders(): PurchaseOrder[] {
   const u = me()
-  const list = u.role === 'TECHNICIAN' ? db.orders.filter((o) => db.repairs.find((r) => r.id === o.repairId)?.branch === u.branch) : db.orders
+  // 기사: 자신에게 배정된 수리 건의 발주만 (출장기사 · 센터 수리자 공통)
+  const list = u.role === 'TECHNICIAN' ? db.orders.filter((o) => canViewRepair(db.repairs.find((r) => r.id === o.repairId) ?? {}, u)) : db.orders
   return [...list].sort((a, b) => (b.requestedAt ?? b.createdAt).localeCompare(a.requestedAt ?? a.createdAt))
 }
 
@@ -565,6 +584,13 @@ export function dashboard(months = 6): DefectDashboard {
     trend,
     recurring,
   }
+}
+
+/** 최근 n일 동안 확정된 고장(기사·담당자가 확정한 리포트만, AI 초안 제외)의 부품별 건수 — 많은 순 */
+export function dashboardPartTop(days = 30, limit = 5): CountItem[] {
+  requireRole('QUALITY_MANAGER')
+  const since = Date.now() - days * 86_400_000
+  return countBy(allRecords().filter((r) => new Date(r.approvedAt).getTime() >= since), 'part').slice(0, limit)
 }
 
 export function dashboardRecords(filter: { dim: 'part' | 'model' | 'branch' | 'factory' | 'month' | 'cause'; value: string }): DefectRecord[] {
@@ -891,14 +917,35 @@ export function customerIntake(req: CustomerIntakeRequest, photos: { name: strin
   const name = req.customerName.trim()
   const phone = req.phone.trim()
   if (!name || !/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(phone)) throw new ApiError(422, '이름과 휴대폰 번호를 확인해 주세요.')
-  const cat = categoryOf(req.category)
-  if (!cat) throw new ApiError(422, '제품 종류를 선택해 주세요.')
-  if (!req.manufacturer?.trim() || !req.model?.trim()) throw new ApiError(422, '제조사와 제품 모델명을 입력해 주세요.')
+  // 영문 Enum 값만 받는다 (한국어 라벨 · 옛 키는 거부)
+  if (!isProductType(req.productType)) throw new ApiError(422, '제품 종류를 선택해 주세요.')
+  const productType = req.productType
+  const productTypeDetail = productType === 'unknown' ? req.productTypeDetail?.trim() : undefined
+  if (productType === 'unknown' && !productTypeDetail) throw new ApiError(422, '제품 종류를 입력해 주세요.')
+  if (productTypeDetail && productTypeDetail.length > PRODUCT_TYPE_DETAIL_MAX) throw new ApiError(422, `제품 종류는 ${PRODUCT_TYPE_DETAIL_MAX}자 이하로 입력해 주세요.`)
+  /** 화면에 보일 제품 종류 이름 (기타 → 직접 입력값) */
+  const catLabel = productTypeDetail || PRODUCT_TYPE_LABEL[productType]
+  // 시리얼 필수 · 제조사 선택 (화면 검사와 같은 기준)
+  if (!req.serial?.trim()) throw new ApiError(422, '시리얼 번호를 입력해 주세요.')
+  if (!req.model?.trim()) throw new ApiError(422, '제품 모델명을 입력해 주세요.')
   if (req.symptom.trim().length < 5) throw new ApiError(422, '고장 증상을 5자 이상 적어 주세요.')
   if (!photos.length) throw new ApiError(422, '제품 사진을 1장 이상 올려 주세요.')
   if (!req.consent?.agreed) throw new ApiError(422, '개인정보 수집·이용에 동의해 주세요.')
-  const serial = req.serial?.trim().toUpperCase()
+  // 수리 방법별 필수 항목: 방문 수리 = 주소 · 시간대 / 센터 방문 = 서비스센터 (큰 제품은 센터 방문 불가)
+  const service = req.serviceType
+  if (service !== 'VISIT' && service !== 'CENTER') throw new ApiError(422, '수리 방법을 골라 주세요.')
+  const center = service === 'CENTER' ? SERVICE_CENTERS.find((c) => c.id === req.centerId) : undefined
+  if (service === 'CENTER') {
+    if (!canBringToCenter(productType)) throw new ApiError(422, '이 제품은 방문 수리만 가능해요.')
+    if (!center) throw new ApiError(422, '서비스센터를 골라 주세요.')
+  } else {
+    if (!req.visitAddress?.roadAddress?.trim()) throw new ApiError(422, '방문 주소를 검색해 주세요.')
+    if (!req.visitAddress.detailAddress?.trim()) throw new ApiError(422, '상세주소를 입력해 주세요.')
+    if (req.visitSlot !== 'AM' && req.visitSlot !== 'PM') throw new ApiError(422, '방문 시간대를 골라 주세요.')
+  }
+  const serial = req.serial.trim().toUpperCase()
   const model = req.model.trim()
+  const manufacturer = req.manufacturer?.trim()
   // 로봇청소기 기존 모델이면 기존 제품 데이터(시리얼 조회·모델 정보)를 그대로 사용
   const fromSerial = serial ? productFromSerial(serial) : null
   const meta = MODELS[model]
@@ -907,8 +954,8 @@ export function customerIntake(req: CustomerIntakeRequest, photos: { name: strin
       ? fromSerial
       : meta
         ? { serialNumber: serial || '미입력', model, modelName: meta.modelName, manufacturedAt: '', factory: meta.factory, warrantyUntil: '', firmware: meta.firmware }
-        : { serialNumber: serial || '미입력', model, modelName: `${cat.label} ${model}`, manufacturedAt: '', factory: '', warrantyUntil: '', firmware: '' }
-  const product: Repair['product'] = { ...base, category: cat.key, manufacturer: req.manufacturer.trim() }
+        : { serialNumber: serial || '미입력', model, modelName: `${catLabel} ${model}`, manufacturedAt: '', factory: '', warrantyUntil: '', firmware: '' }
+  const product: Repair['product'] = { ...base, productType, ...(productTypeDetail ? { productTypeDetail } : {}), ...(manufacturer ? { manufacturer } : {}) }
   const id = nextId()
   const now = new Date().toISOString()
   const token = `${uid('trk')}-${Math.random().toString(36).slice(2, 10)}`
@@ -918,7 +965,8 @@ export function customerIntake(req: CustomerIntakeRequest, photos: { name: strin
     product,
     symptom: req.symptom.trim(),
     errorCodes: [],
-    branch: '강남 서비스센터',
+    // 센터 방문은 고른 센터, 방문 수리는 기본 접수 센터
+    branch: center?.name ?? '강남 서비스센터',
     technician: '배정 대기',
     technicianId: '',
     receivedAt: now,
@@ -929,14 +977,25 @@ export function customerIntake(req: CustomerIntakeRequest, photos: { name: strin
     stages: stagesFor('RECEIVED'),
     progress: 0,
     history: [],
-    visitInfo: { customerName: name, phone, address: req.address.trim(), preferredDate: req.preferredDate, purchaseDate: req.purchaseDate || null },
+    visitInfo: {
+      customerName: name,
+      phone,
+      address: service === 'VISIT' ? (req.address ?? '').trim() : '',
+      ...(service === 'VISIT' && req.visitAddress ? { visitAddress: { ...req.visitAddress } } : {}),
+      preferredDate: req.preferredDate,
+      purchaseDate: req.purchaseDate || null,
+      serviceType: service,
+      ...(center ? { centerId: center.id, centerName: center.name } : {}),
+      ...(service === 'VISIT' ? { visitSlot: req.visitSlot } : {}),
+    },
     consent: { ...req.consent },
     customerToken: token,
+    source: 'CUSTOMER',
     mockScenario: 'NORMAL',
   }
   log(r, { target: 'SYSTEM', action: 'CREATED', actor: name, actorRole: 'CUSTOMER', comment: `고객 온라인 접수 · 사진 ${r.images.length}장` })
   db.repairs.unshift(r)
-  db.notifications.unshift({ id: uid('n'), title: '고객 온라인 접수', body: `수리 #${id} (${cat.label} ${model}) 고객이 직접 접수했습니다.`, at: now, read: false, link: `/repairs/${id}/diagnosis`, roles: ['TECHNICIAN'] })
+  db.notifications.unshift({ id: uid('n'), title: '고객 온라인 접수', body: `수리 #${id} (${catLabel} ${model}) 고객이 직접 접수했습니다.`, at: now, read: false, link: `/repairs/${id}/diagnosis`, roles: ['QUALITY_MANAGER'] })
   persist()
   restartAnalysis(r)
   return { receiptNo: r.receiptNo, token }
@@ -986,9 +1045,153 @@ export function getMyFieldVisits(today: string): FieldVisit[] {
     // 데모 시드의 'TODAY' 는 오늘(한국 시간)로
     .map((v) => (v.visitDate === 'TODAY' ? { ...v, visitDate: today } : v))
     .filter((v) => v.technicianId === u.employeeId && v.visitDate >= today)
+    // 오늘의 출장에는 방문 수리 건만 (기사가 센터 방문으로 바꾼 건은 빠짐)
+    .filter((v) => db.repairs.find((x) => x.id === v.repairId)?.visitInfo?.serviceType !== 'CENTER')
     .map((v) => {
       const r = db.repairs.find((x) => x.id === v.repairId)
       return r ? { ...v, model: r.product.model, symptom: r.symptom, status: r.status } : v
     })
     .sort((a, b) => `${a.visitDate} ${a.visitTime}`.localeCompare(`${b.visitDate} ${b.visitTime}`))
+}
+
+/* ---------------- 사내 사례 동기화 (US-08 · Mock 시뮬레이션) ----------------
+ * 확정 후 4초 WAITING → 10초까지 SYNCING → COMPLETED. #107 은 시드에서 FAILED (실패 안내 시연)
+ * 시드의 확정 리포트(동기화 기록 없음)는 확정 1분 30초 뒤 반영된 것으로 본다 */
+const SYNC_FAILED_SEEDS = [107]
+export function getCaseSync(id: number): CaseSync | null {
+  const r = repairOr404(id)
+  if (!canViewRepair(r, me())) throw new ApiError(404, '수리 건을 찾을 수 없습니다.')
+  const rep = r.report
+  const last = rep?.confirmations[rep.confirmations.length - 1]
+  if (!rep || !last) return null
+  const base = { repairId: id, reportId: rep.id ?? `RPT-${id}`, reportRevision: last.revision, confirmedAt: last.confirmedAt, source: '사내 확정 사례' as const }
+  const rec = db.caseSyncs?.[id]
+  if (!rec || rec.revision !== last.revision) {
+    if (SYNC_FAILED_SEEDS.includes(id)) return { ...base, status: 'FAILED', failureMessage: '사내 사례 저장소에 같은 사례 번호가 있어 반영하지 못했습니다. 본사 품질 담당자가 확인 중입니다.' }
+    return { ...base, status: 'COMPLETED', lastSyncedAt: new Date(new Date(last.confirmedAt).getTime() + 90_000).toISOString() }
+  }
+  const t = Date.now() - new Date(rec.queuedAt).getTime()
+  if (rec.fail && t >= 10_000) return { ...base, status: 'FAILED', failureMessage: '사내 사례 저장소 응답이 없어 반영하지 못했습니다.' }
+  if (t < 4_000) return { ...base, status: 'WAITING' }
+  if (t < 10_000) return { ...base, status: 'SYNCING' }
+  return { ...base, status: 'COMPLETED', lastSyncedAt: new Date(new Date(rec.queuedAt).getTime() + 10_000).toISOString() }
+}
+
+/* ---------------- 재처리 상태 (US-10 · Mock 시뮬레이션) ----------------
+ *  #111 PCB 분석 실패 후 자동 재처리 3회 모두 실패 → FINAL_FAILED (분석 실패가 난 뒤에만 보임)
+ *  #103 유사 사례 검색 시간 초과 → RETRY_SCHEDULED → RETRYING → RECOVERED (처음 조회한 때부터 8초·14초)
+ *  #107 사내 사례 동기화 실패 → FINAL_FAILED
+ *  상세(오류 코드·executionId·시도 이력)는 본사 품질 담당자에게만 내려준다 */
+let retryDemoStart = 0
+const at = (base: number, ms: number) => new Date(base + ms).toISOString()
+function retryRecordsOf(r: Repair): RetryRecord[] {
+  if (r.id === 111 && r.analysisError) {
+    const end = new Date(r.updatedAt).getTime()
+    const attempts: RetryAttempt[] = [1, 2, 3].map((n) => ({ attempt: n, at: at(end, (n - 3) * 60_000), result: 'FAILED', errorCode: 'PCB_IMAGE_UNREADABLE', message: 'PCB 사진 해상도 부족으로 판독 실패' }))
+    return [{ id: 'RT-111-1', repairId: 111, status: 'FINAL_FAILED', stage: 'PCB 분석', failedAt: attempts[0].at, attempt: 3, maxAttempts: 3, final: true, errorCode: 'PCB_IMAGE_UNREADABLE', executionId: 'exec-111-7f3a9c', attempts }]
+  }
+  if (r.id === 103) {
+    if (!retryDemoStart) retryDemoStart = Date.now()
+    const s = retryDemoStart
+    const t = Date.now() - s
+    const first: RetryAttempt = { attempt: 1, at: at(s, -5_000), result: 'FAILED', errorCode: 'RAG_TIMEOUT', message: '유사 사례 검색 응답 시간 초과 (30초)' }
+    const base = { id: 'RT-103-1', repairId: 103, stage: '매뉴얼·유사 사례 검색', failedAt: first.at, maxAttempts: 3, errorCode: 'RAG_TIMEOUT', executionId: 'exec-103-2b81d0' }
+    if (t < 8_000) return [{ ...base, status: 'RETRY_SCHEDULED', attempt: 1, nextRetryAt: at(s, 8_000), final: false, attempts: [first] }]
+    if (t < 14_000) return [{ ...base, status: 'RETRYING', attempt: 2, final: false, attempts: [first] }]
+    return [{ ...base, status: 'RECOVERED', attempt: 2, final: true, attempts: [first, { attempt: 2, at: at(s, 14_000), result: 'SUCCEEDED' }] }]
+  }
+  if (SYNC_FAILED_SEEDS.includes(r.id)) {
+    const c = r.report?.confirmedAt ? new Date(r.report.confirmedAt).getTime() : Date.now()
+    const attempts: RetryAttempt[] = [1, 2, 3].map((n) => ({ attempt: n, at: at(c, n * 120_000), result: 'FAILED', errorCode: 'CASE_SYNC_DUPLICATE', message: '사례 번호 중복' }))
+    return [{ id: `RT-${r.id}-1`, repairId: r.id, status: 'FINAL_FAILED', stage: '사내 사례 동기화', failedAt: attempts[0].at, attempt: 3, maxAttempts: 3, final: true, errorCode: 'CASE_SYNC_DUPLICATE', executionId: `exec-${r.id}-c41e07`, attempts }]
+  }
+  return []
+}
+export function getRetryRecords(id: number): RetryRecord[] {
+  const u = me()
+  const r = repairOr404(id)
+  if (!canViewRepair(r, u)) throw new ApiError(404, '수리 건을 찾을 수 없습니다.')
+  const list = retryRecordsOf(r)
+  if (u.role === 'QUALITY_MANAGER') return list
+  // 기사: 간단 정보만
+  return list.map(({ errorCode: _e, executionId: _x, attempts: _a, ...rest }) => rest)
+}
+
+/* ---------------- 출장 전 리포트: 기사 수정안 · 기사 확인 (Mock) ----------------
+ * AI 진단(db.diagnoses)은 건드리지 않고 db.preVisit 에 따로 저장. 수정·확인은 그 수리 건에 배정된 기사만 */
+function preVisitOf(id: number) {
+  return db.preVisit?.[id] ?? { technicianEdit: null, review: null }
+}
+function assignedTechOr403(id: number) {
+  const u = requireRole('TECHNICIAN')
+  const r = repairOr404(id)
+  if (!canViewRepair(r, u)) throw new ApiError(403, '이 출장 건에 배정된 기사만 수정할 수 있습니다.')
+  return { u, r }
+}
+export function getPreVisitReport(id: number): PreVisitReport {
+  const r = repairOr404(id)
+  if (!canViewRepair(r, me())) throw new ApiError(404, '수리 건을 찾을 수 없습니다.')
+  return { repairId: id, ...preVisitOf(id) }
+}
+export function savePreVisitEdit(id: number, req: SavePreVisitEditRequest): PreVisitReport {
+  const { u, r } = assignedTechOr403(id)
+  const cur = preVisitOf(id)
+  const curVersion = cur.technicianEdit?.version ?? 0
+  if (req.expectedVersion !== curVersion) throw new ApiError(409, '다른 곳에서 리포트 수정 내용이 먼저 저장되었습니다. 새로고침 후 다시 수정해 주세요.', 'EDIT_VERSION')
+  const parts = req.parts.filter((p) => p.partId)
+  if (parts.some((p) => !Number.isInteger(p.quantity) || p.quantity < 1 || p.quantity > 99)) throw new ApiError(422, '부품 수량은 1~99개로 입력해 주세요.')
+  if (parts.some((p) => !db.parts.some((x) => x.id === p.partId))) throw new ApiError(422, '없는 부품이 포함되어 있습니다.')
+  const text = (v?: string) => v?.trim() || undefined
+  const edit: TechnicianReportEdit = {
+    repairId: id,
+    suspectedCauseComment: text(req.suspectedCauseComment),
+    inspectionPlan: text(req.inspectionPlan),
+    repairMethod: text(req.repairMethod),
+    technicianMemo: text(req.technicianMemo),
+    parts,
+    editedBy: u.name,
+    editedAt: new Date().toISOString(),
+    version: curVersion + 1,
+    diagnosisVersion: req.diagnosisVersion,
+  }
+  db.preVisit = { ...(db.preVisit ?? {}), [id]: { technicianEdit: edit, review: cur.review } }
+  log(r, { target: 'DIAGNOSIS', action: 'DRAFT_SAVED', actor: u.name, actorRole: u.role, comment: `출장 전 리포트 기사 수정 v${edit.version} 저장` })
+  persist()
+  return { repairId: id, ...preVisitOf(id) }
+}
+/** 기사 리포트 확인 (TECHNICIAN_REVIEWED) — 최종 수리 확정이 아니라 상태 기록만 */
+export function markPreVisitReviewed(id: number, editVersion: number): PreVisitReport {
+  const { u, r } = assignedTechOr403(id)
+  const cur = preVisitOf(id)
+  if (editVersion !== (cur.technicianEdit?.version ?? 0)) throw new ApiError(409, '리포트 수정 내용이 바뀌었습니다. 새로고침 후 다시 확인해 주세요.', 'EDIT_VERSION')
+  const review: PreVisitReview = { state: 'TECHNICIAN_REVIEWED', reviewedBy: u.name, reviewedAt: new Date().toISOString(), editVersion }
+  db.preVisit = { ...(db.preVisit ?? {}), [id]: { technicianEdit: cur.technicianEdit, review } }
+  log(r, { target: 'DIAGNOSIS', action: 'CONFIRMED', actor: u.name, actorRole: u.role, comment: editVersion ? `출장 전 리포트 확인 완료 (기사 수정 v${editVersion})` : '출장 전 리포트 확인 완료' })
+  persist()
+  return { repairId: id, ...preVisitOf(id) }
+}
+
+/* ---------------- 수리 방법 (방문 수리 / 센터 방문) ---------------- */
+export function listServiceCenters() {
+  return SERVICE_CENTERS
+}
+/** 기사가 고객이 고른 수리 방법을 바꿈 — 사유 필수, 이력에 (누가 · 언제 · 무엇에서 무엇으로 · 사유) */
+export function changeServiceType(id: number, req: ChangeServiceTypeRequest): Repair {
+  const u = requireRole('TECHNICIAN')
+  const r = repairOr404(id)
+  if (!canViewRepair(r, u)) throw new ApiError(403, '배정된 기사만 수리 방법을 바꿀 수 있습니다.')
+  if (!r.visitInfo?.serviceType) throw new ApiError(409, '수리 방법 정보가 없는 접수입니다.')
+  const reason = req.reason?.trim()
+  if (!reason || reason.length < 2) throw new ApiError(422, '변경 사유를 입력해 주세요.')
+  const center = req.serviceType === 'CENTER' ? SERVICE_CENTERS.find((c) => c.id === req.centerId) : undefined
+  if (req.serviceType === 'CENTER' && !center) throw new ApiError(422, '서비스센터를 골라 주세요.')
+  const prev = r.visitInfo
+  if (prev.serviceType === req.serviceType && (req.serviceType === 'VISIT' || prev.centerId === center?.id)) throw new ApiError(422, '지금과 같은 수리 방법입니다.')
+  const fromText = `${SERVICE_TYPE_LABEL[prev.serviceType!]}${prev.centerName ? `(${prev.centerName})` : ''}`
+  const toText = `${SERVICE_TYPE_LABEL[req.serviceType]}${center ? `(${center.name})` : ''}`
+  r.visitInfo = { ...prev, serviceType: req.serviceType, centerId: center?.id, centerName: center?.name }
+  r.updatedAt = new Date().toISOString()
+  log(r, { target: 'SYSTEM', action: 'COMMENTED', actor: u.name, actorRole: u.role, comment: `수리 방법 변경: ${fromText} → ${toText} · 사유: ${reason}` })
+  persist()
+  return r
 }

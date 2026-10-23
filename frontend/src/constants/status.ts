@@ -12,7 +12,7 @@ import {
   Hand,
   Archive,
 } from 'lucide-vue-next'
-import type { AiAcceptance, AnalysisStage, AnalysisToolKind, FaultArea, PhotoKind, RepairOutcome, RepairStatus, ReportStatus, Role, OrderStatus, DecisionState, StatusGroupKey, PhotoQualityIssue } from '@/types'
+import type { AiAcceptance, AnalysisStage, AnalysisToolKind, FaultArea, PhotoKind, RepairOutcome, RepairStatus, ReportStatus, Role, OrderStatus, DecisionState, StatusGroupKey, PhotoQualityIssue, PhotoQualityStatus } from '@/types'
 
 /** 색상만으로 상태를 구분하지 않도록 label + icon + tone 을 함께 정의 */
 export type Tone = 'neutral' | 'info' | 'ai' | 'warning' | 'success' | 'danger'
@@ -32,11 +32,11 @@ export const STATUS_META: Record<RepairStatus, StatusMeta> = {
   ADDITIONAL_INFO_NEEDED: { label: '추가 사진 필요', description: 'AI 가 추가 사진을 요청함', tone: 'warning', icon: Camera },
   DIAGNOSIS_COMPLETED: { label: '진단 초안 도착', description: '기사 확인이 필요한 AI 초안', tone: 'ai', icon: Sparkles },
   TECHNICIAN_REVIEW: { label: '기사 수리·리포트 작성', description: '진단 확인 후 수리하고 리포트를 확정할 차례', tone: 'warning', icon: UserCheck },
-  APPROVED: { label: '승인 완료', description: '고장 DB·대시보드 반영됨', tone: 'success', icon: CircleCheck },
+  APPROVED: { label: '승인 완료', description: '고장 DB·품질 대시보드 반영됨', tone: 'success', icon: CircleCheck },
   REJECTED: { label: '반려', description: '반려되어 반영되지 않음', tone: 'danger', icon: CircleX },
   MANUAL_REVIEW: { label: '본사 수동 검토', description: '사람이 직접 진단하는 건', tone: 'danger', icon: Hand },
   CANCELLED: { label: '취소', description: '접수가 취소됨', tone: 'neutral', icon: CircleX },
-  CLOSED: { label: '리포트 확정', description: '기사가 리포트를 확정해 고장 DB·대시보드에 반영됨', tone: 'success', icon: Archive },
+  CLOSED: { label: '리포트 확정', description: '기사가 리포트를 확정해 고장 DB·품질 대시보드에 반영됨', tone: 'success', icon: Archive },
 }
 
 export const STATUS_ORDER: RepairStatus[] = [
@@ -115,6 +115,17 @@ export const PHOTO_ISSUE_MESSAGE: Record<PhotoQualityIssue, string> = {
   GLARE: '빛 반사가 있어요. 조명을 피해서 찍어 주세요.',
   TOO_FAR: '너무 멀리서 찍었어요. 부품이 화면에 가득 차게 찍어 주세요.',
   WRONG_PART: '요청한 부위가 아닌 것 같아요. 예시 사진을 참고해 주세요.',
+  DARK: '사진이 어두워요. 밝은 곳에서 다시 찍어 주세요.',
+  LOW_RES: '해상도가 낮아요. 카메라로 원본 크기로 찍어 주세요.',
+}
+
+/** 사진 품질 검사 상태 표시 */
+export const PHOTO_QUALITY_META: Record<PhotoQualityStatus, { label: string; tone: Tone }> = {
+  PENDING: { label: '검사 중', tone: 'neutral' },
+  PASSED: { label: '통과', tone: 'success' },
+  WARNING: { label: '확인 필요', tone: 'warning' },
+  FAILED: { label: '불합격 · 재촬영', tone: 'danger' },
+  ERROR: { label: '검사 실패', tone: 'danger' },
 }
 
 export const PHOTO_KIND_LABEL: Record<PhotoKind, string> = {

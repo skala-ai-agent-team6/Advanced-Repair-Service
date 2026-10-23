@@ -1,7 +1,7 @@
 /* 접수 · 진단 · 추가 사진 · 리포트 API
  * Mock: src/mocks/handlers.ts / 실서버: 백엔드 API v2 (응답은 src/api/adapters 에서 프론트 타입으로 변환) */
 import { FEATURES } from './features'
-import { canViewRepair, getWorkScope, inCenterList } from '@/utils/workScope'
+import { canViewRepair, getWorkScope, inListScope } from '@/utils/workScope'
 import { ApiError, http, mockDelay, USE_MOCK } from './http'
 import * as mock from '@/mocks/handlers'
 import { partApi } from './parts'
@@ -20,6 +20,7 @@ import type {
   ReanalysisRequest,
   SaveReportDraftRequest,
   UploadImageRequest,
+  ChangeServiceTypeRequest,
 } from '@/types/api'
 
 export type RepairListResponse = Page<Repair> & { counts: RepairSummaryCounts; statusCounts: RepairStatusCounts }
@@ -90,7 +91,7 @@ async function realList(q: RepairQuery): Promise<RepairListResponse> {
   // 상단 카운트는 상태 필터 없이, 목록은 상태 필터(백엔드)로 조회
   // 기사 업무 범위 (CENTER: 자기 담당 건 · FIELD: 0건) — 카운트와 목록 모두 같은 기준
   const scope = getWorkScope()
-  const inScope = (list: Repair[]) => list.filter((r) => inCenterList(r, scope))
+  const inScope = (list: Repair[]) => list.filter((r) => inListScope(r, scope, q.scope))
   const [all, byStatus] = await Promise.all([get().then(inScope), status ? get(status).then(inScope) : Promise.resolve(null)])
   let items = q.status && q.status !== 'ALL' ? (status ? byStatus! : []) : all
   if (q.group && (!q.status || q.status === 'ALL')) {
@@ -117,6 +118,21 @@ export const repairApi = {
   async lookupProduct(serial: string): Promise<ProductInfo> {
     if (USE_MOCK) return mockDelay(() => mock.getProduct(serial), 600)
     return toProductInfo((await http.get<BeProduct>('/products', { params: { serialNumber: serial } })).data)
+  },
+
+  /** [Mock 전용] 라벨 사진 → 시리얼 번호 인식 (FEATURES.labelOcr). 결과는 기사가 확인·수정한다
+   *  Mock: 파일 이름에 RC + 숫자 10자리가 있으면 그 값, 없으면 데모 시리얼 */
+  async recognizeLabel(file: File): Promise<{ serial: string }> {
+    if (USE_MOCK && FEATURES.labelOcr) return mockDelay(() => ({ serial: (/RC\d{10}/i.exec(file.name)?.[0] ?? 'RC2026000187').toUpperCase() }), 900)
+    throw notSupported('라벨 인식')
+  },
+
+  /** 수리 방법 변경 (사유 필수 · 이력 기록) — 실서버는 FEATURES.visitInfo 가 켜질 때까지 지원하지 않음 */
+  async changeServiceType(id: number, req: ChangeServiceTypeRequest): Promise<Repair> {
+    if (USE_MOCK) return mockDelay(() => mock.changeServiceType(id, req), 400)
+    if (!FEATURES.visitInfo) throw notSupported('수리 방법 변경')
+    await http.post(`/repairs/${id}/service-type`, req)
+    return realGet(id, true)
   },
 
   /** GET /api/repairs?page&size&status&serial */

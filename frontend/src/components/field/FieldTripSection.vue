@@ -1,21 +1,24 @@
 <script setup lang="ts">
 /* =========================================================================
- * 기사 대시보드: 오늘의 출장 (출장기사·센터 수리자 같은 구조)
+ * 출장기사 홈: 오늘의 출장 (출장기사·센터 수리자 같은 구조)
  *  숫자 카드 4개(오늘의 출장 · 부품 확인 필요 · AI 진단 확인 · 방문 완료) + 오늘 방문 일정 + 다음 방문(AI 진단 초안)
  *  센터 수리자: 출장 데이터를 조회하지 않고 모두 0건 · 빈 안내
  * ========================================================================= */
 import { onMounted, ref, watch } from 'vue'
-import { ArrowRight, CalendarDays, MapPin } from 'lucide-vue-next'
+import { ArrowRight, CalendarDays, MapPin, FileText } from 'lucide-vue-next'
 import MetricCard from '@/components/common/MetricCard.vue'
 import AiBadge from '@/components/common/AiBadge.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import FieldVisitList from '@/components/field/FieldVisitList.vue'
 import { useFieldVisits } from '@/composables/useFieldVisits'
+import { usePreVisitReportModal } from '@/composables/usePreVisitReportModal'
 import { repairApi } from '@/api'
 import { kstDateLabel } from '@/utils/kst'
 import type { Diagnosis } from '@/types'
 
-const { loading, error, today, todayVisits, nextVisit, counts, load } = useFieldVisits()
+const { loading, error, today, todayVisits, nextVisit, counts, load, isField } = useFieldVisits()
+/** '다음 방문' 카드의 [출장 전 리포트] — 목록과 같은 모달 */
+const report = usePreVisitReportModal()
 onMounted(load)
 
 /* 다음 방문의 AI 진단 초안 */
@@ -46,7 +49,7 @@ const CARDS = [
 <template>
   <section class="trip" aria-labelledby="h-trip">
     <div class="row between head">
-      <h2 id="h-trip" class="h">오늘의 출장</h2>
+      <h2 id="h-trip" class="h">출장 현황</h2>
       <span class="faint date"><CalendarDays :size="16" aria-hidden="true" /> {{ kstDateLabel(today) }}</span>
     </div>
 
@@ -62,7 +65,7 @@ const CARDS = [
           <h3 id="h-today-visits">오늘 방문 일정</h3>
           <RouterLink to="/field/schedule" class="btn btn-sm">전체 보기 <ArrowRight :size="16" /></RouterLink>
         </div>
-        <div v-if="loading" class="card-body"><SkeletonBlock :lines="3" :height="40" /></div>
+        <div v-if="loading && !todayVisits.length" class="card-body"><SkeletonBlock :lines="3" :height="40" /></div>
         <p v-else-if="error" class="card-body error-text" role="alert">{{ error }}</p>
         <p v-else-if="!todayVisits.length" class="card-body empty">오늘 예정된 출장이 없어요</p>
         <FieldVisitList v-else :items="todayVisits.slice(0, 3)" />
@@ -89,7 +92,7 @@ const CARDS = [
             <p class="cause">{{ nextDiag.topCause }} <span class="faint">판단 점수 {{ nextDiag.confidence }}점</span></p>
             <p v-if="nextDiag.repairMethod[0]" class="faint">→ {{ nextDiag.repairMethod[0] }}</p>
           </div>
-          <RouterLink :to="`/repairs/${nextVisit.repairId}/diagnosis`" class="btn btn-primary">작업 상세 보기 <ArrowRight :size="18" /></RouterLink>
+          <button v-if="isField" type="button" class="btn btn-primary" aria-haspopup="dialog" @click="report.open(nextVisit)"><FileText :size="18" aria-hidden="true" /> 출장 전 리포트</button>
         </div>
       </section>
     </div>

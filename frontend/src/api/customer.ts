@@ -7,6 +7,7 @@ import { ApiError, http, mockDelay, USE_MOCK } from './http'
 import { FEATURES } from './features'
 import * as mock from '@/mocks/handlers'
 import type { CustomerReport } from '@/types'
+import type { ServiceCenter } from '@/constants/serviceType'
 import type { CustomerIntakeRequest, CustomerIntakeResponse } from '@/types/api'
 
 export const CUSTOMER_NOT_FOUND = '접수 정보를 찾을 수 없어요. 접수번호를 다시 확인해 주세요.'
@@ -45,8 +46,18 @@ export async function getCustomerReportByToken(token: string): Promise<CustomerR
 export async function submitCustomerRequest(req: CustomerIntakeRequest, photos: { file: File; dataUrl: string }[]): Promise<CustomerIntakeResponse> {
   if (USE_MOCK) return mockDelay(() => mock.customerIntake(req, photos.map((p) => ({ name: p.file.name, dataUrl: p.dataUrl }))), 900)
   if (!FEATURES.customerIntake) throw new ApiError(501, '온라인 고장 접수는 아직 준비 중이에요. 고객센터로 문의해 주세요.', 'NOT_SUPPORTED')
+  // 수리 방법(serviceType · centerId · visitSlot)은 백엔드 필드가 생기면(FEATURES.visitInfo) 보낸다
+  const { serviceType, centerId, visitSlot, ...rest } = req
+  const body = FEATURES.visitInfo ? { ...rest, serviceType, centerId, visitSlot } : rest
   const f = new FormData()
-  f.append('data', new Blob([JSON.stringify(req)], { type: 'application/json' }))
+  f.append('data', new Blob([JSON.stringify(body)], { type: 'application/json' }))
   photos.forEach((p) => f.append('files', p.file))
   return (await http.post<CustomerIntakeResponse>('/public/service-requests', f, { skipAuthExpired: true })).data
+}
+
+/** 서비스센터 목록 (센터 방문 · 수리 방법 변경) — 실서버는 FEATURES.visitInfo 일 때만 조회, 아니면 빈 목록 */
+export async function getServiceCenters(): Promise<ServiceCenter[]> {
+  if (USE_MOCK) return mockDelay(() => mock.listServiceCenters(), 150)
+  if (!FEATURES.visitInfo) return []
+  return (await http.get<ServiceCenter[]>('/public/service-centers', { skipAuthExpired: true })).data
 }

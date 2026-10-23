@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/* 수리 작업 상세 (기사 메뉴) — 작업할 수리 건을 고르면 진단 리포트로 이동.
+/* 수리 작업 (기사 메뉴) — 작업할 수리 건을 고르면 진단 리포트로 이동.
  * 최근에 본 건이 있으면 맨 위에 "이어서 보기" */
 import { computed, onMounted, ref } from 'vue'
 import { ArrowRight } from 'lucide-vue-next'
@@ -10,6 +10,7 @@ import { repairApi, toErrorMessage } from '@/api'
 import { lastRepairId } from '@/utils/lastRepair'
 import { repairId } from '@/utils/format'
 import type { Repair } from '@/types'
+import { PAGE_LABEL } from '@/constants/menus'
 
 const items = ref<Repair[]>([])
 const loading = ref(false)
@@ -20,7 +21,8 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    items.value = (await repairApi.list({})).items
+    // 출장기사 · 센터 수리자 모두 자신에게 배정된 건
+    items.value = (await repairApi.list({ scope: 'assigned' })).items
   } catch (e) {
     error.value = toErrorMessage(e)
   } finally {
@@ -42,7 +44,7 @@ const active = computed(() =>
   <div class="page">
     <div class="page-head">
       <div>
-        <h1>수리 작업 상세</h1>
+        <h1>{{ PAGE_LABEL.work }}</h1>
         <p class="sub">작업할 수리 건을 고르면 진단 리포트로 이동합니다.</p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /* 품질 대시보드 — 사람이 승인한 고장 데이터만 집계. 그래프를 누르면 관련 수리 목록을 조회 */
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ClipboardList, CircleCheck, Sparkles, Target, TrendingUp, TrendingDown, Minus, X, ShieldCheck, MousePointerClick } from 'lucide-vue-next'
 import DefectStatisticsChart from '@/components/dashboard/DefectStatisticsChart.vue'
 import StateView from '@/components/common/StateView.vue'
@@ -11,10 +12,14 @@ import { FEATURES } from '@/api/features'
 import { formatDate, formatNumber, repairId } from '@/utils/format'
 
 const store = useDashboardStore()
+const route = useRoute()
 const drillEl = ref<HTMLElement | null>(null)
-onMounted(() => {
+onMounted(async () => {
   store.clearDrill()
-  void store.fetch()
+  await store.fetch()
+  // 홈 '부품별 고장 TOP 5' 막대에서 넘어오면 그 부품 필터(기존 부품 드릴다운)를 바로 적용
+  const part = route.query.part
+  if (typeof part === 'string' && part) await drill('part', part)
 })
 
 const d = computed(() => store.data)
@@ -46,7 +51,7 @@ const kpis = computed(() =>
     <div class="page-head">
       <div>
         <h1>품질 대시보드</h1>
-        <p class="sub"><ShieldCheck :size="16" /> 기사가 확정한 수리 리포트만 집계합니다.<template v-if="extras"> 그래프 항목을 누르면 관련 수리 목록을 볼 수 있습니다.</template></p>
+        <p class="sub"><ShieldCheck :size="16" /> 확정된 수리 데이터를 기준으로 제품과 부품의 품질 현황을 분석합니다. (AI 초안 제외)<template v-if="extras"> 그래프 항목을 누르면 관련 수리 목록을 볼 수 있습니다.</template></p>
       </div>
       <div class="row">
         <label for="period" class="label">기간</label>

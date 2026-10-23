@@ -5,7 +5,7 @@
  *  아래: 주문하기 — 사람이 부품·수량을 골라 최종 요청 (POST /repairs/{id}/orders)
  * AI 는 추천만 하며, 확인 모달을 거쳐 담당자가 요청해야 주문이 등록된다.
  * ========================================================================= */
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { Factory, Warehouse, Send, Plus, CircleAlert, ShoppingCart, PackageCheck, Info } from 'lucide-vue-next'
 import AiBadge from '@/components/common/AiBadge.vue'
 import TripPartsSection from '@/components/parts/TripPartsSection.vue'
@@ -22,7 +22,14 @@ import { formatDate, formatDateTime, formatNumber } from '@/utils/format'
 import { isCompatible } from '@/utils/parts'
 import type { Diagnosis, OrderStatus, Part, PurchaseOrder, Repair } from '@/types'
 
-const props = defineProps<{ repair: Repair; diagnosis: Diagnosis }>()
+const props = defineProps<{
+  repair: Repair
+  diagnosis: Diagnosis
+  /** 출장 전 리포트의 기사 수정 부품(저장본). 있으면 AI 추천 대신 이 부품·수량으로 줄을 만든다 */
+  partsOverride?: { partId: string; quantity: number }[] | null
+  /** 1쪽 '발주 신청'으로 들어온 부품 — 주문하기에서 체크하고 그 위치로 스크롤 */
+  focusPartId?: string | null
+}>()
 const orders = useOrderStore()
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -49,7 +56,14 @@ interface Line {
 }
 const manual = ref<Line[]>([])
 const lines = computed<Line[]>(() => {
-  const rec = props.diagnosis.parts.map((p) => ({ ...p, ai: true }))
+  const ai = props.diagnosis.parts
+  const rec = props.partsOverride
+    ? props.partsOverride.map((o) => {
+        const r = ai.find((p) => p.partId === o.partId)
+        const part = orders.partById(o.partId)
+        return { partId: o.partId, partName: r?.partName ?? part?.name ?? o.partId, partNo: r?.partNo ?? part?.partNo ?? '', quantity: o.quantity, reason: r?.reason ?? '기사가 출장 전 리포트에서 추가', ai: !!r }
+      })
+    : ai.map((p) => ({ ...p, ai: true }))
   // 진단 추천에 없는데 이미 요청된 발주 (예: 예전에 직접 추가한 부품)
   const fromOrders = orders.repairOrders
     .filter((o) => o.status !== 'AI_DRAFT' && !rec.some((r) => r.partId === o.partId))
@@ -96,6 +110,19 @@ watch(
   { immediate: true },
 )
 const orderable = computed(() => lines.value.filter((l) => !activeOrder(l.partId)))
+/** 1쪽 '발주 신청' → 해당 부품을 체크하고 주문하기로 (줄·체크 상태가 준비된 뒤 한 번) */
+let focused = ''
+watch(
+  [() => props.focusPartId, () => !!sel[props.focusPartId ?? '']],
+  async ([id, ready]) => {
+    if (!id || !ready || focused === id) return
+    focused = id
+    await nextTick()
+    // 라우터가 이동 직후 맨 위로 스크롤한 뒤에 옮겨야 한다
+    window.setTimeout(() => goOrder(id), 200)
+  },
+  { immediate: true },
+)
 const selected = computed(() => orderable.value.filter((l) => sel[l.partId]?.checked && sel[l.partId].qty >= 1))
 
 /* ---------- 확인 모달 ---------- */

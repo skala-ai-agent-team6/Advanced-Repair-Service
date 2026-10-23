@@ -5,10 +5,12 @@ import { Bell, LogOut, Menu, RotateCcw } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notifications'
 import { ROLE_LABEL } from '@/constants/status'
+import { menuRoleOf, pageTitleFor } from '@/constants/menus'
 import { formatRelative } from '@/utils/format'
 import { USE_MOCK } from '@/api'
 import { resetDb } from '@/mocks/db'
 
+defineProps<{ navOpen?: boolean }>()
 defineEmits<{ 'toggle-nav': [] }>()
 const route = useRoute()
 const router = useRouter()
@@ -16,10 +18,20 @@ const auth = useAuthStore()
 const noti = useNotificationStore()
 const open = ref(false)
 
-const title = computed(() => route.meta.title ?? '')
-/** 기사: 오른쪽에 이름 + 기사 유형 배지만 (로고는 사이드바 맨 위, 품질 담당자는 기존 그대로) */
-const isTech = computed(() => auth.role === 'TECHNICIAN')
+/** 현재 화면 이름 — 역할마다 이름이 다른 화면(부품·수리 목록)은 constants/menus 기준 */
+const title = computed(() => pageTitleFor(route.name, route.meta.title, menuRoleOf(auth.role, auth.technicianType)))
+/* 상단바는 역할과 상관없이 같은 구조: [메뉴] 페이지명 … 데모 초기화 · 알림 · 역할 배지 · 이름/소속 · 로그아웃
+ * 역할 배지만 다름 — 품질 담당자: '본사 품질 담당자', 기사: '출장' / '센터' */
 const TYPE_LABEL = { FIELD: '출장', CENTER: '센터' } as const
+const roleBadge = computed(() => {
+  const u = auth.user
+  if (!u) return null
+  if (u.role === 'TECHNICIAN') {
+    const t = auth.technicianType
+    return t ? { label: TYPE_LABEL[t], tone: t === 'FIELD' ? 'tone-warning' : 'tone-info' } : { label: ROLE_LABEL.TECHNICIAN, tone: 'tone-info' }
+  }
+  return { label: ROLE_LABEL[u.role], tone: 'tone-info' }
+})
 
 async function go(id: string, link?: string) {
   await noti.read(id)
@@ -37,9 +49,8 @@ function reset() {
 
 <template>
   <header class="topbar">
-    <button class="btn btn-ghost menu" type="button" aria-label="메뉴 열기" @click="$emit('toggle-nav')"><Menu :size="24" /></button>
-    <!-- 기사: 로고는 사이드바 맨 위로 옮김 → 상단바에는 오른쪽 사용자 정보만 -->
-    <h1 v-if="!isTech" class="title">{{ title }}</h1>
+    <button class="btn btn-ghost menu" type="button" :aria-label="navOpen ? '메뉴 닫기' : '메뉴 열기'" :aria-expanded="!!navOpen" @click="$emit('toggle-nav')"><Menu :size="22" /></button>
+    <h1 class="title">{{ title }}</h1>
     <div class="spacer" />
 
     <button v-if="USE_MOCK" class="btn btn-ghost btn-sm demo" type="button" title="Mock 데이터 초기화" @click="reset">
@@ -66,12 +77,8 @@ function reset() {
       <div v-if="open" class="click-away" @click="open = false" />
     </div>
 
-    <div v-if="isTech" class="user">
-      <strong class="tech-name">{{ auth.user?.name }}</strong>
-      <span v-if="auth.technicianType" class="badge tech-type" :class="auth.technicianType === 'FIELD' ? 'tone-warning' : 'tone-info'">{{ TYPE_LABEL[auth.technicianType] }}</span>
-    </div>
-    <div v-else class="user">
-      <span class="badge tone-info role">{{ auth.user ? ROLE_LABEL[auth.user.role] : '' }}</span>
+    <div class="user">
+      <span v-if="roleBadge" class="badge role" :class="roleBadge.tone">{{ roleBadge.label }}</span>
       <span class="name">
         <strong>{{ auth.user?.name }}</strong>
         <small>{{ auth.user?.branch }}</small>
@@ -82,12 +89,6 @@ function reset() {
 </template>
 
 <style scoped>
-.tech-name {
-  white-space: nowrap;
-}
-.tech-type {
-  font-size: var(--fs-xs);
-}
 .topbar {
   position: sticky;
   top: 0;
@@ -96,7 +97,7 @@ function reset() {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 24px;
+  padding: 0 var(--page-pad-x);
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border);
@@ -112,6 +113,7 @@ function reset() {
 .menu {
   display: none;
   padding: 0 10px;
+  margin-left: -10px;
 }
 .demo {
   color: var(--text-3);
@@ -198,12 +200,10 @@ function reset() {
   color: var(--text-3);
   font-size: var(--fs-xs);
 }
-@media (max-width: 1100px) {
+/* 메뉴 버튼: Hover 로 펼칠 수 없는 화면(1199px 이하 · 터치 기기) */
+@media (max-width: 1199px), (hover: none) {
   .menu {
     display: inline-flex;
-  }
-  .topbar {
-    padding: 0 12px;
   }
 }
 @media (max-width: 860px) {
@@ -216,7 +216,6 @@ function reset() {
 /* 휴대폰: 이름이 한 글자씩 줄바꿈되지 않게 숨김 (역할·이름은 홈 화면 인사말에 표시) */
 @media (max-width: 480px) {
   .name,
-  .tech-name,
   .lo-txt {
     display: none;
   }

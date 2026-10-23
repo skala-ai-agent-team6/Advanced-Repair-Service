@@ -7,6 +7,7 @@ import RepairSummaryCard from '@/components/repair/RepairSummaryCard.vue'
 import RepairFlowNav from '@/components/repair/RepairFlowNav.vue'
 import RepairProgressTimeline from '@/components/repair/RepairProgressTimeline.vue'
 import AdditionalPhotoRequestCard from '@/components/repair/AdditionalPhotoRequestCard.vue'
+import RetryStatusCard from '@/components/repair/RetryStatusCard.vue'
 import StateView from '@/components/common/StateView.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
@@ -19,6 +20,7 @@ import { toErrorMessage } from '@/api'
 import { FEATURES } from '@/api/features'
 import { formatDateTime } from '@/utils/format'
 import type { UploadItem } from '@/types/upload'
+import type { RepairImage } from '@/types'
 
 const { store, repair, loading, error, sseState, eventLog, activePhotoRequest, submitting, reload } = useRepairPage({ live: true })
 const auth = useAuthStore()
@@ -32,6 +34,16 @@ const running = computed(() => repair.value?.stages.find((s) => s.state === 'RUN
 const done = computed(() => !!repair.value && ['DIAGNOSIS_COMPLETED', 'TECHNICIAN_REVIEW', 'APPROVED', 'REJECTED', 'CLOSED'].includes(repair.value.status))
 const failed = computed(() => !!repair.value?.analysisError)
 const isTech = computed(() => auth.role === 'TECHNICIAN')
+/** 등록 사진을 입력 차수별로 (US-05: 기존 사진과 새 추가 사진 이력을 함께 보여 준다) */
+const photoRounds = computed(() => {
+  const m = new Map<number, RepairImage[]>()
+  for (const img of repair.value?.images ?? []) {
+    const round = img.round ?? (img.kind === 'ADDITIONAL' ? 1 : 0)
+    m.set(round, [...(m.get(round) ?? []), img])
+  }
+  const rounds = [...m.keys()].sort((a, b) => a - b)
+  return rounds.map((round) => ({ round, images: m.get(round)!, latest: round === rounds[rounds.length - 1] }))
+})
 const sse = computed(() => ({
   connecting: { label: '연결 중', tone: 'neutral', icon: Wifi },
   open: { label: '실시간 연결됨', tone: 'success', icon: Wifi },
@@ -92,7 +104,7 @@ async function confirmDialog() {
           <span :style="{ width: `${repair.progress}%` }" />
         </div>
         <div class="row between">
-          <p class="msg">{{ repair.progressMessage ?? '분석을 준비하고 있습니다.' }}</p>
+          <p class="msg">{{ repair.progressMessage ?? (done ? 'AI 분석이 끝났습니다.' : '분석을 준비하고 있습니다.') }}</p>
           <strong class="pct">{{ repair.progress }}%</strong>
         </div>
         <p v-if="runningTool || running" class="now">
@@ -141,14 +153,27 @@ async function confirmDialog() {
         </section>
         <div class="stack">
           <section class="card">
-            <div class="card-head"><h3><Images :size="20" /> 등록 사진 ({{ repair.images.length }})</h3></div>
-            <div class="card-body thumbs">
-              <figure v-for="img in repair.images" :key="img.id">
-                <img :src="img.url" :alt="img.kind" loading="lazy" />
-                <figcaption class="faint">{{ PHOTO_KIND_LABEL[img.kind] }}</figcaption>
-              </figure>
+            <div class="card-head">
+              <h3><Images :size="20" /> 등록 사진 ({{ repair.images.length }})</h3>
+              <span v-if="repair.inputRevision" class="badge tone-info">현재 입력 r{{ repair.inputRevision }}</span>
+            </div>
+            <div class="card-body rounds">
+              <section v-for="g in photoRounds" :key="g.round">
+                <h4 class="round-h">
+                  {{ g.round === 0 ? '접수 사진' : `${g.round}차 추가 사진` }}
+                  <span v-if="g.latest && photoRounds.length > 1" class="badge tone-success">최신</span>
+                  <span class="faint">{{ g.images.length }}장 · {{ formatDateTime(g.images[0].uploadedAt) }}</span>
+                </h4>
+                <div class="thumbs">
+                  <figure v-for="img in g.images" :key="img.id">
+                    <img :src="img.url" :alt="PHOTO_KIND_LABEL[img.kind]" loading="lazy" />
+                    <figcaption class="faint">{{ PHOTO_KIND_LABEL[img.kind] }}<template v-if="img.note"> · {{ img.note }}</template></figcaption>
+                  </figure>
+                </div>
+              </section>
             </div>
           </section>
+          <RetryStatusCard v-if="FEATURES.retryStatus" :repair-id="repair.id" :detailed="auth.role === 'QUALITY_MANAGER'" />
           <section class="card">
             <div class="card-head"><h3>실시간 이벤트</h3><span class="faint">SSE</span></div>
             <ul class="log">
@@ -259,6 +284,19 @@ async function confirmDialog() {
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
+}
+.rounds {
+  display: grid;
+  gap: 14px;
+}
+.round-h {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
 }
 .thumbs {
   display: grid;

@@ -7,6 +7,7 @@ import { Send, History, Images, Hand, ArrowLeft } from 'lucide-vue-next'
 import RepairSummaryCard from '@/components/repair/RepairSummaryCard.vue'
 import HumanApprovalCard from '@/components/diagnosis/HumanApprovalCard.vue'
 import ApprovalHistoryTimeline from '@/components/review/ApprovalHistoryTimeline.vue'
+import RetryStatusCard from '@/components/repair/RetryStatusCard.vue'
 import StateView from '@/components/common/StateView.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useRepairPage } from '@/composables/useRepairPage'
@@ -99,6 +100,8 @@ async function onAction(key: string, comment: string) {
         comment-placeholder="예) 모터 하단 연결부 균열 확인됨. 모터 어셈블리(RM-MT-103) 교체 후 리포트 작성 바랍니다."
         @action="onAction"
       />
+
+      <RetryStatusCard v-if="FEATURES.retryStatus" :repair-id="repair.id" detailed />
 
       <section class="card">
         <div class="card-head"><h3><History :size="20" /> 처리 이력</h3></div>

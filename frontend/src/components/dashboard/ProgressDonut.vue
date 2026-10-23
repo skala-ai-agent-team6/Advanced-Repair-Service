@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/* 진행률 도넛 카드 (기사·품질 담당자 대시보드 공통)
+/* 진행률 도넛 카드 (기사·품질 담당자 홈 공통)
  * 가운데 "완료/전체" 큰 숫자 + "n% 완료". 전체가 0이면 0% + "오늘 예정된 업무가 없어요" */
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import * as echarts from 'echarts/core'

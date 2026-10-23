@@ -3,8 +3,8 @@
 import { computed } from 'vue'
 import { Sun, Ruler, Focus, Maximize, ZoomIn } from 'lucide-vue-next'
 
-/** PRODUCT: 고객 접수 — 제품 종류와 상관없는 일반 가전 그림 */
-const props = defineProps<{ kind: 'PCB' | 'MOTOR' | 'PRODUCT' }>()
+/** PRODUCT: 고객 접수 — 제품 종류와 상관없는 일반 가전 그림 · LABEL: 제품 라벨(시리얼) 촬영 */
+const props = defineProps<{ kind: 'PCB' | 'MOTOR' | 'PRODUCT' | 'LABEL' }>()
 
 const PART_TIPS = [
   { icon: Maximize, text: '정면에서 부위가 화면을 가득 채우게' },
@@ -19,8 +19,15 @@ const PRODUCT_TIPS = [
   { icon: Sun, text: '밝은 곳 · 그림자·반사 없이' },
   { icon: Focus, text: '초점을 맞추고 흔들리지 않게' },
 ]
-const TIPS = computed(() => (props.kind === 'PRODUCT' ? PRODUCT_TIPS : PART_TIPS))
-const LABEL = { PCB: 'PCB 촬영 가이드 그림', MOTOR: '기계부 촬영 가이드 그림', PRODUCT: '제품 촬영 가이드 그림' } as const
+/** 제품 라벨(시리얼 번호) */
+const LABEL_TIPS = [
+  { icon: Maximize, text: '제품 바닥면 · 배터리 커버 안쪽 라벨' },
+  { icon: ZoomIn, text: '라벨 전체가 화면에 들어오게' },
+  { icon: Sun, text: '빛 반사 없이 정면에서' },
+  { icon: Focus, text: '숫자가 선명하게 초점 맞추기' },
+]
+const TIPS = computed(() => (props.kind === 'PRODUCT' ? PRODUCT_TIPS : props.kind === 'LABEL' ? LABEL_TIPS : PART_TIPS))
+const LABEL = { PCB: 'PCB 촬영 가이드 그림', MOTOR: '기계부 촬영 가이드 그림', PRODUCT: '제품 촬영 가이드 그림', LABEL: '제품 라벨 촬영 가이드 그림' } as const
 </script>
 
 <template>
@@ -43,6 +50,14 @@ const LABEL = { PCB: 'PCB 촬영 가이드 그림', MOTOR: '기계부 촬영 가
         <rect x="140" y="48" width="28" height="10" rx="2" fill="#cbd5e1" />
         <circle cx="152" cy="94" r="9" fill="#94a3b8" />
         <path d="M74 98 h52 M74 106 h40" stroke="#a7d7b8" stroke-width="2" />
+      </template>
+      <!-- 제품 바닥면 + 시리얼 라벨 -->
+      <template v-else-if="kind === 'LABEL'">
+        <circle cx="120" cy="75" r="52" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" />
+        <rect x="82" y="52" width="76" height="44" rx="4" fill="#fff" stroke="#64748b" stroke-width="1.5" />
+        <path d="M90 62 h40 M90 70 h52" stroke="#94a3b8" stroke-width="3" />
+        <path d="M90 82 v8 M93 82 v8 M97 82 v8 M99 82 v8 M103 82 v8 M107 82 v8 M110 82 v8 M114 82 v8 M117 82 v8 M121 82 v8" stroke="#334155" stroke-width="1.5" />
+        <text x="128" y="90" font-size="7" fill="#2563eb" font-family="monospace">RC…</text>
       </template>
       <!-- 일반 가전: 본체 + 조작부 + 문 -->
       <template v-else-if="kind === 'PRODUCT'">

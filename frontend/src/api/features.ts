@@ -33,4 +33,13 @@ export const FEATURES = {
   signup: USE_MOCK,
   /** 출장 일정(오늘의 출장) API — 실서버에 아직 없음 → false 면 출장 API 를 호출하지 않고 0건으로 표시 */
   fieldSchedule: USE_MOCK,
+  /** 확정 리포트의 사내 사례 동기화 상태 (US-08) — 실서버 API 없음 → false 면 리포트 화면에서 동기화 카드를 숨기고 호출하지 않음 */
+  caseSync: USE_MOCK,
+  /** 자동 재처리(재시도) 상태 (US-10) — 실서버 API 없음 → false 면 재처리 카드를 숨기고 호출하지 않음 */
+  retryStatus: USE_MOCK,
+  /** 출장 전 진단 리포트 기사 수정안 · 기사 확인(TECHNICIAN_REVIEWED) — 실서버 API 없음 → false 면 [수정] 버튼을 숨기고 호출하지 않음
+   *  ([리포트 확인 완료]는 기존 진단 확인 API 로 동작) */
+  preVisitReportEdit: USE_MOCK,
+  /** 제품 라벨 사진에서 시리얼 번호 인식 — 실서버 API 없음 → false 면 사진은 보면서 직접 입력용(참고)으로만 */
+  labelOcr: USE_MOCK,
 } as const

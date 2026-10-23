@@ -1,9 +1,9 @@
-/* 기사 대시보드 숫자 카드 ↔ 수리 접수 관리 필터 (프론트에서 기존 API 결과를 세어 계산, 새 API 없음)
+/* 기사 홈 숫자 카드 ↔ 수리 접수 관리 필터 (프론트에서 기존 API 결과를 세어 계산, 새 API 없음)
  *  - 오늘 접수: 오늘 접수된 건
  *  - 수리 중: 끝나지 않았고 부품을 기다리지 않는 건
  *  - 부품 대기: 끝나지 않았고 요청·승인·출고됐지만 아직 수령하지 않은 발주가 있는 건
  *  - 완료: 리포트 확정(APPROVED · CLOSED)
- *  - 오늘의 출장(출장 기사): 방문일(확정일, 없으면 희망일)이 오늘인 진행 중 건 */
+ *  - 오늘의 출장(출장기사): 방문일(확정일, 없으면 희망일)이 오늘인 진행 중 건 */
 import type { PurchaseOrder, Repair, RepairStatus } from '@/types'
 
 export type RepairPreset = 'TRIP_TODAY' | 'TODAY' | 'IN_REPAIR' | 'PARTS_WAITING' | 'DONE'

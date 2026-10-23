@@ -13,7 +13,7 @@ export const useRepairListStore = defineStore('repairList', () => {
   const counts = ref<RepairSummaryCounts>({ ...EMPTY_COUNTS })
   const statusCounts = ref<RepairStatusCounts>({})
   const query = reactive<RepairQuery>({ status: 'ALL', keyword: '', sort: 'receivedAt_desc' })
-  /** 대시보드 카드에서 넘어온 필터 (프론트에서 거름, 서버로 보내지 않음) */
+  /** 기사 홈 카드에서 넘어온 필터 (프론트에서 거름, 서버로 보내지 않음) */
   const preset = ref<RepairPreset | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
