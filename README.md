@@ -3,11 +3,40 @@
 기사 접수(사진) → Spring → Kafka → LangGraph 에이전트(PCB·기계·RAG MCP + GPT) → Spring → 프론트 진단 화면 → 진단 확인 → 부품 재고·발주 → 수리 리포트 → 종결까지 돈다.
 팀원 코드를 합치면서 고친 것: **[docs/개조내역.md](docs/개조내역.md)** · 진행 상황: **[docs/진행사항.md](docs/진행사항.md)** · 에이전트 상세(하네스·LangSmith·오류 처리): **[worker/AGENT.md](worker/AGENT.md)**
 
+## Phase 2 고도화 (태그 `phase1-end` 이후)
+
+Phase 1(센터 기사 · 로봇청소기)을 **출장기사 · 고객 비로그인 접수 · 세탁기/에어컨**으로 넓히고, 실패에 강하게 고쳤다.
+
+| 영역 | Phase 1 (`phase1-end`) | Phase 2 | 근거 |
+|---|---|---|---|
+| 사용자 | 센터 기사 | + 고객(비로그인 접수·진행 조회), 출장기사(일정·준비 부품·공구) | PR #5, `docs/FIELD_SERVICE.md` |
+| 가전 | 로봇청소기 | + 세탁기 · 에어컨 (`product_type`을 접수→에이전트→RAG까지 전달) | PR #6, #11 |
+| 에이전트 | 추가 사진 뒤 처음부터 다시 진단 | 체크포인터로 멈춘 지점부터 재개, 새 사진만 분석 | PR #7 |
+| RAG | 공개 사례만 | + 기사가 확정한 수리 결과 자동 반영, 소견 재사용(GPT 중복 호출 제거) | PR #9, `Rag_mcp/docs/confirmed_case_sync.md` |
+| 사진 | 검사 없음 | 사진 품질 검사(흐림·어두움·크기) 후 진단 | PR #1 |
+| 실패 처리 | AI 실패 시 끝 | Kafka 처리 결과 기록 + 실패 진단 자동 재시도 | main PR #4 |
+| 업무 도구 | 재고 조회 | + 출장 방문 준비 리포트(공구·부품·고장 위치), 재고 예약·출고 | PR #3, `docs/FIELD_SERVICE.md` |
+
+**평가셋 개선 전 → 후** (같은 20문항, `eval/`): 결과는 [`eval/README.md`](eval/README.md)
+
+## 팀 역할 · 기여
+
+| 이름 | GitHub | 역할 (교재 p.11) | 주요 PR |
+|---|---|---|---|
+| 유길선 | raphael807-t1 | R1 PM·PO · R6 QA·Eval(검증 책임자) | #1 사진 품질 이관 · #8 기계 사진 진단 수정 · #10 테스트 경로 · #12 계약 대응 · 통합 브랜치 `integration/field-service` |
+| 홍은비 | beeyaaa | R2 AI Engineer (흐름) | #7 체크포인터·interrupt 재개 |
+| 전인수 | insusu21 | R3 AI Engineer (RAG·Data) | #6 제품별 RAG · #9 소견 재사용 |
+| 박시현 | lilloo04 | R4 Backend·Tool | #5 고객 접수·V2 서비스 · #11 product_type 전달 |
+| 박진영 | kamillcream | R4 Backend·Tool (Kafka·업무 MCP) | #3 방문 준비 리포트 MCP · main #4 Kafka 재시도 |
+| 최세민 | cchloe1006-eng | R5 Frontend·Demo | `frontend` 브랜치 (출장기사·고객 화면) |
+
+협업 규칙(브랜치 보호 · 승인 1명 · PR 템플릿): `docs/COLLABORATION.md`
+
 ## 빠른 실행 (처음 받는 사람)
 필요: macOS/Linux, Docker Desktop(켜 둔 상태), JDK 21, [uv](https://docs.astral.sh/uv/), Node 20+, git
 ```bash
-git clone https://github.com/skala-ai-agent-team6/Final_Robot-Vacuum-Repair-Agent.git
-cd Final_Robot-Vacuum-Repair-Agent
+git clone https://github.com/skala-ai-agent-team6/Advanced-Repair-Service.git
+cd Advanced-Repair-Service
 ./setup.sh          # 1. 처음 한 번: 파이썬·프론트 패키지 설치, .env 템플릿 생성
 # 2. 레포 맨 위 .env 파일을 열어 OPENAI_API_KEY= 뒤에 키를 넣는다 (다른 값은 비워 둔다)
 ./run.sh            # 3. 전부 띄움 (처음엔 RAG 인덱스 생성으로 1~2분 더 걸림)
@@ -125,6 +154,18 @@ asyncio.run(main())
 uv run pytest          # 에이전트 (127개, 약 50초)
 cd backend && ./gradlew test
 ```
+
+## 데이터 출처
+
+| 데이터 | 쓰는 곳 | 출처 · 라이선스 | 상세 |
+|---|---|---|---|
+| 수리 사례 3,165건 | RAG 사례 검색 | Open Repair Alliance DustUp (오픈 데이터) | `Rag_mcp/README.md`, `Rag_mcp/data/source_manifest.json` |
+| 수리 문서 | RAG 문서 검색 | Repair Wiki (CC BY-SA 3.0) 등 | `Rag_mcp/README.md` |
+| PCB 결함 사진·라벨 | PCB 모델, 평가셋 A·C | PCB 결함 데이터셋 (test 폴더) | `eval/README.md` |
+| 표면 결함 | 기계 모델, 평가셋 B | NEU 강판 표면 결함 데이터셋 | `eval/README.md` |
+| PCB·외형 손상 수리 문서 | RAG 지침 | Circuit Technology Center 등 공개 문서 | `Rag_mcp/docs/pcb_damage_data_sources.md` |
+| 세탁기·에어컨 사례 6건 | RAG 데모 | **팀이 만든 가상 데모** (검색 결과에 데모 표시) | `Rag_mcp/docs/product_types.md` |
+| 평가셋 사진 16장 | `eval/` | 위 데이터셋 + Wikimedia Commons | `eval/README.md` |
 
 ## 시연 사진 출처
 | 파일 | 원본 | 작성자 | 라이선스 |

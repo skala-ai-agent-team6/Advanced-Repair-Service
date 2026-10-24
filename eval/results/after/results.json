@@ -1,0 +1,218 @@
+[
+  {
+    "id": "A1",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 31.5,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 1845,
+      "output_tokens": 260,
+      "total_tokens": 2105
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.2.0",
+        "version": "1.2.0",
+        "sha256": "6942bf59f1684361853602c4a3d35ec8ccbdbab50d0467f11529a59ddc91e864",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.2.0",
+        "version": "1.2.0",
+        "sha256": "801d02e58330ace2c733ca3bec7982b8e59f85f947c2081b75ea2e04f1a9f2cc",
+        "output_schema": "Report",
+        "schema_sha256": "b58d04db9e623dfab3b3f06d48900dfa25629ce8772412e46375f5783d4e5893",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "missing_hole"
+    ],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "청소기의 전원은 들어오지만 흡입 모터가 회전하지 않는 문제에 대한 진단 리포트입니다. 메인보드의 납땜 부위 확인이 필요하며, PCB에서 결함이 발견되었습니다.\n\n근거 제한: retrieve_repair_context 호출에 실패하여 해당 해석·검색 근거를 사용하지 못했습니다. 미확인 항목을 정상으로 판단하지 말고 수리 전 확인해 주세요.",
+    "topCause": "메인보드 결함으로 인한 흡입 모터 회전 불가",
+    "evidence": 1,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": [
+          [
+            "missing_hole",
+            0.65
+          ],
+          [
+            "missing_hole",
+            0.6
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "A2",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 16.1,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 323,
+      "output_tokens": 31,
+      "total_tokens": 354
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.2.0",
+        "version": "1.2.0",
+        "sha256": "6942bf59f1684361853602c4a3d35ec8ccbdbab50d0467f11529a59ddc91e864",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['mouse_bite'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 1건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "A3",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 19.2,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 322,
+      "output_tokens": 26,
+      "total_tokens": 348
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.2.0",
+        "version": "1.2.0",
+        "sha256": "6942bf59f1684361853602c4a3d35ec8ccbdbab50d0467f11529a59ddc91e864",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['open_circuit'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 1건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "A4",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 12.9,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 318,
+      "output_tokens": 27,
+      "total_tokens": 345
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.2.0",
+        "version": "1.2.0",
+        "sha256": "6942bf59f1684361853602c4a3d35ec8ccbdbab50d0467f11529a59ddc91e864",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['short'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 1건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "A5",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 9.4,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 317,
+      "output_tokens": 28,
+      "total_tokens": 345
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.2.0",
+        "version": "1.2.0",
+        "sha256": "6942bf59f1684361853602c4a3d35ec8ccbdbab50d0467f11529a59ddc91e864",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['spur'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 1건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  }
+]
