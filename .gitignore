@@ -7,5 +7,6 @@ __pycache__/
 *.log
 .DS_Store
 worker/reports/
+mcp_servers/business/reports/
 mcp_servers/*/results/
 logs/

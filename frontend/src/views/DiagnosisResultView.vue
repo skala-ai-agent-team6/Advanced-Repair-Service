@@ -2,21 +2,28 @@
 /* =========================================================================
  * AI 진단 리포트 (서비스 핵심 화면) — '노트(공책)' 형태
  *  종이 한 장씩 넘겨 보는 구조. 페이지는 URL ?page=1|2 로 유지, ←/→ 키로 넘김
- *  1쪽 결론 요약: 결론 · AI 원인 후보 | 유사 사례(MCP) / 사진별 분석 카드 / 상세 보기(접이식) / 처리 버튼(하단 고정)
- *  2쪽 부품 발주: 교체 부품 리스트 + 주문하기 (진단 확인 전에는 잠금)
- *  처리: 진단 내용 확인 / 본사 검토 요청 / 진단 반려
+ *  1쪽 결론 요약: 결론 · 보증 판정 · AI 원인 후보 | 유사 사례(MCP) / 사진별 분석 카드 / 상세 보기(접이식) / 처리 버튼(하단 고정)
+ *  2쪽 부품 발주(출장 준비 · 부품): 출장 전 챙길 부품·재고 예약 + 교체 부품 리스트 + 주문하기 (진단 확인 전에는 잠금)
+ *  처리(기사): 하단 [닫기] … [수정] [리포트 확인 완료]  (센터 수리자는 [본사 검토 요청] [진단 반려]도)
+ *    - 리포트 확인 완료 = 기존 진단 확인 API + 기사 확인(TECHNICIAN_REVIEWED) 기록. 최종 수리 확정 아님
+ *    - 수정: AI 원본은 그대로 두고 기사 수정안을 따로 저장 (FEATURES.preVisitReportEdit, 없으면 버튼 숨김)
+ *  출장 일정에서 들어오면(?from=trip) 또는 출장기사면 제목을 '출장 전 진단 리포트'로
  * ========================================================================= */
-import { computed, onBeforeUnmount, onMounted, reactive, watchEffect } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watchEffect } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   CircleCheck, RotateCw, Building2, CircleX, FileCode2, History, ClipboardList, BookOpen,
-  ArrowRight, ChevronLeft, ChevronRight, Lock, Check, FileSearch,
+  ArrowRight, ChevronLeft, ChevronRight, Lock, Check, FileSearch, CircleAlert, PencilLine, Save, X,
 } from 'lucide-vue-next'
 import RepairFlowNav from '@/components/repair/RepairFlowNav.vue'
 import RepairSummaryCard from '@/components/repair/RepairSummaryCard.vue'
 import SameSerialHistory from '@/components/repair/SameSerialHistory.vue'
 import PhotoAnalysisCard from '@/components/diagnosis/PhotoAnalysisCard.vue'
 import PartsOrderPage from '@/components/parts/PartsOrderPage.vue'
+import WarrantyCard from '@/components/diagnosis/WarrantyCard.vue'
+import TechnicianEditPanel from '@/components/diagnosis/TechnicianEditPanel.vue'
+import PreVisitPartsSection from '@/components/diagnosis/PreVisitPartsSection.vue'
+import { usePreVisitEdit } from '@/composables/usePreVisitEdit'
 import ApprovalHistoryTimeline from '@/components/review/ApprovalHistoryTimeline.vue'
 import AiBadge from '@/components/common/AiBadge.vue'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
@@ -28,10 +35,12 @@ import { useRepairPage } from '@/composables/useRepairPage'
 import { provideCollapsibleGroup } from '@/composables/useCollapsibleGroup'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
-import { toErrorMessage } from '@/api'
+import { ApiError, toErrorMessage } from '@/api'
 import { FEATURES } from '@/api/features'
 import { formatDate, reportTitle } from '@/utils/format'
-import type { AgentResult, PhotoKind } from '@/types'
+import { TOOL_KIND_LABEL } from '@/constants/status'
+import { buildPhotoCards, photoCountLabel } from '@/utils/diagnosisPhotos'
+import type { AnalysisToolKind } from '@/types'
 
 const { store, repair, diagnosis, versions, loading, diagLoading, error, submitting, reload } = useRepairPage({ diagnosis: true, live: true })
 const route = useRoute()
@@ -40,15 +49,23 @@ const auth = useAuthStore()
 const toast = useToastStore()
 provideCollapsibleGroup('diagnosis')
 
-// 브라우저 탭에서도 시리얼이 아닌 수리 ID 로 구분되도록
-watchEffect(() => {
-  if (repair.value) document.title = `${reportTitle(repair.value)} · RobotCare AI`
-})
+/* ---------- 제목: 출장 일정에서 들어오거나 출장기사면 '출장 전 진단 리포트' ---------- */
+const isField = computed(() => auth.role === 'TECHNICIAN' && auth.technicianType === 'FIELD')
+const preVisitTitle = computed(() => route.query.from === 'trip' || isField.value)
+const pageTitle = computed(() => (repair.value ? (preVisitTitle.value ? '출장 전 진단 리포트' : reportTitle(repair.value)) : ''))
+// 브라우저 탭에서도 시리얼이 아닌 수리 ID 로 구분되도록 (쪽 이동 등 쿼리가 바뀌면 라우터가 제목을 덮어쓰므로 그 뒤에 다시)
+watchEffect(
+  () => {
+    void route.fullPath
+    if (repair.value) document.title = `${preVisitTitle.value ? `출장 전 진단 리포트 #${repair.value.id}` : reportTitle(repair.value)} · RobotCare AI`
+  },
+  { flush: 'post' },
+)
 
 /* ---------- 노트 페이지 (?page=1|2) ---------- */
 const PAGES = [
   { no: 1, label: '결론 요약' },
-  { no: 2, label: '부품 발주' },
+  { no: 2, label: FEATURES.stockReservation ? '출장 준비 · 부품' : '부품 발주' },
 ] as const
 const page = computed(() => (route.query.page === '2' ? 2 : 1))
 function go(p: number) {
@@ -84,7 +101,7 @@ const pending = computed(() => diagnosis.value?.technicianDecision.state === 'PE
 //        남은 3개는 모두 바로 보이게 두고 '더 보기' 메뉴는 없앰
 type ActionKey = 'approve' | 'hq' | 'reject'
 const ACTIONS: Record<ActionKey, { label: string; icon: unknown; btn: string; needsReason: boolean; reasonLabel: string; hint: string; placeholder: string }> = {
-  approve: { label: '진단 내용 확인', icon: CircleCheck, btn: 'btn-success', needsReason: false, reasonLabel: '확인 메모 (선택)', hint: '이 진단을 기준으로 점검·수리를 진행합니다.', placeholder: '예) 하단 연결부 들뜸 육안 확인' },
+  approve: { label: '리포트 확인 완료', icon: CircleCheck, btn: 'btn-primary', needsReason: false, reasonLabel: '확인 메모 (선택)', hint: '이 리포트를 기준으로 출장·수리를 준비합니다. 최종 수리 결과 확정은 아닙니다.', placeholder: '예) 하단 연결부 들뜸 육안 확인' },
   hq: { label: '본사 검토 요청', icon: Building2, btn: '', needsReason: true, reasonLabel: '본사 검토 요청 사유', hint: '본사 품질 담당자가 직접 진단합니다.', placeholder: '예) 사진으로 판단이 어려워 본사 확인이 필요합니다.' },
   reject: { label: '진단 반려', icon: CircleX, btn: 'btn-danger', needsReason: true, reasonLabel: '반려 사유', hint: 'AI 진단을 쓰지 않고 직접 점검합니다.', placeholder: '예) 실제 점검 결과 모터는 정상, 배터리 커넥터 산화 확인' },
 }
@@ -105,7 +122,9 @@ async function confirmAction() {
     switch (dlg.key) {
       case 'approve':
         await store.decide({ target: 'DIAGNOSIS', action: 'APPROVE', comment, diagnosisVersion: diagnosis.value?.version })
-        toast.success('진단 내용을 확인했습니다. 2쪽에서 필요 부품을 확인해 주세요.')
+        // 기사 확인(TECHNICIAN_REVIEWED) 기록 — 실패해도 진단 확인은 끝난 상태
+        if (pre.enabled) await pre.markReviewed().catch(() => toast.warning('확인 기록을 저장하지 못했습니다. [리포트 확인 완료]를 다시 눌러 주세요.'))
+        toast.success('리포트 확인을 완료했습니다. 2쪽에서 필요 부품을 확인해 주세요.')
         break
       case 'hq':
         await store.decide({ target: 'DIAGNOSIS', action: 'REQUEST_HQ_REVIEW', comment })
@@ -122,41 +141,138 @@ async function confirmAction() {
   }
 }
 
+/* ---------- 기사 수정 · 리포트 확인 (출장 전 진단 리포트) ---------- */
+const pre = reactive(usePreVisitEdit(computed(() => repair.value?.id), diagnosis))
+/** 수정: 이 건에 배정된 기사 (기사 화면에는 배정된 건만 열림). 품질 담당자 등은 읽기 전용 */
+const canEdit = computed(() => pre.enabled && isTech.value && !!diagnosis.value)
+type ReportAction = 'CLOSE' | 'HQ_REVIEW' | 'REJECT' | 'EDIT' | 'CONFIRM'
+/** 하단 버튼: 출장기사는 닫기·수정·확인 완료만 (본사 검토 요청·진단 반려는 렌더링하지 않음) */
+const reportActions = computed<ReportAction[]>(() =>
+  auth.technicianType === 'FIELD' ? ['CLOSE', 'EDIT', 'CONFIRM'] : ['CLOSE', 'HQ_REVIEW', 'REJECT', 'EDIT', 'CONFIRM'],
+)
+const confirmState = computed<{ kind: 'ready' | 'done' | 'locked' | 'hidden'; reason?: string }>(() => {
+  const st = diagnosis.value?.technicianDecision.state
+  if (st === 'PENDING') return canDecide.value ? { kind: 'ready' } : { kind: 'locked', reason: disabledReason.value }
+  if (st === 'APPROVED') return !pre.enabled || pre.reviewedCurrent ? { kind: 'done' } : { kind: 'ready' }
+  return { kind: 'hidden' }
+})
+const reviewedBadge = computed(() => diagnosis.value?.technicianDecision.state === 'APPROVED' && (!pre.enabled || pre.reviewedCurrent))
+const editNotice = ref('')
+
+async function onConfirmClick() {
+  if (pre.editing) {
+    editNotice.value = '수정 내용을 먼저 저장해 주세요.'
+    toast.warning(editNotice.value)
+    return
+  }
+  if (confirmState.value.kind !== 'ready') return
+  if (pending.value) return openAction('approve')
+  // 이미 진단 확인한 건: 수정 후 다시 확인 → 기사 확인 기록만
+  try {
+    await pre.markReviewed()
+    toast.success('리포트 확인을 완료했습니다.')
+  } catch (e) {
+    toast.error(toErrorMessage(e))
+    if (e instanceof ApiError && e.status === 409) void pre.load()
+  }
+}
+
+/* 수정 시작 · 저장 · 취소 */
+function startEdit() {
+  editNotice.value = ''
+  pre.startEdit()
+}
+const saveDlg = ref(false)
+function openSave() {
+  pre.touched = true
+  if (!pre.valid) {
+    toast.warning('입력 내용을 확인해 주세요.')
+    return
+  }
+  saveDlg.value = true
+}
+async function doSave() {
+  try {
+    await pre.save()
+    saveDlg.value = false
+    editNotice.value = ''
+    toast.success('리포트 수정 내용이 저장되었습니다.')
+  } catch (e) {
+    saveDlg.value = false
+    toast.error(toErrorMessage(e))
+    if (e instanceof ApiError && e.status === 409) void pre.load()
+  }
+}
+/** 저장하지 않은 변경 보호: 수정 취소 · 닫기 · 다른 화면 이동 */
+const discard = reactive({ open: false, then: null as null | (() => void) })
+function askDiscard(then: () => void) {
+  if (!pre.dirty) {
+    pre.cancelEdit()
+    then()
+    return
+  }
+  Object.assign(discard, { open: true, then })
+}
+function confirmDiscard() {
+  const then = discard.then
+  Object.assign(discard, { open: false, then: null })
+  pre.cancelEdit()
+  editNotice.value = ''
+  then?.()
+}
+function cancelEditClick() {
+  askDiscard(() => undefined)
+}
+function close() {
+  const back = (window.history.state as { back?: string } | null)?.back
+  if (back) router.back()
+  else void router.push(isField.value ? '/field/schedule' : '/work')
+}
+function onClose() {
+  if (pre.editing) askDiscard(close)
+  else close()
+}
+let leaving = false
+onBeforeRouteLeave((to) => {
+  if (leaving || !pre.editing || !pre.dirty) return true
+  askDiscard(() => {
+    leaving = true
+    void router.push(to.fullPath)
+  })
+  return false
+})
+function onBeforeUnload(e: BeforeUnloadEvent) {
+  if (pre.dirty) e.preventDefault()
+}
+onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
+
+/* 출장 전 준비 부품 → [발주 신청]: 2쪽 주문하기에서 그 부품을 체크 */
+const canOrder = computed(() => isTech.value && partsUnlocked.value)
+const orderHint = computed(() => (!isTech.value ? '발주 신청은 담당 기사만 할 수 있습니다.' : '리포트 확인을 완료하면 발주를 신청할 수 있습니다.'))
+function orderPart(partId: string) {
+  void router.replace({ query: { ...route.query, page: '2', order: partId } })
+}
+const focusOrder = computed(() => (typeof route.query.order === 'string' ? route.query.order : null))
+
 /* ---------- 1쪽 데이터 ---------- */
 const candidates = computed(() => diagnosis.value?.candidates.slice(0, 3) ?? [])
 const cases = computed(() => diagnosis.value?.similarCases.slice(0, 3) ?? [])
 const moreCases = computed(() => Math.max(0, (diagnosis.value?.similarCaseCount || 0) - cases.value.length))
+/* ---------- 결과를 받지 못한 분석 도구 (US-04: 부분 실패여도 받은 결과는 그대로 보여 준다) ---------- */
+const failedTools = computed(() => (repair.value?.tools ?? []).filter((t) => t.state === 'FAILED' || t.state === 'SKIPPED'))
+const toolName = (t: { kind: AnalysisToolKind; label: string }) => (t.kind === 'OTHER' ? t.label : TOOL_KIND_LABEL[t.kind])
+/** 이 항목을 만드는 도구가 결과를 못 냈으면 그 도구 이름 */
+const missingBy = (kind: AnalysisToolKind) => {
+  const t = failedTools.value.find((x) => x.kind === kind)
+  return t ? toolName(t) : null
+}
+const CASE_ORIGIN = { INTERNAL: { label: '사내 사례', tone: 'success' }, EXTERNAL: { label: '공개 사례', tone: 'neutral' } } as const
 const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨']
 
-/** 사진별 분석 카드: PCB → 기계 → 추가 사진 순. 사진이 없는 부위는 카드가 생기지 않는다 */
-const PHOTO_KINDS: { kind: PhotoKind; label: string }[] = [
-  { kind: 'PCB', label: 'PCB' },
-  { kind: 'MOTOR', label: '기계' },
-  { kind: 'ADDITIONAL', label: '추가 사진' },
-]
-const agents = computed(() => diagnosis.value?.agents ?? [])
-/** 이 사진에 이상 영역을 표시한 부위 판단 → 없으면 사진 종류로 (추가 사진은 기계 분석에 쓰임) */
-function agentFor(imageId: string, kind: PhotoKind): AgentResult | undefined {
-  return agents.value.find((a) => a.annotations.some((an) => an.imageId === imageId)) ?? agents.value.find((a) => a.agent === (kind === 'PCB' ? 'PCB' : 'MOTOR'))
-}
-const photoCards = computed(() =>
-  PHOTO_KINDS.flatMap(({ kind }) =>
-    (repair.value?.images ?? [])
-      .filter((i) => i.kind === kind)
-      .map((image, i) => ({
-        image,
-        index: i + 1,
-        agent: agentFor(image.id, kind),
-        anns: agents.value.flatMap((a) => a.annotations.filter((an) => an.imageId === image.id)),
-      })),
-  ),
-)
-const photoCounts = computed(() =>
-  PHOTO_KINDS.map((k) => ({ ...k, n: photoCards.value.filter((c) => c.image.kind === k.kind).length }))
-    .filter((k) => k.n)
-    .map((k) => `${k.label} ×${k.n}`)
-    .join(' · '),
-)
+/** 사진별 분석 카드 (utils/diagnosisPhotos — 출장 전 리포트 모달과 같은 규칙) */
+const photoCards = computed(() => buildPhotoCards(repair.value?.images ?? [], diagnosis.value?.agents ?? []))
+const photoCounts = computed(() => photoCountLabel(photoCards.value))
 
 const detailSummary = computed(() => {
   const d = diagnosis.value
@@ -181,8 +297,8 @@ const detailSummary = computed(() => {
       <RepairFlowNav :repair="repair" />
       <div class="page-head">
         <div>
-          <h1>{{ reportTitle(repair) }}</h1>
-          <p class="sub">시리얼 <span class="mono">{{ repair.product.serialNumber }}</span> · 접수번호 <span class="mono">{{ repair.receiptNo }}</span></p>
+          <h1>{{ pageTitle }}</h1>
+          <p class="sub"><template v-if="preVisitTitle">수리 ID <span class="mono">#{{ repair.id }}</span> · </template>시리얼 <span class="mono">{{ repair.product.serialNumber }}</span> · 접수번호 <span class="mono">{{ repair.receiptNo }}</span></p>
         </div>
       </div>
       <RepairSummaryCard :repair="repair" compact />
@@ -233,23 +349,41 @@ const detailSummary = computed(() => {
             <button type="button" class="btn btn-ghost nav" :disabled="page === PAGES.length" aria-label="다음 페이지" @click="go(page + 1)"><ChevronRight :size="22" /></button>
             <span class="spacer" />
             <AiBadge />
-            <AiBadge v-if="diagnosis.technicianDecision.state === 'APPROVED'" kind="human" label="진단 확인 완료" />
+            <AiBadge v-if="pre.edit" kind="edit" :label="`기사 수정 v${pre.editVersion}`" />
+            <AiBadge v-if="reviewedBadge" kind="human" label="기사 확인 완료" />
             <span class="faint ver">v{{ diagnosis.version }}<template v-if="versions.length > 1"> / {{ versions.length }}</template></span>
           </div>
 
           <article id="nb-page" class="paper" role="tabpanel" :aria-labelledby="`nb-tab-${page}`">
             <!-- ---------- 1쪽: 결론 요약 ---------- -->
             <template v-if="page === 1">
+              <div v-if="failedTools.length" class="callout tone-warning" role="status">
+                <CircleAlert :size="20" />
+                <div class="grow">
+                  <strong>일부 분석 결과를 받지 못했습니다.</strong> 받은 결과만으로 만든 진단이며, 결과가 없는 항목은 '미확인'으로 표시합니다.
+                  <ul class="missing">
+                    <li v-for="t in failedTools" :key="t.id"><b>{{ toolName(t) }}</b> · {{ t.state === 'SKIPPED' ? '실행 안 됨' : '실패' }}<template v-if="t.message"> — {{ t.message }}</template></li>
+                  </ul>
+                </div>
+              </div>
               <div class="top">
                 <div class="col">
                   <section class="conclusion" aria-labelledby="h-conc">
                     <h2 id="h-conc" class="h">결론 요약</h2>
-                    <p class="cause">
-                      {{ diagnosis.topCause }}
-                      <span class="badge tone-ai">판단 점수 {{ diagnosis.confidence }}점</span>
-                    </p>
-                    <p v-if="diagnosis.repairMethod[0]" class="todo"><ArrowRight :size="18" /> {{ diagnosis.repairMethod[0] }}</p>
+                    <div class="conc-body">
+                      <div class="conc-text">
+                        <p class="cause">{{ diagnosis.topCause }}</p>
+                        <p v-if="diagnosis.repairMethod[0]" class="todo"><ArrowRight :size="18" /> {{ diagnosis.repairMethod[0] }}</p>
+                      </div>
+                      <p class="big-score" :aria-label="`판단 점수 ${diagnosis.confidence}점`">
+                        <span class="num-xl">{{ diagnosis.confidence }}</span><small>점</small>
+                        <span class="faint">판단 점수</span>
+                      </p>
+                    </div>
                   </section>
+
+                  <!-- 보증 판정 (AI 제안 → 기사 확정). 실서버 API 없으면 숨김 -->
+                  <WarrantyCard v-if="FEATURES.warranty" :repair-id="repair.id" :can-decide="isTech" />
 
                   <section v-if="candidates.length" aria-labelledby="h-cand">
                     <h2 id="h-cand" class="h">AI 원인 후보</h2>
@@ -268,6 +402,10 @@ const detailSummary = computed(() => {
                     </ol>
                     <p class="faint note">판단 점수는 확률이 아니라 후보끼리 비교한 점수입니다.</p>
                   </section>
+                  <section v-else aria-labelledby="h-cand">
+                    <h2 id="h-cand" class="h">AI 원인 후보</h2>
+                    <p class="unknown"><span class="badge tone-warning">미확인</span> AI 원인 후보 결과가 없습니다.</p>
+                  </section>
                 </div>
 
                 <section class="col cases-col" aria-labelledby="h-cases">
@@ -279,17 +417,48 @@ const detailSummary = computed(() => {
                       <div class="grow">
                         <div class="row between">
                           <strong>{{ c.cause }}</strong>
-                          <span class="badge tone-ai">유사도 {{ c.similarity }}%</span>
+                          <span class="row tight">
+                            <span v-if="c.origin" class="badge" :class="`tone-${CASE_ORIGIN[c.origin].tone}`">{{ CASE_ORIGIN[c.origin].label }}</span>
+                            <span class="badge tone-ai">유사도 {{ c.similarity }}%</span>
+                          </span>
                         </div>
                         <p v-if="c.resolution" class="muted">→ {{ c.resolution }}</p>
                         <p class="faint">{{ c.receiptNo }} · {{ c.model }}<template v-if="c.closedAt"> · {{ formatDate(c.closedAt) }}</template></p>
                       </div>
                     </li>
                   </ul>
+                  <p v-else-if="missingBy('RAG')" class="unknown"><span class="badge tone-warning">미확인</span> {{ missingBy('RAG') }} 결과를 받지 못해 유사 사례를 확인하지 못했습니다.</p>
                   <p v-else class="faint">찾은 유사 사례가 없습니다.</p>
                   <p v-if="moreCases" class="faint">외 {{ moreCases }}건</p>
                 </section>
               </div>
+
+              <!-- 기사 수정안 (AI 원본과 따로) · 출장 전 준비 부품 -->
+              <TechnicianEditPanel
+                v-if="pre.editing || pre.edit"
+                :diagnosis="diagnosis"
+                :edit="pre.edit"
+                :editing="pre.editing"
+                :form="pre.form"
+                :errors="pre.errors"
+                :show-errors="pre.touched"
+                :review="pre.review"
+                :reviewed-current="pre.reviewedCurrent"
+              />
+              <PreVisitPartsSection
+                :repair-id="repair.id"
+                :diagnosis="diagnosis"
+                :parts="pre.effectiveParts"
+                :edited="!!pre.edit"
+                :editing="pre.editing"
+                :model="repair.product.model"
+                :can-order="canOrder"
+                :order-hint="orderHint"
+                :show-errors="pre.touched"
+                :error="pre.errors.parts"
+                @update:parts="pre.form.parts = $event"
+                @order="orderPart"
+              />
 
               <section v-if="photoCards.length" class="photos-sec" aria-labelledby="h-photos">
                 <h2 id="h-photos" class="h">사진별 분석 <span class="faint cnt">{{ photoCounts }}</span></h2>
@@ -309,8 +478,7 @@ const detailSummary = computed(() => {
               <!-- 확인 후 다음 단계 -->
               <div v-if="diagnosis.technicianDecision.state === 'APPROVED' && isTech && repair.status === 'TECHNICIAN_REVIEW'" class="callout tone-success next">
                 <CircleCheck :size="24" />
-                <div class="grow"><strong>다음 단계</strong> 필요 부품의 재고를 확인하고, 수리를 마친 뒤 실제 결과를 입력해 주세요.</div>
-                <button type="button" class="btn btn-lg" @click="go(2)">2쪽 부품 발주 <ArrowRight :size="20" /></button>
+                <div class="grow"><strong>다음 단계</strong> 필요 부품은 위의 2쪽 탭에서 확인하고, 수리를 마친 뒤 실제 결과를 입력해 주세요.</div>
                 <RouterLink :to="`/repairs/${repair.id}/review`" class="btn btn-primary btn-lg">수리 리포트 작성 <ArrowRight :size="20" /></RouterLink>
               </div>
 
@@ -345,9 +513,10 @@ const detailSummary = computed(() => {
                     </div>
                   </section>
 
-                  <section v-if="diagnosis.sources.length">
+                  <section>
                     <h4 class="sub-h"><BookOpen :size="18" /> 참고 매뉴얼 · 데이터 출처</h4>
-                    <DataSourceList :sources="diagnosis.sources" />
+                    <DataSourceList v-if="diagnosis.sources.length" :sources="diagnosis.sources" />
+                    <p v-else class="unknown"><span class="badge tone-warning">미확인</span> {{ missingBy('RAG') ? `${missingBy('RAG')} 결과를 받지 못했습니다.` : '참고한 출처가 없습니다.' }}</p>
                   </section>
 
                   <section v-if="repair.history.length || versions.length > 1">
@@ -366,8 +535,43 @@ const detailSummary = computed(() => {
                 </div>
               </CollapsibleSection>
 
-              <!-- 처리 버튼 (1쪽 하단 고정, 승인 대기 중일 때만) -->
-              <div v-if="pending" class="actions" role="group" aria-label="진단 결과 처리">
+              <!-- 기사: 리포트 하단 버튼 (1쪽 하단 고정) — 출장기사: 닫기 · 수정 · 리포트 확인 완료 / 센터 수리자: + 본사 검토 요청 · 진단 반려 -->
+              <div v-if="isTech" class="actions report-actions" role="group" aria-label="리포트 처리">
+                <template v-if="pre.editing">
+                  <button type="button" class="btn btn-lg" :disabled="pre.saving" @click="cancelEditClick"><X :size="20" /> 수정 취소</button>
+                  <span class="spacer" />
+                  <p v-if="editNotice" class="edit-notice" role="alert"><CircleAlert :size="16" /> {{ editNotice }}</p>
+                  <button type="button" class="btn btn-lg btn-outline-primary" aria-disabled="true" @click="onConfirmClick">리포트 확인 완료</button>
+                  <button type="button" class="btn btn-primary btn-lg" :disabled="pre.saving" @click="openSave"><Save :size="20" /> {{ pre.saving ? '저장 중…' : '수정 내용 저장' }}</button>
+                </template>
+                <template v-else>
+                  <button type="button" class="btn btn-lg" @click="onClose"><X :size="20" /> 닫기</button>
+                  <span class="spacer" />
+                  <template v-for="a in reportActions" :key="a">
+                    <button v-if="a === 'HQ_REVIEW' && pending && canDecide" type="button" class="btn btn-lg" :disabled="submitting" @click="openAction('hq')">
+                      <Building2 :size="20" /> {{ ACTIONS.hq.label }}
+                    </button>
+                    <button v-else-if="a === 'REJECT' && pending && canDecide" type="button" class="btn btn-lg btn-danger" :disabled="submitting" @click="openAction('reject')">
+                      <CircleX :size="20" /> {{ ACTIONS.reject.label }}
+                    </button>
+                    <button v-else-if="a === 'EDIT' && canEdit" type="button" class="btn btn-lg btn-outline-primary" :disabled="pre.loading" @click="startEdit">
+                      <PencilLine :size="20" /> 수정
+                    </button>
+                    <button
+                      v-else-if="a === 'CONFIRM' && confirmState.kind !== 'hidden'"
+                      type="button"
+                      class="btn btn-lg btn-primary"
+                      :disabled="confirmState.kind !== 'ready' || submitting || pre.reviewing"
+                      @click="onConfirmClick"
+                    >
+                      <CircleCheck :size="20" /> {{ confirmState.kind === 'done' ? '확인 완료됨' : pre.reviewing ? '처리 중…' : '리포트 확인 완료' }}
+                    </button>
+                  </template>
+                </template>
+                <p v-if="!pre.editing && confirmState.kind === 'locked' && confirmState.reason" class="locked full"><Lock :size="18" /> {{ confirmState.reason }}</p>
+              </div>
+              <!-- 그 밖의 역할(품질 담당자 등): 기존 그대로 (조회 전용 안내) -->
+              <div v-else-if="pending" class="actions" role="group" aria-label="진단 결과 처리">
                 <template v-if="canDecide">
                   <button v-for="k in PRIMARY" :key="k" type="button" class="btn btn-lg" :class="ACTIONS[k].btn" :disabled="submitting" @click="openAction(k)">
                     <component :is="ACTIONS[k].icon" :size="20" /> {{ ACTIONS[k].label }}
@@ -380,10 +584,10 @@ const detailSummary = computed(() => {
             <!-- ---------- 2쪽: 부품 발주 ---------- -->
             <template v-else>
               <div class="row between p2-head">
-                <h2 class="h">부품 발주</h2>
+                <h2 class="h">{{ PAGES[1].label }}</h2>
                 <RouterLink v-if="isTech && repair.status === 'TECHNICIAN_REVIEW'" :to="`/repairs/${repair.id}/review`" class="btn btn-primary">수리 리포트 작성 <ArrowRight :size="18" /></RouterLink>
               </div>
-              <PartsOrderPage v-if="partsUnlocked" :repair="repair" :diagnosis="diagnosis" />
+              <PartsOrderPage v-if="partsUnlocked" :repair="repair" :diagnosis="diagnosis" :parts-override="pre.edit?.parts ?? null" :focus-part-id="focusOrder" />
               <StateView v-else state="empty" title="진단 내용을 먼저 확인해 주세요" message="1쪽에서 AI 진단 내용을 확인하면 교체 부품의 재고 확인과 주문 요청을 할 수 있습니다.">
                 <button type="button" class="btn btn-primary" @click="go(1)"><ChevronLeft :size="18" /> 1쪽 결론 요약으로</button>
               </StateView>
@@ -394,6 +598,25 @@ const detailSummary = computed(() => {
         </section>
       </template>
     </template>
+
+    <!-- 수정 내용 저장 확인 -->
+    <BaseModal :open="saveDlg" title="수정 내용 저장" :width="440" @close="saveDlg = false">
+      <p>수정한 리포트 내용을 저장하시겠습니까?</p>
+      <p class="faint">AI 원본은 그대로 보존되고, 기사 수정안이 새 버전(v{{ pre.editVersion + 1 }})으로 저장됩니다.</p>
+      <template #footer>
+        <button type="button" class="btn" :disabled="pre.saving" @click="saveDlg = false">취소</button>
+        <button type="button" class="btn btn-primary" :disabled="pre.saving" @click="doSave"><Save :size="18" /> {{ pre.saving ? '저장 중…' : '저장' }}</button>
+      </template>
+    </BaseModal>
+
+    <!-- 저장하지 않은 변경 보호 -->
+    <BaseModal :open="discard.open" title="수정 취소" :width="440" @close="discard.open = false">
+      <p>저장하지 않은 수정 내용이 있습니다. 수정을 취소하시겠습니까?</p>
+      <template #footer>
+        <button type="button" class="btn btn-primary" @click="discard.open = false">계속 수정</button>
+        <button type="button" class="btn" @click="confirmDiscard">수정 취소</button>
+      </template>
+    </BaseModal>
 
     <!-- 처리 확인 · 사유 입력 모달 -->
     <BaseModal :open="dlg.open" :title="ACTIONS[dlg.key].label" :width="560" @close="dlg.open = false">
@@ -432,13 +655,17 @@ const detailSummary = computed(() => {
 /* ---------- 노트 ---------- */
 .notebook {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
+}
+.notebook {
+  gap: 14px;
 }
 .nb-bar {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   padding: 0 4px;
 }
 .nav {
@@ -448,20 +675,26 @@ const detailSummary = computed(() => {
 .tabs {
   display: flex;
   gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 .tab {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 46px;
-  padding: 8px 18px;
-  border: 1px solid var(--border);
-  border-bottom: 0;
-  border-radius: var(--radius) var(--radius) 0 0;
-  background: var(--surface-2);
+  min-height: 44px;
+  padding: 6px 18px 6px 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
   color: var(--text-2);
   font-weight: 700;
   cursor: pointer;
+}
+.tab:hover:not(.on) {
+  background: var(--blue-50);
 }
 .tab .no {
   display: inline-grid;
@@ -473,18 +706,16 @@ const detailSummary = computed(() => {
   font-size: var(--fs-xs);
 }
 .tab.on {
-  background: var(--surface);
-  color: var(--navy-800);
-  position: relative;
-  top: 1px;
+  background: var(--ink);
+  color: #fff;
 }
 .tab.on .no {
-  background: var(--navy-800);
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 .tab:focus-visible {
-  outline: 3px solid var(--navy-600);
-  outline-offset: -3px;
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
 }
 .ver {
   align-self: center;
@@ -495,13 +726,14 @@ const detailSummary = computed(() => {
 .paper {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
-  padding: 28px 32px 20px;
+  padding: 32px 36px 22px;
   background: #fff;
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 4px var(--radius) var(--radius) var(--radius);
-  box-shadow: 0 1px 2px rgba(15, 29, 66, 0.06), 0 6px 20px rgba(15, 29, 66, 0.07);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
 }
 .page-no {
   justify-self: center;
@@ -530,17 +762,40 @@ const detailSummary = computed(() => {
   align-content: start;
 }
 .conclusion {
-  padding: 16px 18px;
-  border: 2px solid var(--navy-800);
-  border-radius: var(--radius);
+  padding: 20px 22px;
+  background: var(--blue-50);
+  border-radius: var(--radius-lg);
 }
-.cause {
+.conc-body {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+.conc-text {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.cause {
   font-size: var(--fs-xl);
-  font-weight: 800;
+  font-weight: 700;
+  color: var(--ink);
+}
+.big-score {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  column-gap: 2px;
+  margin: 0;
+}
+.big-score small {
+  color: var(--text-2);
+  font-weight: 600;
+}
+.big-score .faint {
+  grid-column: 1 / -1;
+  font-size: var(--fs-xs);
 }
 .todo {
   display: flex;
@@ -706,15 +961,29 @@ const detailSummary = computed(() => {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin: 0 -32px -20px;
-  padding: 14px 32px;
+  margin: 0 -36px -22px;
+  padding: 14px 36px;
   background: rgba(255, 255, 255, 0.96);
   border-top: 1px solid var(--border);
-  border-radius: 0 0 var(--radius) var(--radius);
-  box-shadow: 0 -4px 14px rgba(15, 29, 66, 0.06);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.05);
 }
 .actions + .page-no {
   margin-top: 4px;
+}
+.report-actions .full {
+  flex-basis: 100%;
+  justify-content: flex-end;
+  font-size: var(--fs-sm);
+}
+.edit-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--danger);
+  font-weight: 600;
+  font-size: var(--fs-sm);
 }
 .locked {
   display: inline-flex;
@@ -773,5 +1042,23 @@ const detailSummary = computed(() => {
   .tab {
     padding: 8px 12px;
   }
+}
+.missing {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: var(--fs-sm);
+}
+.unknown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.row.tight {
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 </style>

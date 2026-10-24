@@ -6,6 +6,11 @@ cd "$(dirname "$0")"
 ROOT=$PWD
 mkdir -p logs
 
+# 키 파일 하나를 여러 클론이 같이 쓴다: 레포에 .env가 없으면 ~/.config/skala-repair/ 의 파일을 링크한다
+SHARED="${REPAIR_ENV_DIR:-$HOME/.config/skala-repair}"
+[ -e .env ] || { [ -f "$SHARED/.env" ] && ln -s "$SHARED/.env" .env && echo ".env ← $SHARED/.env"; }
+[ -e backend/.env ] || { [ -f "$SHARED/backend.env" ] && ln -s "$SHARED/backend.env" backend/.env && echo "backend/.env ← $SHARED/backend.env"; }
+
 # 백엔드 비밀값: backend/.env가 있으면 그 값, 없거나 비었으면 로컬 기본값
 if [ -f backend/.env ]; then set -a; . backend/.env; set +a; fi
 : "${DB_PASSWORD:=repair-local}"

@@ -28,6 +28,7 @@ export function toRepairReport(r: BeReport): RepairReport {
   const first = revs[0]
   const confirmedLatest = r.confirmed_revision != null && r.confirmed_revision === r.latest_revision
   return {
+    id: String(r.id),
     repairId: Number(r.case_id),
     version: r.version,
     revision: r.latest_revision,

@@ -26,8 +26,8 @@ const el = ref<HTMLDivElement | null>(null)
 const chart = shallowRef<echarts.ECharts | null>(null)
 let ro: ResizeObserver | null = null
 
-const NAVY = '#1f3672'
-const PALETTE = ['#1f3672', '#c27a1a', '#3d8a5f', '#7a5bd6', '#b0413e', '#4a7fb5']
+const NAVY = '#2563eb'
+const PALETTE = ['#2563eb', '#60a5fa', '#a5b4fc', '#0b1b3f', '#c27a1a', '#3d8a5f']
 
 function option(): EChartsCoreOption {
   const base = {
