@@ -149,6 +149,10 @@ asyncio.run(main())
 - 가짜 재고로 돌리려면 `REAL_BUSINESS_MCP=0 ./run.sh`
 - `.env`에 `BUSINESS_MCP_URL`이 있으면 로컬 대신 그 주소(ngrok)를 쓴다
 
+## 협업 규칙
+
+브랜치 · PR · 리뷰 규칙과 팀원별 주요 PR: [docs/COLLABORATION.md](docs/COLLABORATION.md)
+
 ## 시험
 ```bash
 uv run pytest          # 에이전트 (127개, 약 50초)
