@@ -10,7 +10,11 @@ public final class V2Inputs {
         LocalDate purchaseDate, @NotBlank @Size(max=100) String serialNumber,  // [출장] 구매일 모르면 비움 → 보증 UNKNOWN
         @NotBlank @Size(max=100) String modelCode, @NotNull @Positive Long centerId,
         @NotBlank @Pattern(regexp="CENTER|FIELD") String serviceType,
-        @Size(max=100) String contactName,@Size(max=40) String contactPhone,@Size(max=500) String visitAddress) {}
+        @Size(max=100) String contactName,@Size(max=40) String contactPhone,@Size(max=500) String visitAddress,
+        LocalDate preferredDate,@Pattern(regexp="AM|PM") String visitSlot) {  // [출장] 고객 희망 방문일·시간대 → 방문 일정 초안
+        public ConsumerIntake(String symptoms,LocalDate purchaseDate,String serialNumber,String modelCode,Long centerId,String serviceType,String contactName,String contactPhone,String visitAddress) {
+            this(symptoms,purchaseDate,serialNumber,modelCode,centerId,serviceType,contactName,contactPhone,visitAddress,null,null);}
+    }
     public record Assignment(@NotNull @Positive Long technicianId,@NotBlank @Size(max=1000) String reason) {}
     public record Policy(@NotNull @Positive Long modelId,@NotBlank @Size(max=100) String version,
         @Min(1) @Max(600) int durationMonths,@NotNull LocalDate effectiveFrom,LocalDate effectiveTo,boolean developmentOnly) {}

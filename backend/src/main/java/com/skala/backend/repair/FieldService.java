@@ -134,8 +134,10 @@ public class FieldService {
     @Transactional public Map<String,Object> warranty(Long id){
         access.repair(id);
         var rows=db.list("SELECT a.*,p.duration_months FROM warranty_assessment a LEFT JOIN warranty_policy p ON p.id=a.policy_id WHERE a.case_id=? ORDER BY a.id DESC LIMIT 1",id);
-        var a=rows.isEmpty()?warranty.record(id,WarrantyService.today()):rows.getFirst();
-        if(rows.isEmpty() && a.get("policy_id")!=null) a.put("duration_months",db.one("SELECT duration_months FROM warranty_policy WHERE id=?",a.get("policy_id")).get("duration_months"));
+        // 판정이 없거나 UNKNOWN(정책·구매일 미등록)이면 지금 기준으로 다시 판정한다 (정책이 나중에 등록될 수 있음)
+        boolean fresh=rows.isEmpty() || "UNKNOWN".equals(rows.getFirst().get("result"));
+        var a=fresh?warranty.record(id,WarrantyService.today()):rows.getFirst();
+        if(fresh && a.get("policy_id")!=null) a.put("duration_months",db.one("SELECT duration_months FROM warranty_policy WHERE id=?",a.get("policy_id")).get("duration_months"));
         String result=String.valueOf(a.get("result"));
         var reasons=new ArrayList<String>();
         reasons.add(a.get("purchase_date")==null?"구매일 정보 없음":"구매일 "+a.get("purchase_date"));

@@ -64,6 +64,7 @@ export async function submitCustomerRequest(req: CustomerIntakeRequest, photos: 
     symptoms: req.symptom, purchaseDate: req.purchaseDate || null, serialNumber: req.serial, modelCode: model?.model_code,
     centerId: req.centerId ?? options.centers[0]?.id, serviceType: req.serviceType === 'VISIT' ? 'FIELD' : 'CENTER',  // 프론트 VISIT(방문 수리) = 백엔드 FIELD
     contactName: req.customerName, contactPhone: req.phone, visitAddress: req.address ?? null,
+    preferredDate: req.preferredDate || null, visitSlot: req.visitSlot ?? null,
   }
   const f = new FormData()
   f.append('data', new Blob([JSON.stringify(body)], { type: 'application/json' }))

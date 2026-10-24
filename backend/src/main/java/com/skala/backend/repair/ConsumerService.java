@@ -37,6 +37,9 @@ public class ConsumerService {
             db.update("UPDATE repair_case SET product_snapshot=?::jsonb,product_type=? WHERE id=?",Json.write(snapshot),snapshot.get("product_type"),id);
             Instant expires=Instant.now().plus(Duration.ofDays(keyDays));
             db.update("INSERT INTO consumer_access(case_id,key_hash,expires_at,contact_name,contact_phone,visit_address) VALUES (?,?,?,?,?,?)",id,hash(key),expires.atOffset(ZoneOffset.UTC),input.contactName(),input.contactPhone(),input.visitAddress());
+            // [출장] 고객 희망일(오전 10시 / 오후 2시)을 방문 일정 초안으로. 기사·본사가 PUT /api/repairs/{id}/visit로 바꾼다
+            if(input.serviceType().equals("FIELD") && input.preferredDate()!=null && !input.preferredDate().isBefore(WarrantyService.today()))
+                db.update("UPDATE repair_case SET visit_at=? WHERE id=?",input.preferredDate().atTime("PM".equals(input.visitSlot())?14:10,0).atZone(java.time.ZoneId.of("Asia/Seoul")).toOffsetDateTime(),id);
             var ids=new ArrayList<Long>();for(var f:uploads) ids.add(save(id,f));warranty.record(id,WarrantyService.today());
             db.audit("consumer","CONSUMER_INTAKE_CREATED",id,Map.of("photoCount",ids.size()));
             return Map.of("caseNumber",number,"lookupKey",key,"expiresAt",expires.toString(),"status","RECEIVED","attachmentIds",ids,"requiresTechnicianReview",true);

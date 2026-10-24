@@ -17649,6 +17649,32 @@
                 "type": "null"
               }
             ]
+          },
+          "preferredDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "description": "고객 희망 방문일 (출장)"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visitSlot": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "AM",
+                  "PM"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
