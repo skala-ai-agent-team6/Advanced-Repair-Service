@@ -304,7 +304,8 @@
                   "name": "예시",
                   "active": true,
                   "role": "TECHNICIAN",
-                  "centerId": "1"
+                  "centerId": "1",
+                  "operationsEnabled": true
                 }
               }
             }
@@ -583,7 +584,9 @@
                       "name": "예시",
                       "category": "PCB"
                     }
-                  ]
+                  ],
+                  "appliance_type": "예시",
+                  "product_type": "vacuum"
                 }
               }
             }
@@ -1041,7 +1044,12 @@
                       "created_at": "2026-10-22T09:00:00+09:00",
                       "closed_at": "2026-10-22T09:00:00+09:00",
                       "version": 1,
-                      "correlation_id": "00000000-0000-4000-8000-000000000001"
+                      "correlation_id": "00000000-0000-4000-8000-000000000001",
+                      "intake_source": "STAFF",
+                      "service_type": "CENTER",
+                      "purchase_date": "2026-10-22",
+                      "assigned_technician_id": "1",
+                      "product_type": "vacuum"
                     }
                   ]
                 }
@@ -1188,6 +1196,11 @@
                   "closed_at": "2026-10-22T09:00:00+09:00",
                   "version": 1,
                   "correlation_id": "00000000-0000-4000-8000-000000000001",
+                  "intake_source": "STAFF",
+                  "service_type": "CENTER",
+                  "purchase_date": "2026-10-22",
+                  "assigned_technician_id": "1",
+                  "product_type": "vacuum",
                   "attachments": [
                     {
                       "id": "1",
@@ -4609,7 +4622,13 @@
                         "technicianOpinion": "예시",
                         "repairSuccessful": true,
                         "aiAcceptance": "ACCEPTED",
-                        "outcome": "FIXED"
+                        "outcome": "FIXED",
+                        "replacedParts": [
+                          {
+                            "partId": "1",
+                            "quantity": 1
+                          }
+                        ]
                       },
                       "author_id": "1",
                       "created_at": "2026-10-22T09:00:00+09:00",
@@ -4791,7 +4810,13 @@
                         "technicianOpinion": "예시",
                         "repairSuccessful": true,
                         "aiAcceptance": "ACCEPTED",
-                        "outcome": "FIXED"
+                        "outcome": "FIXED",
+                        "replacedParts": [
+                          {
+                            "partId": "1",
+                            "quantity": 1
+                          }
+                        ]
                       },
                       "author_id": "1",
                       "created_at": "2026-10-22T09:00:00+09:00",
@@ -4920,7 +4945,13 @@
                   "technicianOpinion": "예시",
                   "repairSuccessful": true,
                   "aiAcceptance": "ACCEPTED",
-                  "outcome": "FIXED"
+                  "outcome": "FIXED",
+                  "replacedParts": [
+                    {
+                      "partId": "1",
+                      "quantity": 1
+                    }
+                  ]
                 }
               }
             }
@@ -5003,7 +5034,13 @@
                         "technicianOpinion": "예시",
                         "repairSuccessful": true,
                         "aiAcceptance": "ACCEPTED",
-                        "outcome": "FIXED"
+                        "outcome": "FIXED",
+                        "replacedParts": [
+                          {
+                            "partId": "1",
+                            "quantity": 1
+                          }
+                        ]
                       },
                       "author_id": "1",
                       "created_at": "2026-10-22T09:00:00+09:00",
@@ -5132,7 +5169,13 @@
                   "technicianOpinion": "예시",
                   "repairSuccessful": true,
                   "aiAcceptance": "ACCEPTED",
-                  "outcome": "FIXED"
+                  "outcome": "FIXED",
+                  "replacedParts": [
+                    {
+                      "partId": "1",
+                      "quantity": 1
+                    }
+                  ]
                 }
               }
             }
@@ -5206,7 +5249,13 @@
                         "technicianOpinion": "예시",
                         "repairSuccessful": true,
                         "aiAcceptance": "ACCEPTED",
-                        "outcome": "FIXED"
+                        "outcome": "FIXED",
+                        "replacedParts": [
+                          {
+                            "partId": "1",
+                            "quantity": 1
+                          }
+                        ]
                       },
                       "author_id": "1",
                       "created_at": "2026-10-22T09:00:00+09:00",
@@ -5369,7 +5418,13 @@
                       "technicianOpinion": "예시",
                       "repairSuccessful": true,
                       "aiAcceptance": "ACCEPTED",
-                      "outcome": "FIXED"
+                      "outcome": "FIXED",
+                      "replacedParts": [
+                        {
+                          "partId": "1",
+                          "quantity": 1
+                        }
+                      ]
                     },
                     "author_id": "1",
                     "created_at": "2026-10-22T09:00:00+09:00",
@@ -5541,7 +5596,13 @@
                         "technicianOpinion": "예시",
                         "repairSuccessful": true,
                         "aiAcceptance": "ACCEPTED",
-                        "outcome": "FIXED"
+                        "outcome": "FIXED",
+                        "replacedParts": [
+                          {
+                            "partId": "1",
+                            "quantity": 1
+                          }
+                        ]
                       },
                       "author_id": "1",
                       "created_at": "2026-10-22T09:00:00+09:00",
@@ -6170,7 +6231,12 @@
                     "created_at": "2026-10-22T09:00:00+09:00",
                     "closed_at": "2026-10-22T09:00:00+09:00",
                     "version": 1,
-                    "correlation_id": "00000000-0000-4000-8000-000000000001"
+                    "correlation_id": "00000000-0000-4000-8000-000000000001",
+                    "intake_source": "STAFF",
+                    "service_type": "CENTER",
+                    "purchase_date": "2026-10-22",
+                    "assigned_technician_id": "1",
+                    "product_type": "vacuum"
                   },
                   "task": {
                     "id": "1",
@@ -6529,7 +6595,9 @@
                       "name": "예시",
                       "category": "PCB"
                     }
-                  ]
+                  ],
+                  "appliance_type": "예시",
+                  "product_type": "vacuum"
                 }
               }
             }
@@ -7077,20 +7145,15 @@
                     "confirmed_revision": 1,
                     "content": {
                       "actualCause": "예시",
-                      "faults": [
-                        {
-                          "area": "PCB",
-                          "componentId": "1",
-                          "partId": "1"
-                        }
-                      ],
                       "actualAction": "예시",
-                      "technicianOpinion": "예시",
                       "repairSuccessful": true,
-                      "aiAcceptance": "ACCEPTED",
-                      "outcome": "FIXED"
+                      "outcome": "예시",
+                      "replacedParts": [
+                        {}
+                      ]
                     },
-                    "confirmed_at": "2026-10-22T09:00:00+09:00"
+                    "confirmed_at": "2026-10-22T09:00:00+09:00",
+                    "product_type": "vacuum"
                   }
                 ]
               }
@@ -7998,20 +8061,15 @@
                     "confirmed_revision": 1,
                     "content": {
                       "actualCause": "예시",
-                      "faults": [
-                        {
-                          "area": "PCB",
-                          "componentId": "1",
-                          "partId": "1"
-                        }
-                      ],
                       "actualAction": "예시",
-                      "technicianOpinion": "예시",
                       "repairSuccessful": true,
-                      "aiAcceptance": "ACCEPTED",
-                      "outcome": "FIXED"
+                      "outcome": "예시",
+                      "replacedParts": [
+                        {}
+                      ]
                     },
-                    "confirmed_at": "2026-10-22T09:00:00+09:00"
+                    "confirmed_at": "2026-10-22T09:00:00+09:00",
+                    "product_type": "vacuum"
                   }
                 ]
               }
@@ -9237,6 +9295,11 @@
                   "closed_at": "2026-10-22T09:00:00+09:00",
                   "version": 1,
                   "correlation_id": "00000000-0000-4000-8000-000000000001",
+                  "intake_source": "STAFF",
+                  "service_type": "CENTER",
+                  "purchase_date": "2026-10-22",
+                  "assigned_technician_id": "1",
+                  "product_type": "vacuum",
                   "attachments": [
                     {
                       "id": "1",
@@ -9473,6 +9536,3927 @@
         ],
         "description": "Confirm diagnosis or request/return HQ review\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
       }
+    },
+    "/public/intake-options": {
+      "get": {
+        "summary": "비로그인 접수용 센터·모델 목록",
+        "operationId": "get__public_intake_options",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "centers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "models": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "centers",
+                    "models"
+                  ]
+                },
+                "example": {
+                  "centers": [
+                    {}
+                  ],
+                  "models": [
+                    {}
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 429
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 503
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "tags": [
+          "소비자 접수·조회"
+        ],
+        "description": "비로그인 접수용 센터·모델 목록\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
+      }
+    },
+    "/public/cases": {
+      "post": {
+        "summary": "소비자 비로그인 접수; Agent 자동 실행 안 함",
+        "operationId": "post__public_cases",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsumerAccepted"
+                },
+                "example": {
+                  "caseNumber": "예시",
+                  "lookupKey": "예시",
+                  "expiresAt": "2026-10-22T09:00:00+09:00",
+                  "status": "RECEIVED",
+                  "attachmentIds": [
+                    "1"
+                  ],
+                  "requiresTechnicianReview": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 429
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 503
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "$ref": "#/components/schemas/ConsumerIntake"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "required": [
+                  "data",
+                  "files"
+                ]
+              },
+              "encoding": {
+                "data": {
+                  "contentType": "application/json"
+                },
+                "files": {
+                  "contentType": "image/png, image/jpeg"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "소비자 접수·조회"
+        ],
+        "description": "소비자 비로그인 접수; Agent 자동 실행 안 함\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
+      }
+    },
+    "/public/cases/{number}": {
+      "get": {
+        "summary": "접수번호와 조회 키로 고객 공개 정보 조회",
+        "operationId": "get__public_cases__number_",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "발급된 caseNumber; 비밀값이 아님"
+            },
+            "example": "예시"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerView"
+                },
+                "example": {
+                  "caseNumber": "예시",
+                  "status": "RECEIVED",
+                  "warranty": {
+                    "result": "WITHIN_PERIOD",
+                    "reason": "예시",
+                    "purchase_date": "2026-10-22",
+                    "assessed_on": "2026-10-22",
+                    "policy_version": "예시",
+                    "expires_on_exclusive": "2026-10-22"
+                  },
+                  "report": {
+                    "version": 1,
+                    "kind": "ESTIMATE",
+                    "cause_summary": "예시",
+                    "planned_work": "예시",
+                    "published_at": "2026-10-22T09:00:00+09:00"
+                  },
+                  "photos": [
+                    {
+                      "id": "1",
+                      "status": "예시",
+                      "verdict": "예시",
+                      "issues": [
+                        "예시"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 429
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 503
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ConsumerKey": []
+          }
+        ],
+        "tags": [
+          "소비자 접수·조회"
+        ],
+        "description": "접수번호와 조회 키로 고객 공개 정보 조회\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
+      }
+    },
+    "/public/cases/{number}/attachments": {
+      "post": {
+        "summary": "조회 키로 초기 재촬영 저장; 진단 시작 후 기사에게 인계",
+        "operationId": "post__public_cases__number__attachments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "발급된 caseNumber; 비밀값이 아님"
+            },
+            "example": "예시"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "attachmentId": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]*$",
+                      "description": "PostgreSQL bigint ID encoded as a decimal string"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "attachmentId",
+                    "status"
+                  ]
+                },
+                "example": {
+                  "attachmentId": "1",
+                  "status": "예시"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "이미지 검증 실행 풀 포화 또는 검사 실행 오류/시간 초과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "PHOTO_VALIDATION_BUSY",
+                  "status": 429
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "이미지 검증 실행 풀 포화 또는 검사 실행 오류/시간 초과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "PHOTO_VALIDATION_TIMEOUT",
+                  "status": 503
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ConsumerKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "tags": [
+          "소비자 접수·조회"
+        ],
+        "description": "조회 키로 초기 재촬영 저장; 진단 시작 후 기사에게 인계\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
+      }
+    },
+    "/public/cases/{number}/attachments/{id}": {
+      "get": {
+        "summary": "본인 접수의 원본 사진; 조회 키 필요",
+        "operationId": "get__public_cases__number__attachments__id_",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "발급된 caseNumber; 비밀값이 아님"
+            },
+            "example": "예시"
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 429
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 503
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ConsumerKey": []
+          }
+        ],
+        "tags": [
+          "소비자 접수·조회"
+        ],
+        "description": "본인 접수의 원본 사진; 조회 키 필요\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
+      }
+    },
+    "/api/repairs/{id}/work-report": {
+      "get": {
+        "summary": "기사 통합 리포트·출장 준비·보증·부품·공개본",
+        "operationId": "get__api_repairs__id__work_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkReport"
+                },
+                "example": {
+                  "id": "1",
+                  "case_number": "예시",
+                  "center_id": "1",
+                  "product_id": "1",
+                  "technician_id": "1",
+                  "symptom": "예시",
+                  "error_codes": [
+                    "예시"
+                  ],
+                  "firmware_version": "예시",
+                  "user_input": {},
+                  "product_snapshot": {},
+                  "status": "RECEIVED",
+                  "procurement_status": "NOT_STARTED",
+                  "created_at": "2026-10-22T09:00:00+09:00",
+                  "closed_at": "2026-10-22T09:00:00+09:00",
+                  "version": 1,
+                  "correlation_id": "00000000-0000-4000-8000-000000000001",
+                  "intake_source": "STAFF",
+                  "service_type": "CENTER",
+                  "purchase_date": "2026-10-22",
+                  "assigned_technician_id": "1",
+                  "product_type": "vacuum",
+                  "attachments": [
+                    {
+                      "id": "1",
+                      "request_id": "1",
+                      "kind": "IMAGE",
+                      "target": "예시",
+                      "original_name": "예시",
+                      "mime_type": "예시",
+                      "byte_size": 1,
+                      "sha256": "예시",
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "quality_required": true,
+                      "latest_quality_result_id": "1",
+                      "use_status": "예시",
+                      "replaced_by_id": "1"
+                    }
+                  ],
+                  "tasks": [
+                    {
+                      "id": "1",
+                      "case_id": "1",
+                      "request_key": "00000000-0000-4000-8000-000000000001",
+                      "workflow_version": "예시",
+                      "status": "QUEUED",
+                      "input_revision": 1,
+                      "execution_id": "00000000-0000-4000-8000-000000000001",
+                      "last_sequence": 1,
+                      "photo_request_count": 0,
+                      "retry_count": 1,
+                      "stage": "예시",
+                      "checkpoint_ref": "예시",
+                      "error_code": "예시",
+                      "error_message": "예시",
+                      "lease_until": "2026-10-22T09:00:00+09:00",
+                      "result": {
+                        "summary": "예시",
+                        "modelVersion": "예시",
+                        "repairMethod": "예시",
+                        "candidates": [
+                          null
+                        ],
+                        "recommendedParts": [
+                          null
+                        ],
+                        "evidence": [
+                          null
+                        ]
+                      },
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "updated_at": "2026-10-22T09:00:00+09:00",
+                      "finished_at": "2026-10-22T09:00:00+09:00",
+                      "version": 1,
+                      "candidates": [
+                        {}
+                      ],
+                      "evidence": [
+                        {}
+                      ],
+                      "recommendedParts": [
+                        {}
+                      ]
+                    }
+                  ],
+                  "photoRequests": [
+                    {
+                      "id": "1",
+                      "job_id": "1",
+                      "round_no": 1,
+                      "instruction": "예시",
+                      "target": "예시",
+                      "status": "OPEN",
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "submitted_at": "2026-10-22T09:00:00+09:00",
+                      "request_key": "00000000-0000-4000-8000-000000000001",
+                      "submission_key": "00000000-0000-4000-8000-000000000001"
+                    }
+                  ],
+                  "reports": [
+                    {
+                      "id": "1",
+                      "case_id": "1",
+                      "product_id": "1",
+                      "author_id": "1",
+                      "diagnosis_job_id": "1",
+                      "outcome": "FIXED",
+                      "ai_assessment": "예시",
+                      "comment": "예시",
+                      "action_taken": "예시",
+                      "confirmed_at": "2026-10-22T09:00:00+09:00",
+                      "version": 1,
+                      "latest_revision": 1,
+                      "confirmed_revision": 1,
+                      "created_at": "2026-10-22T09:00:00+09:00"
+                    }
+                  ],
+                  "orders": [
+                    {
+                      "id": "1",
+                      "case_id": "1",
+                      "request_key": "00000000-0000-4000-8000-000000000001",
+                      "requested_by": "1",
+                      "status": "PENDING",
+                      "decided_by": "1",
+                      "decided_at": "2026-10-22T09:00:00+09:00",
+                      "decision_note": "예시",
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "version": 1
+                    }
+                  ],
+                  "warranty": {
+                    "result": "WITHIN_PERIOD",
+                    "reason": "예시",
+                    "purchase_date": "2026-10-22",
+                    "assessed_on": "2026-10-22",
+                    "policy_version": "예시",
+                    "expires_on_exclusive": "2026-10-22"
+                  },
+                  "product": {
+                    "id": "1",
+                    "serial_number": "예시",
+                    "model_id": "1",
+                    "model_code": "예시",
+                    "model_name": "예시",
+                    "manufactured_on": "2026-10-22",
+                    "information": {},
+                    "components": [
+                      {
+                        "id": "1",
+                        "product_id": "1",
+                        "part_id": "1",
+                        "lot_id": "1",
+                        "slot_code": "예시",
+                        "component_serial": "예시",
+                        "installed_at": "2026-10-22T09:00:00+09:00",
+                        "removed_at": "2026-10-22T09:00:00+09:00",
+                        "lot_number": "예시",
+                        "factory_id": "1",
+                        "factory_name": "예시",
+                        "region": "예시"
+                      }
+                    ],
+                    "compatibleParts": [
+                      {
+                        "id": "1",
+                        "part_number": "예시",
+                        "name": "예시",
+                        "category": "PCB"
+                      }
+                    ],
+                    "appliance_type": "예시",
+                    "product_type": "vacuum"
+                  },
+                  "diagnosis": {},
+                  "recommendedParts": [
+                    {}
+                  ],
+                  "procurement": {
+                    "status": "예시",
+                    "snapshots": [
+                      {
+                        "id": "1",
+                        "case_id": "1",
+                        "body": {},
+                        "created_at": "2026-10-22T09:00:00+09:00"
+                      }
+                    ],
+                    "orders": [
+                      {
+                        "id": "1",
+                        "case_id": "1",
+                        "request_key": "00000000-0000-4000-8000-000000000001",
+                        "requested_by": "1",
+                        "status": "PENDING",
+                        "decided_by": "1",
+                        "decided_at": "2026-10-22T09:00:00+09:00",
+                        "decision_note": "예시",
+                        "created_at": "2026-10-22T09:00:00+09:00",
+                        "version": 1
+                      }
+                    ]
+                  },
+                  "report": {},
+                  "visitContact": {},
+                  "preparation": {
+                    "status": "예시",
+                    "missing": [
+                      "예시"
+                    ]
+                  },
+                  "assignments": [
+                    {}
+                  ],
+                  "customerReports": [
+                    {}
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "기사 통합 리포트·출장 준비·보증·부품·공개본\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/assignment": {
+      "post": {
+        "summary": "QUALITY_MANAGER: 기사 배정·재배정 및 이력",
+        "operationId": "post__api_repairs__id__assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkReport"
+                },
+                "example": {
+                  "id": "1",
+                  "case_number": "예시",
+                  "center_id": "1",
+                  "product_id": "1",
+                  "technician_id": "1",
+                  "symptom": "예시",
+                  "error_codes": [
+                    "예시"
+                  ],
+                  "firmware_version": "예시",
+                  "user_input": {},
+                  "product_snapshot": {},
+                  "status": "RECEIVED",
+                  "procurement_status": "NOT_STARTED",
+                  "created_at": "2026-10-22T09:00:00+09:00",
+                  "closed_at": "2026-10-22T09:00:00+09:00",
+                  "version": 1,
+                  "correlation_id": "00000000-0000-4000-8000-000000000001",
+                  "intake_source": "STAFF",
+                  "service_type": "CENTER",
+                  "purchase_date": "2026-10-22",
+                  "assigned_technician_id": "1",
+                  "product_type": "vacuum",
+                  "attachments": [
+                    {
+                      "id": "1",
+                      "request_id": "1",
+                      "kind": "IMAGE",
+                      "target": "예시",
+                      "original_name": "예시",
+                      "mime_type": "예시",
+                      "byte_size": 1,
+                      "sha256": "예시",
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "quality_required": true,
+                      "latest_quality_result_id": "1",
+                      "use_status": "예시",
+                      "replaced_by_id": "1"
+                    }
+                  ],
+                  "tasks": [
+                    {
+                      "id": "1",
+                      "case_id": "1",
+                      "request_key": "00000000-0000-4000-8000-000000000001",
+                      "workflow_version": "예시",
+                      "status": "QUEUED",
+                      "input_revision": 1,
+                      "execution_id": "00000000-0000-4000-8000-000000000001",
+                      "last_sequence": 1,
+                      "photo_request_count": 0,
+                      "retry_count": 1,
+                      "stage": "예시",
+                      "checkpoint_ref": "예시",
+                      "error_code": "예시",
+                      "error_message": "예시",
+                      "lease_until": "2026-10-22T09:00:00+09:00",
+                      "result": {
+                        "summary": "예시",
+                        "modelVersion": "예시",
+                        "repairMethod": "예시",
+                        "candidates": [
+                          null
+                        ],
+                        "recommendedParts": [
+                          null
+                        ],
+                        "evidence": [
+                          null
+                        ]
+                      },
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "updated_at": "2026-10-22T09:00:00+09:00",
+                      "finished_at": "2026-10-22T09:00:00+09:00",
+                      "version": 1,
+                      "candidates": [
+                        {}
+                      ],
+                      "evidence": [
+                        {}
+                      ],
+                      "recommendedParts": [
+                        {}
+                      ]
+                    }
+                  ],
+                  "photoRequests": [
+                    {
+                      "id": "1",
+                      "job_id": "1",
+                      "round_no": 1,
+                      "instruction": "예시",
+                      "target": "예시",
+                      "status": "OPEN",
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "submitted_at": "2026-10-22T09:00:00+09:00",
+                      "request_key": "00000000-0000-4000-8000-000000000001",
+                      "submission_key": "00000000-0000-4000-8000-000000000001"
+                    }
+                  ],
+                  "reports": [
+                    {
+                      "id": "1",
+                      "case_id": "1",
+                      "product_id": "1",
+                      "author_id": "1",
+                      "diagnosis_job_id": "1",
+                      "outcome": "FIXED",
+                      "ai_assessment": "예시",
+                      "comment": "예시",
+                      "action_taken": "예시",
+                      "confirmed_at": "2026-10-22T09:00:00+09:00",
+                      "version": 1,
+                      "latest_revision": 1,
+                      "confirmed_revision": 1,
+                      "created_at": "2026-10-22T09:00:00+09:00"
+                    }
+                  ],
+                  "orders": [
+                    {
+                      "id": "1",
+                      "case_id": "1",
+                      "request_key": "00000000-0000-4000-8000-000000000001",
+                      "requested_by": "1",
+                      "status": "PENDING",
+                      "decided_by": "1",
+                      "decided_at": "2026-10-22T09:00:00+09:00",
+                      "decision_note": "예시",
+                      "created_at": "2026-10-22T09:00:00+09:00",
+                      "version": 1
+                    }
+                  ],
+                  "warranty": {
+                    "result": "WITHIN_PERIOD",
+                    "reason": "예시",
+                    "purchase_date": "2026-10-22",
+                    "assessed_on": "2026-10-22",
+                    "policy_version": "예시",
+                    "expires_on_exclusive": "2026-10-22"
+                  },
+                  "product": {
+                    "id": "1",
+                    "serial_number": "예시",
+                    "model_id": "1",
+                    "model_code": "예시",
+                    "model_name": "예시",
+                    "manufactured_on": "2026-10-22",
+                    "information": {},
+                    "components": [
+                      {
+                        "id": "1",
+                        "product_id": "1",
+                        "part_id": "1",
+                        "lot_id": "1",
+                        "slot_code": "예시",
+                        "component_serial": "예시",
+                        "installed_at": "2026-10-22T09:00:00+09:00",
+                        "removed_at": "2026-10-22T09:00:00+09:00",
+                        "lot_number": "예시",
+                        "factory_id": "1",
+                        "factory_name": "예시",
+                        "region": "예시"
+                      }
+                    ],
+                    "compatibleParts": [
+                      {
+                        "id": "1",
+                        "part_number": "예시",
+                        "name": "예시",
+                        "category": "PCB"
+                      }
+                    ],
+                    "appliance_type": "예시",
+                    "product_type": "vacuum"
+                  },
+                  "diagnosis": {},
+                  "recommendedParts": [
+                    {}
+                  ],
+                  "procurement": {
+                    "status": "예시",
+                    "snapshots": [
+                      {
+                        "id": "1",
+                        "case_id": "1",
+                        "body": {},
+                        "created_at": "2026-10-22T09:00:00+09:00"
+                      }
+                    ],
+                    "orders": [
+                      {
+                        "id": "1",
+                        "case_id": "1",
+                        "request_key": "00000000-0000-4000-8000-000000000001",
+                        "requested_by": "1",
+                        "status": "PENDING",
+                        "decided_by": "1",
+                        "decided_at": "2026-10-22T09:00:00+09:00",
+                        "decision_note": "예시",
+                        "created_at": "2026-10-22T09:00:00+09:00",
+                        "version": 1
+                      }
+                    ]
+                  },
+                  "report": {},
+                  "visitContact": {},
+                  "preparation": {
+                    "status": "예시",
+                    "missing": [
+                      "예시"
+                    ]
+                  },
+                  "assignments": [
+                    {}
+                  ],
+                  "customerReports": [
+                    {}
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Assignment"
+              },
+              "example": {
+                "technicianId": "1",
+                "reason": "예시"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "QUALITY_MANAGER: 기사 배정·재배정 및 이력\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/warranty-policies": {
+      "post": {
+        "summary": "QUALITY_MANAGER: 불변 보증 정책 버전 등록",
+        "operationId": "post__api_warranty_policies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WarrantyPolicy"
+              },
+              "example": {
+                "modelId": "1",
+                "version": "예시",
+                "durationMonths": 1,
+                "effectiveFrom": "2026-10-22",
+                "effectiveTo": "2026-10-22",
+                "developmentOnly": true
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "보증"
+        ],
+        "description": "QUALITY_MANAGER: 불변 보증 정책 버전 등록\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      },
+      "get": {
+        "summary": "QUALITY_MANAGER: 모델별 보증 정책 조회",
+        "operationId": "get__api_warranty_policies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "example": [
+                  {}
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "보증"
+        ],
+        "description": "QUALITY_MANAGER: 모델별 보증 정책 조회\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/warranty-assessments": {
+      "post": {
+        "summary": "TECHNICIAN: 구매일 보증 재판정; 이력 보존",
+        "operationId": "post__api_repairs__id__warranty_assessments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Warranty"
+                },
+                "example": {
+                  "result": "WITHIN_PERIOD",
+                  "reason": "예시",
+                  "purchase_date": "2026-10-22",
+                  "assessed_on": "2026-10-22",
+                  "policy_version": "예시",
+                  "expires_on_exclusive": "2026-10-22"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "보증"
+        ],
+        "description": "TECHNICIAN: 구매일 보증 재판정; 이력 보존\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/customer-report": {
+      "post": {
+        "summary": "TECHNICIAN: 고객 전용 초안 작성; 자동 공개 안 함",
+        "operationId": "post__api_repairs__id__customer_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerDraft"
+              },
+              "example": {
+                "expectedVersion": 0,
+                "kind": "ESTIMATE",
+                "causeSummary": "예시",
+                "plannedWork": "예시",
+                "sourceRevision": 1
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "TECHNICIAN: 고객 전용 초안 작성; 자동 공개 안 함\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/customer-report/publish": {
+      "post": {
+        "summary": "TECHNICIAN: 검토한 고객 리포트 버전 명시적 공개",
+        "operationId": "post__api_repairs__id__customer_report_publish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              },
+              "example": {
+                "version": 1
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "TECHNICIAN: 검토한 고객 리포트 버전 명시적 공개\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/reports/{id}/rag-sync": {
+      "get": {
+        "summary": "접근 가능한 보고서의 RAG 동기화 최신 상태·이력",
+        "operationId": "get__api_reports__id__rag_sync",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "latest": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "enabled",
+                    "latest",
+                    "history"
+                  ]
+                },
+                "example": {
+                  "enabled": true,
+                  "latest": {},
+                  "history": [
+                    {}
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "수리 리포트"
+        ],
+        "description": "접근 가능한 보고서의 RAG 동기화 최신 상태·이력\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/reports/{id}/edit-proposals": {
+      "get": {
+        "summary": "AI 원본·편집 제안·수락 또는 반려 이력",
+        "operationId": "get__api_reports__id__edit_proposals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalState"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "1",
+                    "report_id": "1",
+                    "target_revision": 1,
+                    "request_key": "00000000-0000-4000-8000-000000000001",
+                    "original": {
+                      "actualCause": "예시",
+                      "faults": [
+                        {
+                          "area": "PCB",
+                          "componentId": "1",
+                          "partId": "1"
+                        }
+                      ],
+                      "actualAction": "예시",
+                      "technicianOpinion": "예시",
+                      "repairSuccessful": true,
+                      "aiAcceptance": "ACCEPTED",
+                      "outcome": "FIXED",
+                      "replacedParts": [
+                        {
+                          "partId": "1",
+                          "quantity": 1
+                        }
+                      ]
+                    },
+                    "proposed": {
+                      "actualCause": "예시",
+                      "faults": [
+                        {
+                          "area": "PCB",
+                          "componentId": "1",
+                          "partId": "1"
+                        }
+                      ],
+                      "actualAction": "예시",
+                      "technicianOpinion": "예시",
+                      "repairSuccessful": true,
+                      "aiAcceptance": "ACCEPTED",
+                      "outcome": "FIXED",
+                      "replacedParts": [
+                        {
+                          "partId": "1",
+                          "quantity": 1
+                        }
+                      ]
+                    },
+                    "author_service": "예시",
+                    "state": "PENDING",
+                    "decided_by": "1",
+                    "decided_at": "2026-10-22T09:00:00+09:00",
+                    "accepted_revision": 1,
+                    "created_at": "2026-10-22T09:00:00+09:00"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "수리 리포트"
+        ],
+        "description": "AI 원본·편집 제안·수락 또는 반려 이력\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/reports/{id}/edit-proposals/{proposalId}/decision": {
+      "post": {
+        "summary": "TECHNICIAN: 편집 제안 수락(새 초안) 또는 반려",
+        "operationId": "post__api_reports__id__edit_proposals__proposalId__decision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          },
+          {
+            "in": "path",
+            "name": "proposalId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalState"
+                },
+                "example": {
+                  "id": "1",
+                  "report_id": "1",
+                  "target_revision": 1,
+                  "request_key": "00000000-0000-4000-8000-000000000001",
+                  "original": {
+                    "actualCause": "예시",
+                    "faults": [
+                      {
+                        "area": "PCB",
+                        "componentId": "1",
+                        "partId": "1"
+                      }
+                    ],
+                    "actualAction": "예시",
+                    "technicianOpinion": "예시",
+                    "repairSuccessful": true,
+                    "aiAcceptance": "ACCEPTED",
+                    "outcome": "FIXED",
+                    "replacedParts": [
+                      {
+                        "partId": "1",
+                        "quantity": 1
+                      }
+                    ]
+                  },
+                  "proposed": {
+                    "actualCause": "예시",
+                    "faults": [
+                      {
+                        "area": "PCB",
+                        "componentId": "1",
+                        "partId": "1"
+                      }
+                    ],
+                    "actualAction": "예시",
+                    "technicianOpinion": "예시",
+                    "repairSuccessful": true,
+                    "aiAcceptance": "ACCEPTED",
+                    "outcome": "FIXED",
+                    "replacedParts": [
+                      {
+                        "partId": "1",
+                        "quantity": 1
+                      }
+                    ]
+                  },
+                  "author_service": "예시",
+                  "state": "PENDING",
+                  "decided_by": "1",
+                  "decided_at": "2026-10-22T09:00:00+09:00",
+                  "accepted_revision": 1,
+                  "created_at": "2026-10-22T09:00:00+09:00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "ACCEPT",
+                      "REJECT"
+                    ]
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "example": {
+                "action": "ACCEPT"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "수리 리포트"
+        ],
+        "description": "TECHNICIAN: 편집 제안 수락(새 초안) 또는 반려\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/operations/reprocessing": {
+      "get": {
+        "summary": "별도 operations_enabled 권한: 실패·재처리 현황",
+        "operationId": "get__api_operations_reprocessing",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "maxManualAttempts": {
+                      "type": "integer"
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "outbox": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "maxManualAttempts",
+                    "tasks",
+                    "outbox",
+                    "events"
+                  ]
+                },
+                "example": {
+                  "maxManualAttempts": 1,
+                  "tasks": [
+                    {}
+                  ],
+                  "outbox": [
+                    {}
+                  ],
+                  "events": [
+                    {}
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "운영 재처리"
+        ],
+        "description": "별도 operations_enabled 권한: 실패·재처리 현황\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/operations/events/{eventId}/attempts": {
+      "get": {
+        "summary": "별도 운영 권한: 원래 이벤트의 수동 재처리 이력",
+        "operationId": "get__api_operations_events__eventId__attempts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "00000000-0000-4000-8000-000000000001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "example": [
+                  {}
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "운영 재처리"
+        ],
+        "description": "별도 운영 권한: 원래 이벤트의 수동 재처리 이력\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/operations/events/{eventId}/retry": {
+      "post": {
+        "summary": "별도 운영 권한: 원래 실패 이벤트와 연결한 재처리 시도",
+        "operationId": "post__api_operations_events__eventId__retry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "00000000-0000-4000-8000-000000000001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reprocess"
+              },
+              "example": {
+                "requestKey": "00000000-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "운영 재처리"
+        ],
+        "description": "별도 운영 권한: 원래 실패 이벤트와 연결한 재처리 시도\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/operations/outbox/{eventId}/retry": {
+      "post": {
+        "summary": "별도 운영 권한: 원래 실패 이벤트와 연결한 재처리 시도",
+        "operationId": "post__api_operations_outbox__eventId__retry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "00000000-0000-4000-8000-000000000001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reprocess"
+              },
+              "example": {
+                "requestKey": "00000000-0000-4000-8000-000000000001"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "운영 재처리"
+        ],
+        "description": "별도 운영 권한: 원래 실패 이벤트와 연결한 재처리 시도\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/internal/rag/confirmed-changes": {
+      "get": {
+        "summary": "RAG: 고정 high-water mark와 단조 cursor로 확정 변경분 조회",
+        "operationId": "get__internal_rag_confirmed_changes",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "format": "int64",
+              "default": 0
+            },
+            "example": 0
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "format": "int64"
+            },
+            "example": 0
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "1",
+                      "report_id": "1",
+                      "revision": 1,
+                      "confirmed_at": "2026-10-22T09:00:00+09:00",
+                      "document": {
+                        "documentId": "예시",
+                        "source": "예시",
+                        "reportId": "1",
+                        "revision": 1,
+                        "confirmedAt": "2026-10-22T09:00:00+09:00",
+                        "symptom": "예시",
+                        "actualCause": "예시",
+                        "actualAction": "예시",
+                        "replacedParts": [
+                          {}
+                        ],
+                        "outcome": "예시",
+                        "product_type": "vacuum"
+                      },
+                      "status": "PENDING",
+                      "succeeded_at": "2026-10-22T09:00:00+09:00",
+                      "error_code": "예시",
+                      "attempts": 1,
+                      "updated_at": "2026-10-22T09:00:00+09:00",
+                      "product_type": "vacuum"
+                    }
+                  ],
+                  "nextCursor": 1,
+                  "until": 1,
+                  "hasMore": true,
+                  "enabled": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "tags": [
+          "내부 서비스"
+        ],
+        "description": "RAG: 고정 high-water mark와 단조 cursor로 확정 변경분 조회\n\n내부 서비스 Bearer 토큰이 필요합니다."
+      }
+    },
+    "/internal/rag/confirmed-changes/{id}/receipt": {
+      "post": {
+        "summary": "RAG: 실제 색인 처리 결과 기록; 이전 버전은 최신 상태에 영향 없음",
+        "operationId": "post__internal_rag_confirmed_changes__id__receipt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagState"
+                },
+                "example": {
+                  "id": "1",
+                  "report_id": "1",
+                  "revision": 1,
+                  "status": "예시",
+                  "succeeded_at": "2026-10-22T09:00:00+09:00",
+                  "error_code": "예시",
+                  "attempts": 1,
+                  "updated_at": "2026-10-22T09:00:00+09:00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncReceipt"
+              },
+              "example": {
+                "requestKey": "00000000-0000-4000-8000-000000000001",
+                "reportId": "1",
+                "revision": 1,
+                "status": "SUCCEEDED",
+                "errorCode": "예시"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "tags": [
+          "내부 서비스"
+        ],
+        "description": "RAG: 실제 색인 처리 결과 기록; 이전 버전은 최신 상태에 영향 없음\n\n내부 서비스 Bearer 토큰이 필요합니다."
+      }
+    },
+    "/internal/reports/{id}/edit-proposals": {
+      "post": {
+        "summary": "편집자 AI: 정의된 제안 저장 adapter; 모델 호출 안 함",
+        "operationId": "post__internal_reports__id__edit_proposals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalState"
+                },
+                "example": {
+                  "id": "1",
+                  "report_id": "1",
+                  "target_revision": 1,
+                  "request_key": "00000000-0000-4000-8000-000000000001",
+                  "original": {
+                    "actualCause": "예시",
+                    "faults": [
+                      {
+                        "area": "PCB",
+                        "componentId": "1",
+                        "partId": "1"
+                      }
+                    ],
+                    "actualAction": "예시",
+                    "technicianOpinion": "예시",
+                    "repairSuccessful": true,
+                    "aiAcceptance": "ACCEPTED",
+                    "outcome": "FIXED",
+                    "replacedParts": [
+                      {
+                        "partId": "1",
+                        "quantity": 1
+                      }
+                    ]
+                  },
+                  "proposed": {
+                    "actualCause": "예시",
+                    "faults": [
+                      {
+                        "area": "PCB",
+                        "componentId": "1",
+                        "partId": "1"
+                      }
+                    ],
+                    "actualAction": "예시",
+                    "technicianOpinion": "예시",
+                    "repairSuccessful": true,
+                    "aiAcceptance": "ACCEPTED",
+                    "outcome": "FIXED",
+                    "replacedParts": [
+                      {
+                        "partId": "1",
+                        "quantity": 1
+                      }
+                    ]
+                  },
+                  "author_service": "예시",
+                  "state": "PENDING",
+                  "decided_by": "1",
+                  "decided_at": "2026-10-22T09:00:00+09:00",
+                  "accepted_revision": 1,
+                  "created_at": "2026-10-22T09:00:00+09:00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditProposal"
+              },
+              "example": {
+                "requestKey": "00000000-0000-4000-8000-000000000001",
+                "targetRevision": 1,
+                "authorService": "예시",
+                "proposed": {
+                  "actualCause": "예시",
+                  "faults": [
+                    {
+                      "area": "PCB",
+                      "componentId": "1",
+                      "partId": "1"
+                    }
+                  ],
+                  "actualAction": "예시",
+                  "technicianOpinion": "예시",
+                  "repairSuccessful": true,
+                  "aiAcceptance": "ACCEPTED",
+                  "outcome": "FIXED",
+                  "replacedParts": [
+                    {
+                      "partId": "1",
+                      "quantity": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "tags": [
+          "내부 서비스"
+        ],
+        "description": "편집자 AI: 정의된 제안 저장 adapter; 모델 호출 안 함\n\n내부 서비스 Bearer 토큰이 필요합니다."
+      }
     }
   },
   "components": {
@@ -9485,6 +13469,11 @@
       "ServiceToken": {
         "type": "http",
         "scheme": "bearer"
+      },
+      "ConsumerKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "접수 때 발급된 lookupKey; 직원·SERVICE 토큰과 다름"
       }
     },
     "schemas": {
@@ -9556,6 +13545,9 @@
                 "type": "null"
               }
             ]
+          },
+          "operationsEnabled": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -9597,6 +13589,31 @@
           "userInput": {
             "type": "object",
             "additionalProperties": true
+          },
+          "purchaseDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "serviceType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CENTER",
+                  "FIELD"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -10033,7 +14050,8 @@
           "confidence": {
             "type": "number",
             "minimum": 0,
-            "maximum": 1
+            "maximum": 1,
+            "description": "모델 점수이며 실제 고장 확률을 의미하지 않습니다."
           },
           "explanation": {
             "type": "string"
@@ -10366,6 +14384,12 @@
             "items": {
               "$ref": "#/components/schemas/Part"
             }
+          },
+          "appliance_type": {
+            "type": "string"
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -10377,7 +14401,8 @@
           "manufactured_on",
           "information",
           "components",
-          "compatibleParts"
+          "compatibleParts",
+          "product_type"
         ]
       },
       "Repair": {
@@ -10477,6 +14502,46 @@
           "correlation_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "intake_source": {
+            "type": "string",
+            "enum": [
+              "STAFF",
+              "CONSUMER"
+            ]
+          },
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "CENTER",
+              "FIELD"
+            ]
+          },
+          "purchase_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assigned_technician_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$",
+                "description": "PostgreSQL bigint ID encoded as a decimal string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -10495,7 +14560,8 @@
           "created_at",
           "closed_at",
           "version",
-          "correlation_id"
+          "correlation_id",
+          "product_type"
         ]
       },
       "RepairDetail": {
@@ -10664,6 +14730,12 @@
                 "type": "null"
               }
             ]
+          },
+          "replacedParts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplacedPart"
+            }
           }
         },
         "required": [
@@ -11546,11 +15618,14 @@
             "type": "integer"
           },
           "content": {
-            "$ref": "#/components/schemas/ReportContent"
+            "$ref": "#/components/schemas/RagLegacyContent"
           },
           "confirmed_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
           }
         },
         "required": [
@@ -11558,7 +15633,8 @@
           "case_id",
           "confirmed_revision",
           "content",
-          "confirmed_at"
+          "confirmed_at",
+          "product_type"
         ]
       },
       "AnalysisInput": {
@@ -12078,6 +16154,972 @@
         "required": [
           "target",
           "action"
+        ]
+      },
+      "RagLegacyContent": {
+        "type": "object",
+        "properties": {
+          "actualCause": {
+            "type": "string"
+          },
+          "actualAction": {
+            "type": "string"
+          },
+          "repairSuccessful": {
+            "type": "boolean"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replacedParts": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "actualCause",
+          "actualAction",
+          "repairSuccessful",
+          "outcome",
+          "replacedParts"
+        ]
+      },
+      "ProductType": {
+        "type": "string",
+        "enum": [
+          "vacuum",
+          "washing_machine",
+          "air_conditioner",
+          "unknown"
+        ],
+        "description": "PR #6 제품 종류. 누락·미지원 메타데이터는 unknown, 소견에서 추정하지 않음"
+      },
+      "ConsumerIntake": {
+        "type": "object",
+        "properties": {
+          "symptoms": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "purchaseDate": {
+            "type": "string",
+            "format": "date",
+            "description": "구매일; 미래 날짜 거부"
+          },
+          "serialNumber": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "modelCode": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "centerId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "CENTER",
+              "FIELD"
+            ]
+          },
+          "contactName": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contactPhone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visitAddress": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "symptoms",
+          "purchaseDate",
+          "serialNumber",
+          "modelCode",
+          "centerId",
+          "serviceType"
+        ],
+        "example": {
+          "symptoms": "시연용 청소기 바퀴가 멈춥니다.",
+          "purchaseDate": "2026-01-01",
+          "serialNumber": "ROBOT-SEOUL-001",
+          "modelCode": "R1",
+          "centerId": "1",
+          "serviceType": "CENTER"
+        }
+      },
+      "ConsumerAccepted": {
+        "type": "object",
+        "properties": {
+          "caseNumber": {
+            "type": "string"
+          },
+          "lookupKey": {
+            "type": "string",
+            "description": "256비트 임의 키. 발급 응답에서 한 번 제공하며 로그·URL에 넣지 마세요."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECEIVED"
+            ]
+          },
+          "attachmentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            }
+          },
+          "requiresTechnicianReview": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "caseNumber",
+          "lookupKey",
+          "expiresAt",
+          "status",
+          "attachmentIds",
+          "requiresTechnicianReview"
+        ]
+      },
+      "Warranty": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "WITHIN_PERIOD",
+              "OUTSIDE_PERIOD",
+              "UNKNOWN"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "purchase_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assessed_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "policy_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expires_on_exclusive": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "result",
+          "reason"
+        ]
+      },
+      "CustomerReport": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ESTIMATE",
+              "CONFIRMED"
+            ]
+          },
+          "cause_summary": {
+            "type": "string"
+          },
+          "planned_work": {
+            "type": "string"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "cause_summary",
+          "planned_work",
+          "published_at"
+        ]
+      },
+      "CustomerView": {
+        "type": "object",
+        "properties": {
+          "caseNumber": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "UNDER_REVIEW",
+              "REPAIRING",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "warranty": {
+            "$ref": "#/components/schemas/Warranty"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$",
+                  "description": "PostgreSQL bigint ID encoded as a decimal string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "verdict": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "issues": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "status",
+                "verdict",
+                "issues"
+              ]
+            }
+          }
+        },
+        "required": [
+          "caseNumber",
+          "status",
+          "warranty",
+          "report",
+          "photos"
+        ]
+      },
+      "Assignment": {
+        "type": "object",
+        "properties": {
+          "technicianId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "technicianId",
+          "reason"
+        ]
+      },
+      "WarrantyPolicy": {
+        "type": "object",
+        "properties": {
+          "modelId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "durationMonths": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 600
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "effectiveTo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "developmentOnly": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "modelId",
+          "version",
+          "durationMonths",
+          "effectiveFrom",
+          "developmentOnly"
+        ]
+      },
+      "CustomerDraft": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ESTIMATE",
+              "CONFIRMED"
+            ]
+          },
+          "causeSummary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "plannedWork": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "sourceRevision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "kind",
+          "causeSummary",
+          "plannedWork"
+        ]
+      },
+      "ReplacedPart": {
+        "type": "object",
+        "properties": {
+          "partId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "partId",
+          "quantity"
+        ]
+      },
+      "WorkReport": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RepairDetail"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "warranty": {
+                "$ref": "#/components/schemas/Warranty"
+              },
+              "product": {
+                "$ref": "#/components/schemas/Product"
+              },
+              "diagnosis": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "recommendedParts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "procurement": {
+                "$ref": "#/components/schemas/Procurement"
+              },
+              "report": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "visitContact": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "preparation": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "missing": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "status",
+                  "missing"
+                ]
+              },
+              "assignments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "customerReports": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            },
+            "required": [
+              "warranty",
+              "product",
+              "diagnosis",
+              "recommendedParts",
+              "procurement",
+              "report",
+              "visitContact",
+              "preparation",
+              "assignments",
+              "customerReports"
+            ]
+          }
+        ]
+      },
+      "RagDocument": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "reportId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "symptom": {
+            "type": "string"
+          },
+          "actualCause": {
+            "type": "string"
+          },
+          "actualAction": {
+            "type": "string"
+          },
+          "replacedParts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
+          }
+        },
+        "required": [
+          "documentId",
+          "source",
+          "reportId",
+          "revision",
+          "confirmedAt",
+          "symptom",
+          "actualCause",
+          "actualAction",
+          "replacedParts",
+          "outcome",
+          "product_type"
+        ]
+      },
+      "RagChange": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "report_id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "confirmed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "document": {
+            "$ref": "#/components/schemas/RagDocument"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "SUCCEEDED",
+              "ERROR"
+            ]
+          },
+          "succeeded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "product_type": {
+            "$ref": "#/components/schemas/ProductType"
+          }
+        },
+        "required": [
+          "id",
+          "report_id",
+          "revision",
+          "confirmed_at",
+          "document",
+          "status",
+          "succeeded_at",
+          "error_code",
+          "attempts",
+          "updated_at",
+          "product_type"
+        ]
+      },
+      "RagPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RagChange"
+            }
+          },
+          "nextCursor": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "until": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "until",
+          "hasMore",
+          "enabled"
+        ]
+      },
+      "SyncReceipt": {
+        "type": "object",
+        "properties": {
+          "requestKey": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reportId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUCCEEDED",
+              "ERROR"
+            ]
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9_]{1,100}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "requestKey",
+          "reportId",
+          "revision",
+          "status"
+        ]
+      },
+      "EditProposal": {
+        "type": "object",
+        "properties": {
+          "requestKey": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "authorService": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "proposed": {
+            "$ref": "#/components/schemas/ReportContent"
+          }
+        },
+        "required": [
+          "requestKey",
+          "targetRevision",
+          "authorService",
+          "proposed"
+        ]
+      },
+      "Reprocess": {
+        "type": "object",
+        "properties": {
+          "requestKey": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "requestKey"
+        ]
+      },
+      "RagState": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "report_id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "succeeded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "report_id",
+          "revision",
+          "status",
+          "succeeded_at",
+          "error_code",
+          "attempts",
+          "updated_at"
+        ]
+      },
+      "ProposalState": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "report_id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "PostgreSQL bigint ID encoded as a decimal string"
+          },
+          "target_revision": {
+            "type": "integer"
+          },
+          "request_key": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "original": {
+            "$ref": "#/components/schemas/ReportContent"
+          },
+          "proposed": {
+            "$ref": "#/components/schemas/ReportContent"
+          },
+          "author_service": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "REJECTED"
+            ]
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$",
+                "description": "PostgreSQL bigint ID encoded as a decimal string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "accepted_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "report_id",
+          "target_revision",
+          "request_key",
+          "original",
+          "proposed",
+          "author_service",
+          "state",
+          "decided_by",
+          "decided_at",
+          "accepted_revision",
+          "created_at"
         ]
       }
     }

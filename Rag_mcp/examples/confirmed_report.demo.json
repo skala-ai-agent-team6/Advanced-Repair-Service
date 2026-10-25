@@ -1,4 +1,5 @@
 {
+  "product_type": "vacuum",
   "report_id": 900001,
   "case_id": 900001,
   "confirmed_revision": 1,
@@ -10,6 +11,12 @@
     "repairSuccessful": true,
     "aiAcceptance": "PARTIAL",
     "outcome": "FIXED",
-    "faults": [{"area": "OTHER", "componentId": null, "partId": null}]
+    "faults": [
+      {
+        "area": "OTHER",
+        "componentId": null,
+        "partId": null
+      }
+    ]
   }
 }

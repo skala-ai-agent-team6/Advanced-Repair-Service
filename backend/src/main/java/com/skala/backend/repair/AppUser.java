@@ -12,6 +12,7 @@ public class AppUser {
     boolean active;
     @Column(name="password_hash") String passwordHash;
     String role;
+    @Column(name="operations_enabled") boolean operationsEnabled;
     @Column(name="center_id") Long centerId;
     protected AppUser() {}
 }

@@ -33,6 +33,20 @@ def upload(c, repair, request_id, target):
     return str(out["attachmentId"])
 
 
+def confirm_quality(c, ids, timeout=60):
+    """[사진 품질] 검사가 끝날 때까지 기다리고 경고 사진은 확인 처리한다. 안 하면 재개가 409로 거절된다."""
+    deadline = time.monotonic() + timeout
+    for a in ids:
+        while True:
+            q = c.call("GET", f"/api/attachments/{a}/quality")
+            if q.get("status") not in ("PENDING", "RUNNING") or time.monotonic() > deadline:
+                break
+            time.sleep(1)
+        latest = q.get("latest") or {}
+        if latest.get("verdict") == "WARNING":
+            c.call("POST", f"/api/attachments/{a}/quality/acknowledgment", {"resultId": int(latest["id"])})
+
+
 def answer(c, repair):
     detail = c.call("GET", f"/api/repairs/{repair}")
     now = datetime.now(timezone.utc)
@@ -43,6 +57,7 @@ def answer(c, repair):
         t = req["target"]
         targets = ["PCB", "MOTOR"] if t == "GENERAL" else ["PCB"] if t == "PCB" else ["MOTOR"]
         ids = [upload(c, repair, req["id"], t) for t in targets]
+        confirm_quality(c, ids)
         c.call("POST", f"/api/repairs/{repair}/diagnosis/resume",
                {"requestId": req["id"], "submissionKey": str(uuid.uuid4()), "attachmentIds": ids})
         print(f"[대역] 접수 {repair} · {req['round_no']}차 요청({req['target']}) → 지정 사진 {targets} 제출, 재개", flush=True)
@@ -54,7 +69,10 @@ def watch(interval=2):
     while True:
         page = c.call("GET", "/api/repairs?status=WAITING_INPUT&size=50")
         for row in page.get("items") or page.get("content") or []:
-            answer(c, row["id"])
+            try:
+                answer(c, row["id"])
+            except Exception as e:  # 한 건 실패로 감시 전체가 죽지 않게
+                print(f"[대역] 접수 {row['id']} 처리 실패: {e}", flush=True)
         time.sleep(interval)
 
 

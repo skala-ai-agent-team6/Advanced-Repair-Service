@@ -24,7 +24,7 @@ COMMAND = {  # contract/kafka-examples.json 첫 번째 예시와 같은 모양
     "occurredAt": "2026-10-20T01:00:00Z", "repairId": TASK_ID, "taskId": TASK_ID,
     "correlationId": str(uuid.uuid4()), "inputRevision": 1, "executionId": str(uuid.uuid4()), "sequence": 0,
     "payload": {
-        "repair": {"id": TASK_ID, "product_snapshot": {"id": "1", "model_code": "R1", "components": []},
+        "repair": {"id": TASK_ID, "product_type": "vacuum", "product_snapshot": {"id": "1", "model_code": "R1", "components": []},
                    "symptom": "충전이 안 되고 바퀴 모터에서 소음", "error_codes": ["E05"], "firmware_version": "1.2",
                    "user_input": {"customerDescription": "펌웨어 업데이트 후부터 그렇다고 함"}},
         "task": {"id": TASK_ID},

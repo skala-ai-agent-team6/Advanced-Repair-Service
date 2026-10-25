@@ -1,0 +1,11 @@
+{
+  "product_type": "washing_machine",
+  "raw_text": "세탁이 끝났는데 물이 빠지지 않습니다.",
+  "origin": "technician",
+  "technician_confirmed": true,
+  "pcb_labels": [
+    "open_circuit"
+  ],
+  "damage_labels": null,
+  "top_k": 3
+}

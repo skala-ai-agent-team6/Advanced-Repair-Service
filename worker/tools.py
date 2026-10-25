@@ -13,6 +13,7 @@ from fastmcp.client.transports import StdioTransport
 from pydantic import BaseModel, Field, field_validator
 
 from . import config as C
+from .products import normalize_product_type, PRODUCT_NAMES
 from .prompts import render
 from .harness import guarded
 from .context_policy import (UsageTracker, masked, prepare_text, prepare_findings, reserve_llm)
@@ -80,20 +81,23 @@ async def call_pcb_mcp(path: str) -> dict:
 
 
 @guarded()
-async def call_rag_mcp(text: str, pcb_labels: list[str], damage_labels: list[str] = ()) -> dict:
+async def call_rag_mcp(text: str, pcb_labels: list[str] | None, damage_labels: list[str] | None = (), *,
+                       product_type: str = "unknown", normalized_observation: dict | None = None,
+                       error_codes: list[str] | None = None) -> dict:
     """Rag_mcp(retrieve_repair_context): 증상 글 + PCB 라벨로 과거 수리 사례·라벨 정의를 찾는다.
 
     [통합] 10/21부터 기계 MCP 표면 결함 6종도 보낸다. 찌그러짐(자동차 라벨)은 여전히 보내지 않는다.
     """
-    request = {"raw_text": prepare_text(text, "rag_query"), "origin": "technician", "technician_confirmed": True,
-               "pcb_labels": pcb_labels, "damage_labels": list(damage_labels), "top_k": 3}  # [통합] 표면 결함 라벨 전달
+    product_type = normalize_product_type(product_type)
+    request = {"product_type": product_type, "raw_text": prepare_text(text, "rag_query"), "origin": "technician", "technician_confirmed": True,
+               "normalized_observation": normalized_observation, "error_codes": [prepare_text(code, "rag_error_code") for code in (error_codes or [])],
+               "pcb_labels": pcb_labels, "damage_labels": list(damage_labels) if damage_labels is not None else None, "top_k": 3}  # [통합] 표면 결함 라벨 전달
     async with Client(C.RAG_MCP_URL, timeout=60) as c:
         d = check_object(check_response(
             await c.call_tool("retrieve_repair_context", {"request": request}),
             "retrieve_repair_context").structured_content, "retrieve_repair_context")
     # [통합] score 추가: RAG가 주는 similarity_score를 버려서 화면 유사도가 0%로 나왔다
-    hits = [{"kind": "CASE", "citation": x["source_id"], "sourceUri": x["source_url"], "score": x.get("similarity_score", 0),
-             "excerpt": (x.get("korean_summary") or x.get("chunk_text") or "")[:300]} for x in d["repair_cases"]]
+    hits = [case_hit(x) for x in d["repair_cases"]]
     # [통합] 표면 결함 라벨 정의는 title 없이 name_ko만 온다 (10/21 Rag_mcp). title만 읽으면 KeyError로 사례가 다 빠진다
     hits += [{"kind": "LABEL", "citation": x["document_id"], "excerpt": x.get("title") or x.get("name_ko") or x.get("label", "")}
              for x in d["label_definitions"]]
@@ -101,7 +105,31 @@ async def call_rag_mcp(text: str, pcb_labels: list[str], damage_labels: list[str
               "excerpt": (x.get("text") or x.get("chunk_text") or x.get("title") or "")[:2000],
               **({"sourceUri": x["source_url"]} if x.get("source_url") else {})}
              for x in d.get("pcb_references", [])]
-    return {"hits": hits, "status": d["case_search_status"], "warnings": d.get("warnings", [])}
+    return {"product_type": product_type, "hits": hits, "status": d["case_search_status"],
+            "observation": d.get("observation", {}),
+            "warnings": d.get("warnings", []), "integrated_assessment": d.get("integrated_assessment", {})}
+
+
+def case_hit(case):
+    """Adapt public, confirmed and synthetic RAG records to Spring evidence."""
+    citation = case.get("document_id") or case.get("source_id")
+    if not citation:
+        raise ToolResponseError("retrieve_repair_context")
+    summary = case.get("korean_summary") or case.get("chunk_text") or case.get("original_text") or ""
+    if isinstance(summary, dict):
+        summary = "; ".join(str(summary[key]) for key in (
+            "reported_symptom_ko", "reported_observations_ko", "reported_action_ko") if summary.get(key))
+    summary = " ".join(str(summary).split())
+    demo = case.get("is_demo") is True or case.get("source_type") == "synthetic_demo_repair"
+    if demo and not summary.startswith("[가상 데모 사례]"):
+        summary = "[가상 데모 사례] " + summary
+    internal = case.get("source_type") == "internal_confirmed_repair" and not demo
+    return {"kind": "CASE", "citation": citation,
+            "sourceUri": case.get("source_uri") or case.get("source_url"),
+            "score": case.get("similarity_score", 0), "excerpt": summary[:300],
+            "origin": "INTERNAL" if internal else "EXTERNAL",
+            "sourceLabel": case.get("source_label") or ("사내 확정 사례" if internal else "공개 사례"),
+            "isDemo": demo, "product_type": case.get("product_type", "unknown")}
 
 
 # ── 3. GPT ───────────────────────────────────────────────
@@ -195,30 +223,32 @@ async def classify_photo(path: str) -> str:
 
 
 @guarded()
-async def split_text(text: str) -> Clues:
+async def split_text(text: str, *, product_type="unknown") -> Clues:
     """증상 문장을 PCB / 기계 / SW 단서로 나눈다."""
     if not C.USE_GPT:
         return Clues(pcb=[w for w in ("전원", "충전", "회로") if w in text],
                      mech=[w for w in ("바퀴", "모터", "브러시", "소음") if w in text],
                      sw=[w for w in ("펌웨어", "앱", "업데이트") if w in text])
-    prompt = render("split_text", Clues, text=text)
+    product_type = normalize_product_type(product_type)
+    prompt = render("split_text", Clues, text=f"제품: {PRODUCT_NAMES[product_type]}\n{text}")
     reserve_llm(Clues, prompt)
     result = await gpt(Clues).ainvoke(prompt)
     return Clues.model_validate(masked(result.model_dump()))
 
 
 @guarded()
-async def write_report(text: str, findings: list[dict], compatible_parts=None) -> Report:
+async def write_report(text: str, findings: list[dict], compatible_parts=None, *, product_type="unknown") -> Report:
     """MCP 결과를 근거로 진단 리포트를 쓴다."""
     defects = [d for f in findings for d in f["output"].get("defects", [])]
     if not C.USE_GPT:
         top = max(defects, key=lambda d: d["confidence"])
         return Report(summary=f"{top['type']} 결함 추정", repairMethod="해당 부품 점검 후 교체",
                       candidates=[Candidate(cause=top["type"], confidence=top["confidence"], explanation="MCP 검출 결과")])
+    product_type = normalize_product_type(product_type)
     safe_text = prepare_text(text, "report_text")
     safe_findings, trimmed = prepare_findings(findings)
     prompt = render("write_report", Report, compatible_parts=masked(compatible_parts or []),
-                    text=safe_text, findings=safe_findings)
+                    text=f"제품: {PRODUCT_NAMES[product_type]}\n{safe_text}", findings=safe_findings)
     reserve_llm(Report, prompt)
     result = await gpt(Report).ainvoke(prompt)
     result = Report.model_validate(masked(result.model_dump()))
@@ -236,7 +266,7 @@ async def write_report(text: str, findings: list[dict], compatible_parts=None) -
 
 BUSINESS_READ_TOOLS = ("get_part_availability", "get_product", "search_products", "search_past_orders")
 PARTS_AGENT_PROMPT = (
-    "너는 로봇청소기 수리 부품 담당이다. 진단 근거와 호환 부품 목록을 보고, 교체가 필요해 보이는 부품의 재고·입고 예정을 "
+    "너는 가전제품 수리 부품 담당이다. 진단 근거와 호환 부품 목록을 보고, 교체가 필요해 보이는 부품의 재고·입고 예정을 "
     "업무 MCP 도구로 직접 확인하라. 어떤 도구를 몇 번 쓸지는 네가 정한다(최대 {max_calls}번). "
     "part_id는 호환 부품 목록의 id만 써라. 확인이 끝나면 도구 없이 한국어 3줄 이내로 "
     "'부품 id·이름 / 재고 여부 / 근거 도구'를 정리하라. 교체 근거가 없으면 도구를 쓰지 말고 그렇게 말하라."

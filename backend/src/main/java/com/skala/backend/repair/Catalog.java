@@ -10,7 +10,8 @@ public class Catalog {
     public List<Map<String,Object>> parts() {return db.list("SELECT * FROM part ORDER BY part_number,id");}
     public Map<String,Object> product(String serial) {
         if(serial==null || serial.isBlank()) throw ApiError.bad("SERIAL_REQUIRED");
-        var p=db.one("SELECT p.*,m.model_code,m.name AS model_name FROM product p JOIN product_model m ON m.id=p.model_id WHERE p.serial_number=?",serial);
+        var p=db.one("SELECT p.*,m.model_code,m.name AS model_name,m.appliance_type FROM product p JOIN product_model m ON m.id=p.model_id WHERE p.serial_number=?",serial);
+        p.put("product_type",ProductTypes.fromAppliance(p.get("appliance_type")));
         p.put("components",db.list("SELECT c.*,l.lot_number,l.factory_id,f.name AS factory_name,f.region FROM product_component c LEFT JOIN part_lot l ON l.id=c.lot_id LEFT JOIN factory f ON f.id=l.factory_id WHERE c.product_id=? AND c.removed_at IS NULL ORDER BY c.slot_code,c.id",p.get("id")));
         p.put("compatibleParts",db.list("SELECT p.* FROM model_part m JOIN part p ON p.id=m.part_id WHERE m.model_id=? ORDER BY p.id",p.get("model_id")));return p;
     }

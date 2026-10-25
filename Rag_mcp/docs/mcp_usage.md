@@ -2,7 +2,7 @@
 
 ## 담당 범위
 
-서비스는 청소기 전용이다. 요청에서 제품 종류를 선택하지 않으며 `product_domain` 입력 항목은 제거했다. 기존 요청에 이 항목이 있다면 삭제한다.
+입력에 `product_type`을 전달한다: `vacuum`(청소기), `washing_machine`(세탁기), `air_conditioner`(에어컨). 누락하면 `unknown`으로 처리하고 제품별 사례 검색을 생략한다. `product_domain` 입력은 지원하지 않는다. [제품 종류·연동 규격](product_types.md).
 
 팀원이 실행한 모델의 **라벨 결과**를 받는다. 사진이나 모델 가중치를 받지 않는다.
 
@@ -16,14 +16,14 @@
 
 보조 목록 도구: `list_observation_terms`, `list_damage_labels`.
 
-RAG에는 **원문과 원본 라벨**을 전달한다. RAG가 같은 정규화 함수를 내부에서 사용하므로 네 서버를 반드시 차례로 호출할 필요는 없다. 별도 해석 MCP는 화면의 해석 미리보기 또는 LangGraph가 해당 도구만 필요할 때 사용한다. 미리보기 결과에서 양성 코드만 추려 보내면 부정·추정·미등록 표현이 사라지므로 그렇게 전달하지 않는다.
+RAG에는 **원문, 소견 MCP 응답 전체(`normalized_observation`), PCB·외형 원본 라벨**을 전달한다. 소견 MCP가 변환을 담당하고 RAG는 결과를 재사용한다. 변환 결과가 없으면 원문과 모델 라벨로 검색하며 RAG 내부에서 소견 변환 API를 호출하지 않는다.
 
 ```text
-기사 소견 ─── observation-mcp (표준 소견 미리보기)
-PCB 결과 ─── pcb-mcp         (라벨 해석 미리보기)
-외형 결과 ── damage-mcp      (라벨 해석 미리보기)
-     └── 원문 소견 + 원본 라벨 ── rag-mcp ── 출처가 있는 검색 근거
-                                                  └── LangGraph 답변 생성
+기사 소견 → observation-mcp → normalized_observation ─┐
+원문 소견 + PCB·외형 라벨 + error_codes ──────────────┤
+                                                   ↓
+                                               rag-mcp
+                                       사례·점검 안내·최종 소견
 ```
 
 이 네 MCP는 업무 DB를 쓰지 않는다. Spring 접수 저장·작업 큐·SSE·추가 사진 interrupt/resume·사람 승인·발주·최종 원인 저장은 다른 담당 서비스와 연결한다. 이 구현에는 그 오케스트레이션 전체가 포함되지 않는다.
@@ -41,7 +41,7 @@ OPENAI_OBSERVATION_MODEL=gpt-4.1-mini
 
 ```bash
 uv sync --locked --python 3.11
-uv run repair-mcp normalize "흡입구에 먼지가 많은 것 같아요. 필터는 막히지 않았어요."
+uv run repair-mcp normalize --product-type vacuum "흡입구에 먼지가 많은 것 같아요. 필터는 막히지 않았어요."
 ```
 
 전체 검색 실행:
@@ -83,11 +83,14 @@ LangGraph 쪽에서는 이 주소들을 MCP Client에 등록한다. Docker 안�
 
 ## 요청 예시
 
-`retrieve_repair_context`의 MCP arguments:
+`retrieve_repair_context`의 MCP arguments (아래는 변환 결과가 없는 원문 검색 예시):
+
+표준 소견을 활용하려면 먼저 `normalize_observation`을 호출하고 그 응답 전체를 `request.normalized_observation`에 넣는다. `examples/call_mcp.py`와 통합 워커가 이 순서를 수행한다. 원문·제품 종류·작성 주체·기사 확인 여부가 일치하지 않는 결과는 거절한다. 에러코드는 `request.error_codes` 문자열 배열로 별도 전달한다.
 
 ```json
 {
   "request": {
+    "product_type": "vacuum",
     "raw_text": "청소기가 간헐적으로 멈춰요. 외장 표면에 가는 금이 보이고, 필터에는 막힘이 보이지 않아요.",
     "origin": "technician",
     "technician_confirmed": true,
@@ -183,18 +186,18 @@ LangGraph는 출처별 증거를 비교하고 추가 점검 필요성을 설명�
 
 Dense 검색의 기본 0.75 임계값은 임시값이다. E5의 점수는 0.7~1.0 부근에 몰릴 수 있으며 고장 확률이 아니다. 무관한 질문도 검색될 수 있다. 따라서 실제 신규 접수 질문에 대한 관련/무관 정답셋으로 임계값과 순위를 평가해야 한다. [모델 카드](https://huggingface.co/intfloat/multilingual-e5-small)는 query/passage 접두어와 점수 해석을 설명한다.
 
-`experiments/results/summary.md`와 `retrieval.json`은 이전 규칙 기반 소견 변환의 실제 실행 결과다. OpenAI 전환 후 결과가 아니다. 키 등록 후 `experiments/run.py`를 실행하면 OpenAI 호출이 발생하고 `experiments/results/openai/`에 별도 저장된다. 반복 실행 시 그 하위 결과만 갱신한다. 모델의 독립 호출이므로 비교 간 변동성이 있으며 진단 정확도 평가가 아니다.
+`experiments/results/summary.md`와 `retrieval.json`은 이전 규칙 기반 소견 변환의 실제 실행 결과다. OpenAI 전환 후 결과가 아니다. 키 등록 후 `experiments/run.py`를 실행하면 OpenAI 호출이 발생하고 `experiments/results/openai/`에 별도 저장된다. 반복 실행 시 그 하위 결과만 갱신한다. 입력별 소견 변환 결과를 비교 간 재사용하며, 진단 정확도 평가가 아니다.
 
 OpenAI 전환 후 검증: SDK HTTP 응답을 모의하여 요청 스키마·출처 보존·에러 처리·CLI·MCP 연결을 확인한다. 실제 OpenAI 호출은 키 등록 후 확인해야 한다. 이전 규칙 버전에서는 네 서버의 HTTP 호출과 실검색을 확인했다. `experiments/check_http.py`는 키 등록 후 재검증할 수 있으며 검증 후 임시 서버를 종료한다.
 
-소견 MCP와 RAG를 각각 호출하면 소견 변환도 두 번 실행된다. RAG는 검색 뒤 최종 소견 작성을 위해 OpenAI를 한 번 더 호출한다. 두 소견 변환 결과는 같다고 보장하지 않는다. 검색과 소견만 필요하면 `retrieve_repair_context` 한 번으로 처리한다. 최종 소견 API에는 긍정적으로 보고된 표준 증상과 모델 라벨·점검 지침, 적용 가능한 상위 사례의 짧은 발췌문만 전달한다. 부정된 증상과 같은 고장 유형의 사례는 최종 소견 입력에서 제외하고, 고장 유형을 안전하게 대조할 수 없으면 사례를 전달하지 않는다. 사례 전체나 API 키는 프롬프트에 넣지 않는다. 최종 소견 실패 시 규칙 문장으로 대체하지 않고 오류를 반환한다.
+소견 MCP는 소견 변환 API를 1회 호출한다. RAG MCP는 그 결과를 재사용하고, 검색 뒤 최종 소견 작성 API를 호출한다. 정상 경로에서는 이 두 기능에 API 호출이 각각 1회 발생한다. API 재시도나 최종 소견 검증 실패 시 추가 호출이 발생할 수 있다. 다른 LangGraph 노드의 LLM 호출은 별도다. 부정된 소견과 미등록 구절도 전달하며, 최종 소견은 기존 근거 선별 규칙을 유지한다. 최종 소견 생성 실패 시 규칙 문장으로 대체하지 않고 오류를 반환한다.
 
 ## API 키를 넣었는데 인증 실패가 나는 경우
 
 `.env`보다 기존 터미널의 `OPENAI_API_KEY` 환경변수가 우선한다. 오래된 키가 터미널에 남아 있다면 macOS/Linux에서 아래처럼 해당 실행에 한해 환경변수를 제외하고 `.env`의 키를 사용한다.
 
 ```bash
-env -u OPENAI_API_KEY uv run repair-mcp normalize "흡입구에 먼지가 많은 것 같아요."
+env -u OPENAI_API_KEY uv run repair-mcp normalize --product-type vacuum "흡입구에 먼지가 많은 것 같아요."
 env -u OPENAI_API_KEY uv run python examples/call_mcp.py
 ```
 

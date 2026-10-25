@@ -33,9 +33,9 @@ public class SecurityConfig {
         var csrfHandler=new CsrfTokenRequestAttributeHandler();
         http.cors(c -> c.configurationSource(request -> {
             var cfg=new CorsConfiguration(); cfg.setAllowedOrigins(List.of(origin)); cfg.setAllowedMethods(List.of("GET","POST","PUT","OPTIONS"));
-            cfg.setAllowedHeaders(List.of("Content-Type","X-CSRF-TOKEN","Last-Event-ID","Idempotency-Key")); cfg.setAllowCredentials(true); return cfg;
-        })).csrf(c->c.csrfTokenRequestHandler(csrfHandler).ignoringRequestMatchers("/internal/**"))
-        .authorizeHttpRequests(a->a.requestMatchers("/api/auth/csrf","/api/auth/login","/swagger-ui.html","/swagger-ui","/swagger-ui/**","/v3/api-docs","/webjars/swagger-ui/**").permitAll()
+            cfg.setAllowedHeaders(List.of("Authorization","Content-Type","X-CSRF-TOKEN","Last-Event-ID","Idempotency-Key")); cfg.setAllowCredentials(true); return cfg;
+        })).csrf(c->c.csrfTokenRequestHandler(csrfHandler).ignoringRequestMatchers("/internal/**","/public/**"))
+        .authorizeHttpRequests(a->a.requestMatchers("/public/**","/api/auth/csrf","/api/auth/login","/swagger-ui.html","/swagger-ui","/swagger-ui/**","/v3/api-docs","/webjars/swagger-ui/**").permitAll()
             .requestMatchers("/internal/**").hasRole("SERVICE").anyRequest().authenticated())
         .formLogin(f->f.loginProcessingUrl("/api/auth/login")
             .successHandler((req,res,auth)->{res.setContentType("application/json");res.getWriter().write("{\"authenticated\":true}");})

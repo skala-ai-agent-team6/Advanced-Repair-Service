@@ -80,9 +80,11 @@ class AgentProcessingStatusConsumer {
 class OutboxPublisher {
     private static final org.slf4j.Logger log=org.slf4j.LoggerFactory.getLogger(OutboxPublisher.class);
     final Store db; final KafkaTemplate<String,String> kafka; final TransactionTemplate tx;
+    @org.springframework.beans.factory.annotation.Value("${app.outbox.max-attempts:8}") int maxAttempts;
     OutboxPublisher(Store db,KafkaTemplate<String,String> kafka,PlatformTransactionManager manager) { this.db=db;this.kafka=kafka;this.tx=new TransactionTemplate(manager); }
     @Scheduled(fixedDelayString="${app.outbox-delay:1000}") public void publish() {
-        var rows=tx.execute(s->db.list("UPDATE outbox_event SET lease_until=now()+interval '30 seconds',publish_attempts=publish_attempts+1 WHERE id IN (SELECT id FROM outbox_event WHERE topic IS NOT NULL AND published_at IS NULL AND next_attempt_at<=now() AND (lease_until IS NULL OR lease_until<now()) ORDER BY created_at LIMIT 10 FOR UPDATE SKIP LOCKED) RETURNING *"));
+        db.update("UPDATE outbox_event SET terminal_failure=true,last_error_code='PUBLISH_ATTEMPTS_EXHAUSTED' WHERE topic IS NOT NULL AND published_at IS NULL AND publish_attempts>=? AND NOT terminal_failure AND (lease_until IS NULL OR lease_until<now())",maxAttempts);
+        var rows=tx.execute(s->db.list("UPDATE outbox_event SET lease_until=now()+interval '30 seconds',publish_attempts=publish_attempts+1 WHERE id IN (SELECT id FROM outbox_event WHERE topic IS NOT NULL AND NOT terminal_failure AND publish_attempts<? AND published_at IS NULL AND next_attempt_at<=now() AND (lease_until IS NULL OR lease_until<now()) ORDER BY created_at LIMIT 10 FOR UPDATE SKIP LOCKED) RETURNING *",maxAttempts));
         if(rows==null) return;
         for(var row:rows) {
             try {
@@ -92,7 +94,7 @@ class OutboxPublisher {
             } catch(Exception e) {
                 if(e instanceof InterruptedException) Thread.currentThread().interrupt();
                 int delay=Math.min(300,1 << Math.min(8,Json.number(row.get("publish_attempts"))));
-                db.update("UPDATE outbox_event SET lease_until=NULL,next_attempt_at=now()+(? * interval '1 second') WHERE id=?",delay,row.get("id"));
+                db.update("UPDATE outbox_event SET lease_until=NULL,next_attempt_at=now()+(? * interval '1 second'),last_error_code='KAFKA_PUBLISH_FAILED',terminal_failure=(publish_attempts>=?) WHERE id=?",delay,maxAttempts,row.get("id"));
                 log.warn("outbox.publish_failed outboxId={} taskId={} eventType={} attempt={} errorType={}",row.get("id"),row.get("job_id"),row.get("event_type"),row.get("publish_attempts"),e.getClass().getSimpleName());
             }
         }
@@ -103,10 +105,12 @@ class OutboxPublisher {
 class FailedDiagnosisRetryScheduler {
     private static final org.slf4j.Logger log=org.slf4j.LoggerFactory.getLogger(FailedDiagnosisRetryScheduler.class);
     final Store db; final RepairService repairs;
+    @org.springframework.beans.factory.annotation.Value("${app.diagnosis.auto-retry:false}") boolean enabled;
     FailedDiagnosisRetryScheduler(Store db,RepairService repairs) { this.db=db;this.repairs=repairs; }
     @Scheduled(fixedDelayString="${app.failed-diagnosis-retry-delay:30000}")
     public void retryFailed() {
-        var rows=db.list("SELECT j.id FROM diagnosis_job j WHERE j.status='FAILED' AND j.id=(SELECT j2.id FROM diagnosis_job j2 WHERE j2.case_id=j.case_id ORDER BY j2.created_at DESC,j2.id DESC LIMIT 1) AND (SELECT count(*) FROM diagnosis_job all_jobs WHERE all_jobs.case_id=j.case_id)<4 ORDER BY j.finished_at LIMIT 20");
+        if(!enabled)return;
+        var rows=db.list("SELECT j.id FROM diagnosis_job j WHERE j.status='FAILED' AND j.error_code IN ('AGENT_TEMPORARY_FAILURE','SERVICE_UNAVAILABLE') AND j.id=(SELECT j2.id FROM diagnosis_job j2 WHERE j2.case_id=j.case_id ORDER BY j2.created_at DESC,j2.id DESC LIMIT 1) AND (SELECT count(*) FROM diagnosis_job all_jobs WHERE all_jobs.case_id=j.case_id)<4 ORDER BY j.finished_at LIMIT 20");
         if(!rows.isEmpty()) log.info("diagnosis_retry.candidates count={}",rows.size());
         for(var row:rows) repairs.retryFailedDiagnosis(Json.id(row.get("id")));
     }

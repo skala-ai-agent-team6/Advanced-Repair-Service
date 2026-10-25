@@ -1,7 +1,7 @@
 # 확정 수리 사례 자동 반영
 
 Spring의 기존 `GET /internal/confirmed-cases?page=0&size=100` 응답을 주기적으로 읽는다.
-백엔드 코드 변경 없이 기사 소견, 보고 원인, 실제 조치, 결과를 검색 문서로 변환한다.
+기사 소견, 보고 원인, 실제 조치, 결과를 검색 문서로 변환한다. Spring 응답의 각 보고서 최상위에 `product_type`을 추가해야 제품별 검색에 포함된다. 누락된 보고서는 `unknown`으로 저장하고 제품별 검색에서는 제외한다. [제품 종류·연동 규격](product_types.md).
 출장/센터 구분을 조회 조건으로 사용하지 않아 API가 반환하는 모든 확정 보고서가 대상이다.
 현재 API에 없는 접수 증상, 제품 모델, 사진 모델 라벨, 출장/센터 구분은 만들어 넣지 않는다.
 
@@ -31,7 +31,7 @@ Spring이 내려가도 이미 저장한 사례는 검색할 수 있다.
 ```bash
 uv run python examples/sync_confirmed_cases.py status
 uv run python examples/sync_confirmed_cases.py sync
-uv run python examples/sync_confirmed_cases.py search --query "청소기 왼쪽 바퀴가 걸리고 회전하지 않아요"
+uv run python examples/sync_confirmed_cases.py search --product-type vacuum --query "청소기 왼쪽 바퀴가 걸리고 회전하지 않아요"
 ```
 
 `sync`는 동일한 자동 동기화 작업을 즉시 실행한다. 이미 실행 중이면 `busy`를 반환하므로 완료 상태 확인 후 다시 요청한다.

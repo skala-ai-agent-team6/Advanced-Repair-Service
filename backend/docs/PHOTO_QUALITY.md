@@ -10,7 +10,7 @@ Java 21의 ImageIO/BufferedImage만 사용한다. OpenCV·Python·외부 AI를 �
 
 `PHOTO_QUALITY_ENABLED=false`는 기존 접수 자동 진단과 본문 없는 진단 요청을 유지한다. 검사 worker는 일시 중지하고 기존 PENDING/ERROR를 PASS로 바꾸지 않는다. 진단 입력에는 DISABLED 우회를 기록한다. 디코딩·파일 크기/유형 안전성 검증은 비활성화 상태에서도 적용한다. 이전에 허용됐던 깨진 PNG/JPEG는 이제 업로드 오류다. 재활성화하면 대기 검사를 재개하고 신규 입력 품질 gate를 다시 적용한다.
 
-V6 적용 전 첨부와 비활성화 중 업로드는 quality_required=false다. 결과가 없으면 **LEGACY_UNCHECKED**로 표시하고 명시적 사진 선택 시 이전 자료로 허용한다. 신규 활성화 업로드의 required=true/PENDING과 구분한다. 기존 자료도 retry API에 resultId=null을 보내 검사 대상으로 전환할 수 있으며, 전환 이후에는 완료·경고 확인을 요구한다. 과거 실행에 이미 포함된 입력은 변경하지 않는다.
+V7 적용 전 첨부와 비활성화 중 업로드는 quality_required=false다. 결과가 없으면 **LEGACY_UNCHECKED**로 표시하고 명시적 사진 선택 시 이전 자료로 허용한다. 신규 활성화 업로드의 required=true/PENDING과 구분한다. 기존 자료도 retry API에 resultId=null을 보내 검사 대상으로 전환할 수 있으며, 전환 이후에는 완료·경고 확인을 요구한다. 과거 실행에 이미 포함된 입력은 변경하지 않는다.
 
 ## 계산과 입력 검증
 
@@ -57,7 +57,7 @@ checker_version과 policy_version을 각각 저장한다. policy_version에는 �
 
 처리 상태 PENDING/RUNNING/COMPLETED/ERROR와 판정 PASS/WARNING을 구분한다. COMPLETED에만 판정이 있다. LOW_RESOLUTION/TOO_DARK/TOO_BRIGHT/BLURRY는 여러 개가 동시에 발생할 수 있고 모두 WARNING이다. ERROR는 품질 불량이 아니라 계산/파일 접근 등의 실패다.
 
-V6에서 추가한 테이블:
+V7에서 추가한 테이블:
 
 - photo_quality_result: 첨부별 attempt 이력·현재 상태·검사기/정책 버전·원본/검사 크기·밝기/비율/분산·문제·처리 시각/시간·실패 코드·실행 token/lease.
 - photo_quality_confirmation: 해당 결과 ID에 대한 확인 사용자·시각. 같은 결과/사용자 UNIQUE로 중복 확인을 방지한다.

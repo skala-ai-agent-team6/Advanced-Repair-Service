@@ -1,5 +1,7 @@
 # Swagger UI API 문서
 
+V2 포함 최신76개 API. 실행·권한·연동은 [V2_SERVICE.md](V2_SERVICE.md), 최신 검증은 [V2_VERIFICATION.md](V2_VERIFICATION.md)를 참고한다.
+
 애플리케이션 기동 후 아래 주소에서 모든 업무·내부 컨트롤러 API를 확인할 수 있다.
 
 - UI: http://localhost:8080/swagger-ui.html (실제 화면 /swagger-ui/index.html)
@@ -34,7 +36,7 @@ node scripts/test_swagger_ui.cjs
 
 컨트롤러의 별칭과 발주 action 경로를 포함해 문서의 경로·HTTP 메서드가 일치하는지 테스트한다. 추가한 API를 생성기에 등록하지 않으면 테스트가 실패한다. 문서 제공 컨트롤러(/swagger-ui.html, /swagger-ui, /v3/api-docs)는 UI 인프라이므로 업무 API 목록에 포함하지 않는다. 로그인·로그아웃은 Spring Security 필터 API지만 함께 문서화했다. 예시는 호출 형식을 설명하며 실제 데이터 존재나 업무 상태를 보장하지 않는다.
 
-## 실제 검증
+## Swagger 도입 시 검증 기록 (이전 작업)
 
 2026-10-23, Java 21, PostgreSQL 17·Kafka 4.1.1 Testcontainers. BackendApplicationTests **23개 통과, 실패·오류·생략 0**. bootJar 성공(21초), JAR 내부 UI·OpenAPI 리소스 포함 확인. MockMvc에서 인증 없는 UI/JSON/CSS/JS 조회, 패키징된 문서와 원본 일치, 모든 업무 경로 일치, 업무·내부 API 인증 유지, 로그인 CSRF 강제를 검증했다.
 
@@ -42,7 +44,7 @@ Node 테스트는 context path, 매 쓰기 요청 최신 CSRF 교체, 조회·�
 
 참고: [Swagger UI 공식 설정](https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/), [사용한 WebJar](https://central.sonatype.com/artifact/org.webjars/swagger-ui/5.32.1).
 
-## API 목록 (54개)
+## API 목록 (76개)
 
 | 분류 | 메서드 | 경로 |
 |---|---|---|
@@ -100,3 +102,25 @@ Node 테스트는 context path, 매 쓰기 요청 최신 CSRF 교체, 조회·�
 | 사진 품질 | POST | `/api/attachments/{id}/quality/retry` |
 | 사진 품질 | PUT | `/api/attachments/{id}/selection` |
 | 접수·진단 | POST | `/api/repairs/{id}/approval` |
+| 소비자 접수·조회 | GET | `/public/intake-options` |
+| 소비자 접수·조회 | POST | `/public/cases` |
+| 소비자 접수·조회 | GET | `/public/cases/{number}` |
+| 소비자 접수·조회 | POST | `/public/cases/{number}/attachments` |
+| 소비자 접수·조회 | GET | `/public/cases/{number}/attachments/{id}` |
+| 접수·진단 | GET | `/api/repairs/{id}/work-report` |
+| 접수·진단 | POST | `/api/repairs/{id}/assignment` |
+| 보증 | POST | `/api/warranty-policies` |
+| 보증 | GET | `/api/warranty-policies` |
+| 보증 | POST | `/api/repairs/{id}/warranty-assessments` |
+| 접수·진단 | POST | `/api/repairs/{id}/customer-report` |
+| 접수·진단 | POST | `/api/repairs/{id}/customer-report/publish` |
+| 수리 리포트 | GET | `/api/reports/{id}/rag-sync` |
+| 수리 리포트 | GET | `/api/reports/{id}/edit-proposals` |
+| 수리 리포트 | POST | `/api/reports/{id}/edit-proposals/{proposalId}/decision` |
+| 운영 재처리 | GET | `/api/operations/reprocessing` |
+| 운영 재처리 | GET | `/api/operations/events/{eventId}/attempts` |
+| 운영 재처리 | POST | `/api/operations/events/{eventId}/retry` |
+| 운영 재처리 | POST | `/api/operations/outbox/{eventId}/retry` |
+| 내부 서비스 | GET | `/internal/rag/confirmed-changes` |
+| 내부 서비스 | POST | `/internal/rag/confirmed-changes/{id}/receipt` |
+| 내부 서비스 | POST | `/internal/reports/{id}/edit-proposals` |

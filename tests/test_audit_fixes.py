@@ -69,7 +69,7 @@ def test_100_dent_photos_produce_one_interpretation_label(monkeypatch):
     asyncio.run(graph.run_photo_mcp(state, {"configurable": {"emit": AsyncMock()}},
                                    "MECH", model, "detect_dents", "MOTOR", "mechanical"))
     assert model.await_count == 100
-    interpreter.assert_awaited_once_with(["scratches"])
+    interpreter.assert_awaited_once_with(["scratches"], product_type="unknown")
 
 
 def test_download_failure_produces_failed_not_sample_report(monkeypatch, tmp_path):

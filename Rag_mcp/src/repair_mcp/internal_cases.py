@@ -39,9 +39,17 @@ class InternalCasesMixin:
                 if payload["report_revision"] > document["report_revision"]:
                     return "stale"
                 if payload["report_revision"] == document["report_revision"]:
-                    if payload["content_hash"] != digest:
+                    if payload["content_hash"] == digest:
+                        return "unchanged"
+                    source_fields = ("report_id", "case_id", "report_revision", "confirmed_at",
+                                     "reported_observations_ko", "confirmed_cause_ko",
+                                     "reported_action_ko", "outcome")
+                    missing_product = ("product_type" not in payload or (
+                        payload["product_type"] == "unknown" and document["product_type"] != "unknown"))
+                    legacy_metadata_upgrade = missing_product and all(
+                        payload.get(key) == document.get(key) for key in source_fields)
+                    if not legacy_metadata_upgrade:
                         raise ValueError("CONFIRMED_REVISION_CONTENT_CHANGED")
-                    return "unchanged"
 
             vectors = self._encode(list(self._chunks(document)), "passage: ")
             mean = [sum(values) / len(vectors) for values in zip(*vectors)]

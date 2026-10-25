@@ -84,7 +84,21 @@
             "type": "object",
             "properties": {
               "repair": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "product_type": {
+                    "type": "string",
+                    "enum": [
+                      "vacuum",
+                      "washing_machine",
+                      "air_conditioner",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "product_type"
+                ]
               },
               "task": {
                 "type": "object"
@@ -182,6 +196,27 @@
                   "string",
                   "null"
                 ]
+              },
+              "selectedAttachmentIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
+              },
+              "excludedAttachmentIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
+              },
+              "explicitlyExcludedAttachmentIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
               }
             },
             "required": [
@@ -216,7 +251,21 @@
             "type": "object",
             "properties": {
               "repair": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "product_type": {
+                    "type": "string",
+                    "enum": [
+                      "vacuum",
+                      "washing_machine",
+                      "air_conditioner",
+                      "unknown"
+                    ]
+                  }
+                },
+                "required": [
+                  "product_type"
+                ]
               },
               "task": {
                 "type": "object"
@@ -314,6 +363,27 @@
                   "string",
                   "null"
                 ]
+              },
+              "selectedAttachmentIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
+              },
+              "excludedAttachmentIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
+              },
+              "explicitlyExcludedAttachmentIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                }
               }
             },
             "required": [
@@ -358,7 +428,7 @@
           },
           "sequence": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           }
         }
       }
@@ -387,7 +457,7 @@
           },
           "sequence": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           }
         }
       }
@@ -421,7 +491,7 @@
           },
           "sequence": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           }
         }
       }
@@ -450,7 +520,11 @@
               },
               "bodyPart": {
                 "type": "string",
-                "minLength": 1
+                "enum": [
+                  "PCB",
+                  "MOTOR",
+                  "GENERAL"
+                ]
               },
               "description": {
                 "type": "string",
@@ -471,7 +545,7 @@
           },
           "sequence": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           }
         }
       }
@@ -544,14 +618,16 @@
                     },
                     "quantity": {
                       "type": "integer",
-                      "minimum": 1
+                      "minimum": 1,
+                      "maximum": 100
                     }
                   },
                   "required": [
                     "partId",
                     "quantity"
                   ]
-                }
+                },
+                "maxItems": 20
               },
               "evidence": {
                 "type": "array",
@@ -572,10 +648,31 @@
                     "citation": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "sourceUri": {
+                      "type": "string",
+                      "minLength": 1
                     }
                   },
                   "required": [
                     "type"
+                  ],
+                  "anyOf": [
+                    {
+                      "required": [
+                        "attachmentId"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "citation"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "sourceUri"
+                      ]
+                    }
                   ]
                 }
               }
@@ -591,7 +688,7 @@
           },
           "sequence": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           }
         }
       }
@@ -612,6 +709,16 @@
               "errorCode": {
                 "type": "string",
                 "minLength": 1
+              },
+              "summary": {
+                "type": "string",
+                "minLength": 1
+              },
+              "analysisResults": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
               }
             },
             "required": [
@@ -620,7 +727,7 @@
           },
           "sequence": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           }
         }
       }

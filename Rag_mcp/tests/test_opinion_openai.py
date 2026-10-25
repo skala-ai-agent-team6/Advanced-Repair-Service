@@ -132,3 +132,13 @@ def test_unmapped_technician_report_reaches_opinion_when_models_are_missing(monk
     opinion.generate_final_opinion(observation, pcb, damage, [], guidance)
     evidence = json.loads(calls[0]["input"][1]["content"])
     assert evidence["unmapped_report"] == "동작이 이상해요"
+
+
+def test_error_codes_are_preserved_in_final_opinion_input(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key-not-real")
+    calls = install_fake_client(monkeypatch, opinion.FinalOpinion(opinion_ko="전원 연결을 점검합니다.", supporting_case_ids=[]))
+    obs, pcb, damage, cases, guidance = sample_evidence()
+    obs["error_codes"] = ["E01"]
+    opinion.generate_final_opinion(obs, pcb, damage, [], guidance)
+    evidence = json.loads(calls[0]["input"][1]["content"])
+    assert evidence["error_codes"] == ["E01"]

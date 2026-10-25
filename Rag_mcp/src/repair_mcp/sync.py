@@ -10,6 +10,8 @@ from urllib.parse import urlsplit
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StrictBool, ValidationError
 
+from .products import ProductType, PRODUCT_NAMES
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,6 +26,7 @@ class ReportContent(BaseModel):
 
 class ConfirmedReport(BaseModel):
     model_config = ConfigDict(extra="ignore")
+    product_type: ProductType = "unknown"
     report_id: PositiveInt
     case_id: PositiveInt
     confirmed_revision: PositiveInt
@@ -52,7 +55,7 @@ def report_document(raw):
         raise ValueError("EMPTY_REPORT")
     outcome_ko = {"FIXED": "수리 완료", "NOT_FIXED": "수리 미완료", "NO_FAULT_FOUND": "고장 미발견"}[outcome]
     text = "\n".join(filter(None, [
-        "제품: 청소기", f"기사 소견: {opinion}" if opinion else "",
+        f"제품: {PRODUCT_NAMES[report.product_type]}", f"기사 소견: {opinion}" if opinion else "",
         f"기사 확정 보고 원인: {cause}", f"실제 조치: {action}", f"수리 결과: {outcome_ko}",
     ]))
     return {
@@ -65,7 +68,8 @@ def report_document(raw):
         "report_revision": report.confirmed_revision,
         "confirmed_at": report.confirmed_at.isoformat(),
         "source_uri": f"urn:repair-report:{report.report_id}:revision:{report.confirmed_revision}",
-        "product_domain": "vacuum", "product_category": "Vacuum", "model_code": None,
+        "product_type": report.product_type, "product_domain": report.product_type,
+        "product_category": PRODUCT_NAMES[report.product_type], "model_code": None,
         # The current API has no intake symptom or model labels. Do not fabricate them.
         "reported_observations_ko": opinion,
         "confirmed_cause_ko": cause, "reported_action_ko": action,

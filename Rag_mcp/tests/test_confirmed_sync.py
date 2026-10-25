@@ -33,7 +33,7 @@ class Encoder:
 
 
 def report(report_id=42, revision=1, text="motor contact", outcome="FIXED"):
-    return {"report_id": report_id, "case_id": report_id + 100,
+    return {"product_type": "vacuum", "report_id": report_id, "case_id": report_id + 100,
             "confirmed_revision": revision, "confirmed_at": "2026-10-22T00:00:00Z",
             "content": {"actualCause": text, "actualAction": "contact repaired",
                         "technicianOpinion": text, "repairSuccessful": outcome == "FIXED",
@@ -48,7 +48,7 @@ def store_at(path=":memory:"):
 def public_index(store):
     store.documents = {"repair_cases": [
         {"document_id": "dustup:public1", "text": "filter blocked", "original_text": "filter blocked",
-         "source_repair_status": "Fixed", "source_type": "external_community_repair_record"}],
+         "product_type": "vacuum", "source_repair_status": "Fixed", "source_type": "external_community_repair_record"}],
         "pcb_documents": [], "damage_documents": []}
     store.index()
 
@@ -132,9 +132,9 @@ def test_restart_and_public_corpus_change_preserve_internal_reports(tmp_path, mo
         assert reopened.upsert_confirmed_case(report_document(report())) == "unchanged"
         assert reopened.encoder.calls == 0
         public_index(reopened)
-        assert reopened.search("repair_cases", "motor", min_score=.9)[0]["document_id"] == "internal:report:42"
+        assert reopened.search("repair_cases", "motor", product_type="vacuum", min_score=.9)[0]["document_id"] == "internal:report:42"
         assert reopened.upsert_confirmed_case(report_document(report(revision=2, text="filter"))) == "updated"
-        assert reopened.search("repair_cases", "motor", min_score=.9) == []
+        assert reopened.search("repair_cases", "motor", product_type="vacuum", min_score=.9) == []
         assert reopened.internal_case_count() == 1
     finally:
         reopened.close()
@@ -186,8 +186,6 @@ def test_both_sources_and_internal_outcomes_reach_existing_rag(monkeypatch):
     public_index(store)
     store.upsert_confirmed_case(report_document(report()))
     store.upsert_confirmed_case(report_document(report(43, outcome="NOT_FIXED")))
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations",
-                        lambda text, *args: {"raw_text": text, "observations": []})
     received = []
     def opinion(observation, pcb, damage, cases, guidance):
         received.extend(cases)
@@ -195,12 +193,12 @@ def test_both_sources_and_internal_outcomes_reach_existing_rag(monkeypatch):
                 "engine": "test-stub", "model": "test"}
     monkeypatch.setattr("repair_mcp.retrieval.generate_final_opinion", opinion)
     try:
-        result = retrieve_context(SearchRequest(raw_text="motor", min_score=-1), store)
+        result = retrieve_context(SearchRequest(product_type="vacuum", raw_text="motor", min_score=-1), store)
         assert {c["source_label"] for c in result["case_briefs"]} == {"공개 사례", "사내 확정 사례"}
         assert len(received) == 3
         assert result["diagnosis_confirmed"] is False
         assert all(not case["diagnosis_confirmed"] for case in received)
-        fixed = store.search("repair_cases", "motor", min_score=.9, repair_status="Fixed")
+        fixed = store.search("repair_cases", "motor", product_type="vacuum", min_score=.9, repair_status="Fixed")
         assert [c["document_id"] for c in fixed] == ["internal:report:42"]
     finally:
         store.close()
@@ -226,7 +224,7 @@ async def test_mcp_periodic_sync_immediate_sync_and_shutdown():
             rows[0] = report(revision=2)
             result = (await client.call_tool("sync_confirmed_cases", {})).data
             assert result["updated"] == 1
-            found = (await client.call_tool("search_repair_cases", {"query": "motor", "min_score": .9})).data
+            found = (await client.call_tool("search_repair_cases", {"query": "motor", "min_score": .9, "product_type": "vacuum"})).data
             assert found["case_briefs"][0]["source_label"] == "사내 확정 사례"
         assert sync._thread is None
     finally:

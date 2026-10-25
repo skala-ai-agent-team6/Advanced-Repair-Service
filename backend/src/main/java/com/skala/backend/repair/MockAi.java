@@ -27,7 +27,7 @@ class MockAi {
         send(command,3,"TOOL_EXECUTED",Map.of("tool","scripted-fixture","toolVersion","dev-1","modelVersion","none","output",Map.of("scenario",scenario)));
         if((scenario.equals("photo") && revision==1) || (scenario.equals("manual") && revision<=3)) {
             UUID request=UUID.nameUUIDFromBytes((command.get("eventId")+":request").getBytes(StandardCharsets.UTF_8));
-            send(command,4,"PHOTO_REQUESTED",Map.of("requestKey",request,"round",revision,"bodyPart","wheel","description","바퀴 하부 사진을 추가해 주세요","checkpoint",command.get("taskId")+":checkpoint"));
+            send(command,4,"PHOTO_REQUESTED",Map.of("requestKey",request,"round",revision,"bodyPart","MOTOR","description","바퀴 하부 사진을 추가해 주세요","checkpoint",command.get("taskId")+":checkpoint"));
         } else if(scenario.equals("manual")) send(command,4,"DIAGNOSIS_FAILED",Map.of("errorCode","INCONCLUSIVE_AFTER_THIRD_PHOTO"));
         else {
             var attachments=(List<?>)payload.get("attachmentIds");

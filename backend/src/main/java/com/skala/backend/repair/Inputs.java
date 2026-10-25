@@ -7,7 +7,9 @@ import java.util.*;
 public final class Inputs {
     public record Intake(@NotNull Long productId,@NotBlank @Size(max=10000) String symptoms,
         @NotNull @Size(max=50) List<@NotBlank @Size(max=100) String> errorCodes,@NotBlank @Size(max=100) String firmware,
-        @NotNull Map<String,Object> userInput) {}
+        @NotNull Map<String,Object> userInput,java.time.LocalDate purchaseDate,@Pattern(regexp="CENTER|FIELD") String serviceType) {
+        public Intake(Long id,String symptoms,List<String> errors,String firmware,Map<String,Object> input){this(id,symptoms,errors,firmware,input,null,null);}
+    }
     public record DiagnosisSelection(@NotEmpty List<@NotNull Long> attachmentIds) {}
     public record Resume(@NotNull Long requestId,@NotNull UUID submissionKey,@NotEmpty List<@NotNull Long> attachmentIds,List<@NotNull Long> excludedAttachmentIds) {
         public Resume {excludedAttachmentIds=excludedAttachmentIds==null?List.of():List.copyOf(excludedAttachmentIds);}
@@ -19,8 +21,10 @@ public final class Inputs {
     public record Fault(@NotBlank @Pattern(regexp="PCB|MOTOR|SW|OTHER") String area,Long componentId,Long partId) {}
     public record ReportContent(@NotBlank @Size(max=10000) String actualCause,@NotNull @Valid List<Fault> faults,
         @NotBlank @Size(max=10000) String actualAction,@NotNull @Size(max=10000) String technicianOpinion,@NotNull Boolean repairSuccessful,
-        @NotNull Acceptance aiAcceptance,Outcome outcome) {
-        public ReportContent(String cause,List<Fault> faults,String action,String opinion,Boolean successful,Acceptance assessment) {this(cause,faults,action,opinion,successful,assessment,null);}
+        @NotNull Acceptance aiAcceptance,Outcome outcome,@Size(max=20) @Valid List<V2Inputs.ReplacedPart> replacedParts) {
+        public ReportContent {replacedParts=replacedParts==null?List.of():List.copyOf(replacedParts);}
+        public ReportContent(String cause,List<Fault> faults,String action,String opinion,Boolean successful,Acceptance assessment,Outcome outcome){this(cause,faults,action,opinion,successful,assessment,outcome,List.of());}
+        public ReportContent(String cause,List<Fault> faults,String action,String opinion,Boolean successful,Acceptance assessment) {this(cause,faults,action,opinion,successful,assessment,null,List.of());}
     }
     public enum Outcome { FIXED, NOT_FIXED, NO_FAULT_FOUND }
     public enum Acceptance { ACCEPTED, PARTIAL, REJECTED, NOT_AVAILABLE }

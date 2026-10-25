@@ -179,8 +179,78 @@ paths['/api/repairs/{id}/attachments']['post']['parameters'].append(query('targe
 
 for path, methods in paths.items():
     for method, operation in methods.items():
-        if method in ['post','put'] and not path.startswith('/internal/'):
+        if method in ['post','put'] and not path.startswith(('/internal/','/public/')):
             operation['parameters'].append({'in':'header','name':'X-CSRF-TOKEN','required':True,'schema':string(),'description':'GET /api/auth/csrf; refresh after successful login'})
+S['Product']['properties']['appliance_type']=string()
+S['User']['properties']['operationsEnabled']=boolean
+S['RagLegacyContent']=obj({'actualCause':string(),'actualAction':string(),'repairSuccessful':boolean,'outcome':nullable(string()),'replacedParts':nullable(array(free))})
+S['ConfirmedCase']['properties']['content']=ref('RagLegacyContent')
+S['Candidate']['properties']['confidence']['description']='모델 점수이며 실제 고장 확률을 의미하지 않습니다.'
+S['ProductType']=string(enum=['vacuum','washing_machine','air_conditioner','unknown'],description='PR #6 제품 종류. 누락·미지원 메타데이터는 unknown, 소견에서 추정하지 않음')
+S['Product']['properties']['product_type']=ref('ProductType');S['Product']['required'].append('product_type')
+S['ConfirmedCase']['properties']['product_type']=ref('ProductType')
+S['ConfirmedCase']['required'].append('product_type')
+# V2 service expansion: public intake, human publication, RAG/editor and operations.
+S['ConsumerIntake']=obj({'symptoms':string(minLength=1,maxLength=10000),'purchaseDate':string(format='date',description='구매일; 미래 날짜 거부'),'serialNumber':string(maxLength=100),'modelCode':string(maxLength=100),'centerId':uid,'serviceType':string(enum=['CENTER','FIELD']),'contactName':nullable(string(maxLength=100)),'contactPhone':nullable(string(maxLength=40)),'visitAddress':nullable(string(maxLength=500))},['symptoms','purchaseDate','serialNumber','modelCode','centerId','serviceType'])
+S['ConsumerAccepted']=obj({'caseNumber':string(),'lookupKey':string(description='256비트 임의 키. 발급 응답에서 한 번 제공하며 로그·URL에 넣지 마세요.'),'expiresAt':date,'status':string(enum=['RECEIVED']),'attachmentIds':array(uid),'requiresTechnicianReview':boolean})
+S['Warranty']=obj({'result':string(enum=['WITHIN_PERIOD','OUTSIDE_PERIOD','UNKNOWN']),'reason':string(),'purchase_date':nullable(string(format='date')),'assessed_on':string(format='date'),'policy_version':nullable(string()),'expires_on_exclusive':nullable(string(format='date'))},['result','reason'])
+S['CustomerReport']=obj({'version':integer(),'kind':string(enum=['ESTIMATE','CONFIRMED']),'cause_summary':string(),'planned_work':string(),'published_at':date})
+S['CustomerView']=obj({'caseNumber':string(),'status':string(enum=['RECEIVED','UNDER_REVIEW','REPAIRING','COMPLETED','CANCELLED']),'warranty':ref('Warranty'),'report':nullable(ref('CustomerReport')),'photos':array(obj({'id':uid,'status':string(),'verdict':nullable(string()),'issues':nullable(array(string()))}))})
+S['Assignment']=obj({'technicianId':uid,'reason':string(minLength=1,maxLength=1000)})
+S['WarrantyPolicy']=obj({'modelId':uid,'version':string(minLength=1,maxLength=100),'durationMonths':integer(minimum=1,maximum=600),'effectiveFrom':string(format='date'),'effectiveTo':nullable(string(format='date')),'developmentOnly':boolean},['modelId','version','durationMonths','effectiveFrom','developmentOnly'])
+S['CustomerDraft']=obj({'expectedVersion':integer(minimum=0),'kind':string(enum=['ESTIMATE','CONFIRMED']),'causeSummary':string(minLength=1,maxLength=4000),'plannedWork':string(minLength=1,maxLength=4000),'sourceRevision':nullable(integer(minimum=1))},['expectedVersion','kind','causeSummary','plannedWork'])
+S['ReplacedPart']=obj({'partId':uid,'quantity':integer(minimum=1,maximum=100)})
+S['ReportContent']['properties']['replacedParts']=array(ref('ReplacedPart'))
+S['Intake']['properties'].update({'purchaseDate':nullable(string(format='date')),'serviceType':nullable(string(enum=['CENTER','FIELD']))})
+S['Repair']['properties'].update({'intake_source':string(enum=['STAFF','CONSUMER']),'service_type':string(enum=['CENTER','FIELD']),'purchase_date':nullable(string(format='date')),'assigned_technician_id':nullable(uid)})
+S['WorkReport']={'allOf':[ref('RepairDetail'),obj({'warranty':ref('Warranty'),'product':ref('Product'),'diagnosis':free,'recommendedParts':array(free),'procurement':ref('Procurement'),'report':free,'visitContact':free,'preparation':obj({'status':string(),'missing':array(string())}),'assignments':array(free),'customerReports':array(free)})]}
+S['RagDocument']=obj({'documentId':string(),'source':string(),'reportId':uid,'revision':integer(minimum=1),'confirmedAt':date,'symptom':string(),'actualCause':string(),'actualAction':string(),'replacedParts':array(free),'outcome':nullable(string())})
+S['RagChange']=obj({'id':uid,'report_id':uid,'revision':integer(),'confirmed_at':date,'document':ref('RagDocument'),'status':string(enum=['PENDING','SUCCEEDED','ERROR']),'succeeded_at':nullable(date),'error_code':nullable(string()),'attempts':integer(),'updated_at':date})
+S['RagPage']=obj({'items':array(ref('RagChange')),'nextCursor':integer(format='int64'),'until':integer(format='int64'),'hasMore':boolean,'enabled':boolean})
+S['SyncReceipt']=obj({'requestKey':key,'reportId':uid,'revision':integer(minimum=1),'status':string(enum=['SUCCEEDED','ERROR']),'errorCode':nullable(string(pattern='^[A-Z0-9_]{1,100}$'))},['requestKey','reportId','revision','status'])
+S['EditProposal']=obj({'requestKey':key,'targetRevision':integer(minimum=1),'authorService':string(minLength=1,maxLength=100),'proposed':ref('ReportContent')})
+S['Reprocess']=obj({'requestKey':key})
+S['RagState']=obj({'id':uid,'report_id':uid,'revision':integer(),'status':string(),'succeeded_at':nullable(date),'error_code':nullable(string()),'attempts':integer(),'updated_at':date})
+S['ProposalState']=obj({'id':uid,'report_id':uid,'target_revision':integer(),'request_key':key,'original':ref('ReportContent'),'proposed':ref('ReportContent'),'author_service':string(),'state':string(enum=['PENDING','ACCEPTED','REJECTED']),'decided_by':nullable(uid),'decided_at':nullable(date),'accepted_revision':nullable(integer()),'created_at':date})
+S['ConsumerIntake']['example']={'symptoms':'시연용 청소기 바퀴가 멈춥니다.','purchaseDate':'2026-01-01','serialNumber':'ROBOT-SEOUL-001','modelCode':'R1','centerId':'1','serviceType':'CENTER'}
+add('/public/intake-options','get','비로그인 접수용 센터·모델 목록',obj({'centers':array(free),'models':array(free)}))
+op=add('/public/cases','post','소비자 비로그인 접수; Agent 자동 실행 안 함',ref('ConsumerAccepted'),code=202)
+op['requestBody']={'required':True,'content':{'multipart/form-data':{'schema':obj({'data':ref('ConsumerIntake'),'files':array(string(format='binary'))}),'encoding':{'data':{'contentType':'application/json'},'files':{'contentType':'image/png, image/jpeg'}}}}}
+add('/public/cases/{number}','get','접수번호와 조회 키로 고객 공개 정보 조회',ref('CustomerView'))
+op=add('/public/cases/{number}/attachments','post','조회 키로 초기 재촬영 저장; 진단 시작 후 기사에게 인계',obj({'attachmentId':uid,'status':string()}))
+op['requestBody']={'required':True,'content':{'multipart/form-data':{'schema':obj({'file':string(format='binary')})}}}
+add('/public/cases/{number}/attachments/{id}','get','본인 접수의 원본 사진; 조회 키 필요',string(format='binary'),media='application/octet-stream')
+add('/api/repairs/{id}/work-report','get','기사 통합 리포트·출장 준비·보증·부품·공개본',ref('WorkReport'))
+add('/api/repairs/{id}/assignment','post','QUALITY_MANAGER: 기사 배정·재배정 및 이력',ref('WorkReport'),ref('Assignment'))
+add('/api/warranty-policies','post','QUALITY_MANAGER: 불변 보증 정책 버전 등록',free,ref('WarrantyPolicy'))
+add('/api/warranty-policies','get','QUALITY_MANAGER: 모델별 보증 정책 조회',array(free))
+add('/api/repairs/{id}/warranty-assessments','post','TECHNICIAN: 구매일 보증 재판정; 이력 보존',ref('Warranty'))
+add('/api/repairs/{id}/customer-report','post','TECHNICIAN: 고객 전용 초안 작성; 자동 공개 안 함',free,ref('CustomerDraft'))
+add('/api/repairs/{id}/customer-report/publish','post','TECHNICIAN: 검토한 고객 리포트 버전 명시적 공개',free,obj({'version':integer(minimum=1)}))
+add('/api/reports/{id}/rag-sync','get','접근 가능한 보고서의 RAG 동기화 최신 상태·이력',obj({'enabled':boolean,'latest':free,'history':array(free)}))
+add('/api/reports/{id}/edit-proposals','get','AI 원본·편집 제안·수락 또는 반려 이력',array(ref('ProposalState')))
+add('/api/reports/{id}/edit-proposals/{proposalId}/decision','post','TECHNICIAN: 편집 제안 수락(새 초안) 또는 반려',ref('ProposalState'),obj({'action':string(enum=['ACCEPT','REJECT'])}))
+add('/api/operations/reprocessing','get','별도 operations_enabled 권한: 실패·재처리 현황',obj({'maxManualAttempts':integer(),'tasks':array(free),'outbox':array(free),'events':array(free)}),params=[query('size',integer(minimum=1,maximum=100,default=50))])
+add('/api/operations/events/{eventId}/attempts','get','별도 운영 권한: 원래 이벤트의 수동 재처리 이력',array(free))
+for kind in ['events','outbox']:
+    add('/api/operations/'+kind+'/{eventId}/retry','post','별도 운영 권한: 원래 실패 이벤트와 연결한 재처리 시도',free,ref('Reprocess'))
+add('/internal/rag/confirmed-changes','get','RAG: 고정 high-water mark와 단조 cursor로 확정 변경분 조회',ref('RagPage'),params=[query('after',integer(minimum=0,format='int64',default=0)),query('until',integer(minimum=0,format='int64')),query('size',integer(minimum=1,maximum=500,default=100))],internal=True)
+add('/internal/rag/confirmed-changes/{id}/receipt','post','RAG: 실제 색인 처리 결과 기록; 이전 버전은 최신 상태에 영향 없음',ref('RagState'),ref('SyncReceipt'),internal=True)
+add('/internal/reports/{id}/edit-proposals','post','편집자 AI: 정의된 제안 저장 adapter; 모델 호출 안 함',ref('ProposalState'),ref('EditProposal'),internal=True)
+for route,methods in paths.items():
+    for method,op in methods.items():
+        for parameter in op.get('parameters',[]):
+            if parameter['in']=='path' and parameter['name']=='number': parameter['schema']=string(description='발급된 caseNumber; 비밀값이 아님')
+            if parameter['in']=='path' and parameter['name']=='eventId': parameter['schema']=key
+        if route.startswith('/public/'):
+            op['security']=[] if route in ['/public/intake-options','/public/cases'] else [{'ConsumerKey':[]}]
+            op['parameters']=[p for p in op.get('parameters',[]) if p['name']!='X-CSRF-TOKEN']
+            for status in [429,503]:op['responses'][str(status)]={'description':'요청량 제한 또는 이미지 검증 포화·처리 오류','content':{'application/json':{'schema':ref('Error')}}}
+        if route.startswith('/internal/') and method=='post':op['parameters']=[p for p in op.get('parameters',[]) if p['name']!='X-CSRF-TOKEN']
+
+S['Repair']['properties']['product_type']=ref('ProductType');S['Repair']['required'].append('product_type')
+S['RagDocument']['properties']['product_type']=ref('ProductType');S['RagDocument']['required'].append('product_type')
+S['RagChange']['properties']['product_type']=ref('ProductType');S['RagChange']['required'].append('product_type')
 # Swagger UI grouping and executable examples for every documented operation.
 def sample(schema, depth=0):
     if depth > 12: return None
@@ -205,7 +275,10 @@ S['Intake']['example']={'productId':'1','symptoms':'청소 중 바퀴가 멈춥�
 S['DiagnosisSelection']['example']={'attachmentIds':['1']}
 for path, methods in paths.items():
     for verb, operation in methods.items():
-        if path.startswith('/internal/'): tag='내부 서비스'
+        if path.startswith('/public/'): tag='소비자 접수·조회'
+        elif '/operations/' in path: tag='운영 재처리'
+        elif '/warranty' in path: tag='보증'
+        elif path.startswith('/internal/'): tag='내부 서비스'
         elif '/auth/' in path: tag='인증'
         elif '/quality' in path or '/selection' in path: tag='사진 품질'
         elif '/reports/' in path or '/report' in path: tag='수리 리포트'
@@ -225,11 +298,14 @@ for path, methods in paths.items():
                 if media=='application/json': content['example']=({'code':'FORBIDDEN_OR_CSRF' if code=='403' else 'API_ERROR','status':int(code)} if int(code)>=400 else sample(content['schema']))
         if verb=='post' and (path=='/api/repairs' or path.endswith('/attachments')):
             for code in ['429','503']: operation['responses'][code]={'description':'이미지 검증 실행 풀 포화 또는 검사 실행 오류/시간 초과','content':{'application/json':{'schema':ref('Error'),'example':{'code':'PHOTO_VALIDATION_BUSY' if code=='429' else 'PHOTO_VALIDATION_TIMEOUT','status':int(code)}}}}
+for route, methods in paths.items():
+    if route.startswith('/public/'):
+        for operation in methods.values(): operation['description']=operation['summary']+'\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다.'
 paths['/api/repairs']['post']['summary']='접수와 원본 파일 저장; 품질 검사 활성화 시 명시적 진단 요청 필요'
 paths['/api/repairs']['post']['description']+='\n\n사진 품질 활성화 시 taskId=null이며 자동 진단하지 않습니다. 품질 조회·WARNING 확인 후 /api/repairs/{id}/diagnoses에 attachmentIds를 제출하세요. multipart data는 application/json, files는 원본 파일입니다. targets는 files와 같은 순서입니다.'
 paths['/api/auth/login']['post']['description']='실제 계정으로 폼 로그인합니다. username/password를 입력하세요. CSRF는 자동 조회하며 성공한 세션 쿠키로 이후 API를 호출합니다.'
 paths['/api/auth/csrf']['get']['description']='로그인 전에도 조회할 수 있습니다. 로그인·로그아웃 후 토큰을 갱신해야 합니다. 이 UI는 매 쓰기 요청 전에 갱신합니다.'
 paths['/api/repairs/{id}/events']['get']['description']+='\n\n장시간 연결하는 SSE입니다. Swagger UI의 일반 응답 미리보기보다 EventSource 또는 curl -N을 사용하세요. Last-Event-ID로 재연결합니다.'
-doc={'openapi':'3.1.0','info':{'title':'Robot repair backend','version':'2.0.0','description':'모든 업무·내부 API. 요청 DTO는 camelCase, DB 기반 응답은 snake_case, bigint ID는 문자열입니다. 인증 → POST /api/auth/login에서 로그인한 뒤 호출하세요. CSRF는 UI에서 자동 설정합니다. 내부 API는 Authorize의 ServiceToken에 토큰만 입력하세요. 예시 ID와 값은 실제 데이터로 바꿔야 합니다.'},'servers':[{'url':'/'}],'security':[{'SessionCookie':[]}],'paths':paths,'components':{'securitySchemes':{'SessionCookie':{'type':'apiKey','in':'cookie','name':'JSESSIONID'},'ServiceToken':{'type':'http','scheme':'bearer'}},'schemas':S}}
+doc={'openapi':'3.1.0','info':{'title':'Robot repair backend','version':'2.0.0','description':'모든 업무·내부 API. 요청 DTO는 camelCase, DB 기반 응답은 snake_case, bigint ID는 문자열입니다. 인증 → POST /api/auth/login에서 로그인한 뒤 호출하세요. CSRF는 UI에서 자동 설정합니다. 내부 API는 Authorize의 ServiceToken에 토큰만 입력하세요. 예시 ID와 값은 실제 데이터로 바꿔야 합니다.'},'servers':[{'url':'/'}],'security':[{'SessionCookie':[]}],'paths':paths,'components':{'securitySchemes':{'SessionCookie':{'type':'apiKey','in':'cookie','name':'JSESSIONID'},'ServiceToken':{'type':'http','scheme':'bearer'},'ConsumerKey':{'type':'http','scheme':'bearer','description':'접수 때 발급된 lookupKey; 직원·SERVICE 토큰과 다름'}},'schemas':S}}
 Path('docs/openapi.json').write_text(json.dumps(doc,ensure_ascii=False,indent=2)+'\n')
 print(f'Generated OpenAPI: {len(paths)} paths, {sum(map(len,paths.values()))} operations')

@@ -6,13 +6,15 @@ import java.util.*;
 
 @Service
 public class ReportService {
-    final Store db; final Access access;
-    public ReportService(Store db,Access access) { this.db=db;this.access=access; }
+    final Store db; final Access access;final RagCaseService rag;
+    public ReportService(Store db,Access access,RagCaseService rag) { this.db=db;this.access=access;this.rag=rag; }
     @Transactional public Map<String,Object> saveAndConfirm(Long repair,Inputs.Draft input) {
         var saved=draft(repair,input);return confirm((Long)saved.get("id"),new Inputs.Confirm(((Number)saved.get("version")).longValue(),Json.number(saved.get("latest_revision"))));
     }
     @Transactional public Map<String,Object> draft(Long repair,Inputs.Draft input) {
         access.technician();var repairRow=access.repair(repair);
+        if(input.content().actualCause()==null || input.content().actualCause().isBlank() || input.content().actualAction()==null || input.content().actualAction().isBlank())throw ApiError.bad("ACTUAL_CAUSE_ACTION_REQUIRED");
+        if(input.content().replacedParts().size()>20)throw ApiError.bad("REPLACED_PARTS_LIMIT");
         if(input.content().outcome()==Inputs.Outcome.NO_FAULT_FOUND && !input.content().faults().isEmpty()) throw ApiError.bad("NO_FAULT_FOUND_WITH_FAULTS");
         if(input.content().outcome()==Inputs.Outcome.FIXED && !input.content().repairSuccessful() || input.content().outcome()==Inputs.Outcome.NOT_FIXED && input.content().repairSuccessful()) throw ApiError.bad("OUTCOME_SUCCESS_MISMATCH");Long actor=access.user().id;
         // Serialize first creation, then use the caller's version as a compare-and-set.
@@ -44,6 +46,12 @@ public class ReportService {
             }
             db.update("INSERT INTO confirmed_fault(report_id,product_id,revision,ordinal,fault_domain,cause_code,description,part_id,component_id,factory_id,factory_name,production_region) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",id,repairRow.get("product_id"),revision,++ordinal,fault.area(),input.content().actualCause(),input.content().actualCause(),part,fault.componentId(),factory,factoryName,region);
         }
+        var replaced=new HashSet<Long>();
+        for(var part:input.content().replacedParts()){
+            if(part.quantity()<1 || part.quantity()>100 || !replaced.add(part.partId()))throw ApiError.bad("REPLACED_PARTS_INVALID");
+            if(db.list("SELECT mp.part_id FROM model_part mp JOIN product p ON p.model_id=mp.model_id WHERE p.id=? AND mp.part_id=?",repairRow.get("product_id"),part.partId()).isEmpty())throw ApiError.bad("INCOMPATIBLE_REPLACED_PART");
+            db.update("INSERT INTO report_replaced_part(report_id,revision,part_id,quantity) VALUES (?,?,?,?)",id,revision,part.partId(),part.quantity());
+        }
         db.event(repair,"REPORT_DRAFT_SAVED",Map.of("reportId",id,"revision",revision));
         db.audit(access.user().email,"REPORT_DRAFT_SAVED",id,Map.of("revision",revision));
         return get(id);
@@ -55,10 +63,12 @@ public class ReportService {
         db.update("UPDATE repair_report_revision SET confirmed_at=now() WHERE report_id=? AND revision=?",id,input.revision());
         var revision=db.one("SELECT content FROM repair_report_revision WHERE report_id=? AND revision=?",id,input.revision());
         var content=(Map<?,?>)revision.get("content");
+        if(!(content.get("actualCause") instanceof String cause) || cause.isBlank() || !(content.get("actualAction") instanceof String action) || action.isBlank())throw ApiError.bad("ACTUAL_CAUSE_ACTION_REQUIRED");
         String outcome=content.get("outcome")==null?(Boolean.TRUE.equals(content.get("repairSuccessful"))?"FIXED":"NOT_FIXED"):String.valueOf(content.get("outcome"));
         db.update("UPDATE repair_report SET outcome=?,ai_assessment=?,comment=?,action_taken=?,confirmed_at=now() WHERE id=?",outcome,content.get("aiAcceptance"),content.get("technicianOpinion"),content.get("actualAction"),id);
         if(!outcome.equals("NOT_FIXED")) db.update("UPDATE repair_case SET status='CLOSED',closed_at=now(),version=version+1 WHERE id=?",report.get("case_id"));
         else db.update("UPDATE repair_case SET status='MANUAL_REVIEW' WHERE id=?",report.get("case_id"));
+        rag.confirmed(id,input.revision());
         db.event((Long)report.get("case_id"),"REPORT_CONFIRMED",Map.of("reportId",id,"revision",input.revision()));
         db.audit(access.user().email,"REPORT_CONFIRMED",id,Map.of("revision",input.revision()));return get(id);
     }

@@ -179,7 +179,7 @@ def test_long_pii_input_large_rag_creates_masked_report_and_keeps_all_photo_evid
                 assert 'sample@example.com' not in json.dumps(event)
             assert json.loads(saved.read_text())['result'] == result and cmd == original
             # 이 레포는 유사사례 번역 LLM 호출이 하나 더 있다. 리포트 프롬프트만 센다.
-            reports = [x for x in received if x.startswith('로봇청소기 수리 기사')]
+            reports = [x for x in received if x.startswith('입력된 가전제품의 수리 기사')]
             assert len(reports) == 1 and len(rag['hits'][0]['excerpt']) > 10000
         finally:
             journal.close()

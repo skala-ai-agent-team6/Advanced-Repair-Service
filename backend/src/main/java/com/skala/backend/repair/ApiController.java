@@ -19,7 +19,7 @@ public class ApiController {
         this.queries=queries;this.access=access;this.repairs=repairs;this.reports=reports;this.orders=orders;this.files=files;this.sse=sse;this.catalog=catalog;this.dashboard=dashboard;
     }
     @GetMapping("/auth/csrf") public Map<String,Object> csrf(CsrfToken token) {return Map.of("headerName",token.getHeaderName(),"token",token.getToken());}
-    @GetMapping("/auth/me") public Map<String,Object> me() {var u=access.user();var m=new LinkedHashMap<String,Object>();m.put("id",u.id);m.put("username",u.email);m.put("email",u.email);m.put("name",u.name);m.put("active",u.active);m.put("role",u.role);m.put("centerId",u.centerId);return m;}
+    @GetMapping("/auth/me") public Map<String,Object> me() {var u=access.user();var m=new LinkedHashMap<String,Object>();m.put("id",u.id);m.put("username",u.email);m.put("email",u.email);m.put("name",u.name);m.put("active",u.active);m.put("role",u.role);m.put("centerId",u.centerId);m.put("operationsEnabled",u.operationsEnabled);return m;}
     @GetMapping("/products") public Map<String,Object> product(@RequestParam(required=false) String serial,@RequestParam(required=false) String serialNumber) {access.user();return catalog.product(serialNumber!=null?serialNumber:serial);}
     @PostMapping(value="/repairs",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> create(@Valid @RequestPart("data") Inputs.Intake input,@RequestPart("files") List<MultipartFile> uploads,@RequestParam(value="targets",required=false) List<String> targets) {return ResponseEntity.accepted().body(repairs.create(input,uploads,targets));}
