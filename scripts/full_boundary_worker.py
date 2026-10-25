@@ -6,8 +6,10 @@ from worker import tools, harness, main, config as C
 from worker.observability import configure_logging
 original=tools.parts_agent_llm
 
-def model(specs):
-    llm=original(specs)
+def model(specs, *, tool_choice=None):
+    llm=original(specs, tool_choice=tool_choice)
+    if tool_choice == "none":
+        return llm
     budget=harness.current.get()
     if budget and str(budget.context.get('case_id'))==os.environ['BOUNDARY_REPAIR_ID']:
         return llm.bind(tool_choice={'type':'function','function':{'name':'get_part_availability'}},parallel_tool_calls=False)

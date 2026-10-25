@@ -7,7 +7,6 @@ from string import Formatter
 PROMPT_DIR = Path(__file__).resolve().parent.parent / "prompts"
 SPECS = {
     "classify_photo": ("PhotoKind", set()),
-    "split_text": ("Clues", {"text"}),
     "write_report": ("Report", {"text", "findings", "compatible_parts"}),
 }
 

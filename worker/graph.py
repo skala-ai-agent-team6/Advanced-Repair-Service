@@ -107,8 +107,7 @@ async def split_text(state: State, config) -> dict:
     repair = state["command"]["payload"]["repair"]
     text = f"{repair.get('symptom') or ''} {repair.get('user_input', {}).get('customerDescription', '')}".strip()
     product_type = command_product_type(state["command"])
-    clues = (await tools.split_text(text, product_type=product_type)).model_dump()
-    clues["errorCodes"] = repair.get("error_codes") or []
+    clues = {"errorCodes": repair.get("error_codes") or []}
     observation = await supplemental(config, "normalize_observation", "observation-mcp",
                                      lambda: enrichment.normalize_observation(text, product_type=product_type))
     output = observation["output"]
@@ -275,10 +274,14 @@ async def check_parts(state: State, config) -> dict:
                              f"호환 부품: {tools.compact([{k: p.get(k) for k in ('id', 'part_number', 'name', 'category')} for p in parts], 3000)}")]
     findings, calls = [], 0
     for turn in range(C.MAX_PART_TOOL_CALLS + 1):
-        # 실행 분기는 그대로 유지하고, 실제로 버려진 응답만 측정 로그로 구분한다.
+        # 조회 예산을 소진하면 마지막 호출은 요약만 생성한다.
+        summary_only = calls >= C.MAX_PART_TOOL_CALLS
+        turn_llm = tools.parts_agent_llm(specs, tool_choice="none") if summary_only else llm
         measurement_group = uuid.uuid4().hex
         with measurement.scope(parts_call_group=measurement_group, parts_turn=turn + 1):
-            ai = await tools.ask_parts_agent(llm, messages, turn)
+            ai = await tools.ask_parts_agent(turn_llm, messages, turn)
+        if summary_only and ai.tool_calls:
+            raise ValueError("Summary-only response must not request tools")
         measurement.emit("parts.response_usage", parts_call_group=measurement_group,
                          parts_turn=turn + 1,
                          usage=("discarded_tool_request" if ai.tool_calls and calls >= C.MAX_PART_TOOL_CALLS

@@ -42,7 +42,6 @@ def fixture_tools(monkeypatch, tmp_path):
     monkeypatch.setattr(tools, "load_photos", AsyncMock(side_effect=lambda cmd: [
         {"attachmentId": a["id"], "path": image, "target": a.get("target", "PCB")}
         for a in cmd["payload"]["attachments"]]))
-    monkeypatch.setattr(tools, "split_text", AsyncMock(return_value=tools.Clues(pcb=[], mech=[], sw=[])))
     async def observation(text, *, product_type="unknown"):
         from worker.context_policy import prepare_text
         text = prepare_text(text)
