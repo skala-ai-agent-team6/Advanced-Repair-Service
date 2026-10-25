@@ -108,8 +108,9 @@ interface BePublicCase {
 }
 
 /** [출장] AI 추가 사진 요청을 고객이 알아듣는 말로 (원문은 기사용 분석 요약이라 그대로 보여주지 않음) */
+/*  기판은 접수 화면 품질 검사에서 다시 찍게 하므로, 고객에게는 기계 부품 사진만 요청한다 (target은 기사 화면용) */
 function customerInstruction(target?: string, product?: string): string {
-  if (target === 'PCB') return '제품 안쪽 기판(회로판)을 밝은 곳에서 가까이 찍어 주세요.'
+  void target
   const parts = /wash|세탁/i.test(product ?? '') ? '배수 펌프, 배수 필터, 도어 잠금장치' : /cool|에어컨/i.test(product ?? '') ? '실외기 팬, 필터, 배관 연결부' : '바퀴, 브러시, 모터 부분'
   return `고장 원인을 정확히 보려고 해요. ${parts}처럼 이상이 의심되는 부품을 가까이에서 한 장 더 찍어 주세요.`
 }

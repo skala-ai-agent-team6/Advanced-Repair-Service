@@ -32,6 +32,8 @@ const available = USE_MOCK || FEATURES.customerIntake
 const today = kstToday()
 const STEPS = ['제품·증상', '사진', '방문·동의']
 const router = useRouter()
+/** [출장] 사진 단계 '촬영 예시'를 고른 제품 종류에 맞춤 (기본: 로봇청소기) */
+const EXAMPLE_IMG: Record<string, string> = { washing_machine: '/mock/washer.svg', air_conditioner: '/mock/aircon.svg' }
 const step = ref(0)
 
 const form = reactive({ ...({ productType: '', productTypeDetail: '' } as ProductTypeForm), manufacturer: '', model: '', serial: '', purchaseDate: '', symptomText: '', customerName: '', phone: '', preferredDate: '', serviceType: '' as ServiceType | '', centerId: '', visitSlot: '' as VisitSlot | '' })
@@ -374,7 +376,7 @@ async function submit() {
       <p class="muted">제품 전체가 보이도록 촬영해 주세요. {{ FEATURES.photoQualityCheck ? '올린 사진마다 품질 검사 결과가 표시돼요.' : '접수 후 품질 검사 결과를 알려드려요.' }}</p>
       <PhotoGuide kind="PRODUCT" />
       <!-- 가로 3칸: 제품 전체 · 고장 난 부분 · 촬영 예시 (1장 이상, 최대 5장) -->
-      <ProductPhotoSlots v-model="photos" :max="5" :invalid="touched[1] && !photos.length" example-src="/mock/product.svg" @quality="quality = $event" />
+      <ProductPhotoSlots v-model="photos" :max="5" :invalid="touched[1] && !photos.length" :example-src="EXAMPLE_IMG[form.productType] ?? '/mock/product.svg'" @quality="quality = $event" />
       <p v-if="touched[1] && errs.photos" class="error-text" role="alert">{{ errs.photos }}</p>
       <p v-if="quality.checking && qWait" class="callout tone-info"><Loader2 :size="18" class="spin" /> 사진 검사가 끝날 때까지 잠시 기다려 주세요.</p>
       <p v-else-if="quality.problems" class="callout tone-warning" role="alert"><TriangleAlert :size="18" /> 문제 있는 사진이 {{ quality.problems }}장 있어요. 다시 찍으면 더 정확하게 확인할 수 있어요.</p>
