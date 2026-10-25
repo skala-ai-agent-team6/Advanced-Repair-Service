@@ -81,14 +81,6 @@ public class ConsumerService {
                 db.audit("consumer","CONSUMER_PHOTO_REPLACED",id,Map.of("replaced",replaces,"attachmentId",saved));}
             return Map.of("attachmentId",saved,"status","STORED");});
     }
-    /** [출장] 고객이 경고 사진을 그대로 두고 진행 → ConsumerPipeline이 기다리지 않고 통과 사진으로 진단 */
-    public Map<String,Object> acceptPhotos(String number,String authorization) {
-        Long id=authorized(number,authorization);
-        tx.executeWithoutResult(s->{db.one("SELECT id FROM repair_case WHERE id=? FOR UPDATE",id);
-            if(!photoWarningAccepted(id)) db.audit("consumer","CONSUMER_PHOTO_WARNING_ACCEPTED",id,Map.of());});
-        return get(number,authorization);
-    }
-    boolean photoWarningAccepted(Long id) {return !db.list("SELECT id FROM audit_log WHERE action='CONSUMER_PHOTO_WARNING_ACCEPTED' AND entity_type='repair_case' AND entity_id=?",id).isEmpty();}
     Map<String,Object> openRequest(Long id) {
         var rows=db.list("SELECT p.id,p.target,p.instruction,p.round_no FROM photo_request p JOIN diagnosis_job j ON j.id=p.job_id WHERE j.case_id=? AND j.status='WAITING_INPUT' AND p.status='OPEN' ORDER BY p.id DESC LIMIT 1",id);
         return rows.isEmpty()?null:rows.getFirst();
@@ -102,11 +94,10 @@ public class ConsumerService {
         var info=db.one("SELECT r.created_at,r.visit_at,m.name AS product_name,u.name AS technician_name FROM repair_case r JOIN product p ON p.id=r.product_id JOIN product_model m ON m.id=p.model_id LEFT JOIN app_user u ON u.id=coalesce(r.assigned_technician_id,r.technician_id) WHERE r.id=?",id);
         response.put("productName",info.get("product_name"));response.put("receivedAt",info.get("created_at"));response.put("technicianName",info.get("technician_name"));response.put("visitAt",info.get("visit_at"));
         var decision=db.list("SELECT result FROM warranty_decision WHERE case_id=? ORDER BY id DESC LIMIT 1",id);response.put("warrantyDecision",decision.isEmpty()?null:decision.getFirst().get("result"));
-        // [출장] 교체된 사진은 빼고, AI 추가 사진 요청(열린 것)과 경고 사진 진행 동의 여부를 함께 준다
+        // [출장] 교체된 사진은 빼고, AI 추가 사진 요청(열린 것)을 함께 준다
         response.put("photos",db.list("SELECT a.id,coalesce(q.status,CASE WHEN a.quality_required THEN 'PENDING' ELSE 'LEGACY_UNCHECKED' END) AS status,q.verdict,q.issues,a.request_id FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? AND a.use_status='AVAILABLE' ORDER BY a.id",id));
         var open=openRequest(id);
         response.put("photoRequest",open==null?null:Map.of("requestId",open.get("id"),"target",open.get("target"),"instruction",open.get("instruction"),"round",open.get("round_no")));
-        response.put("photoWarningAccepted",photoWarningAccepted(id));
         response.put("diagnosisStarted",!db.list("SELECT id FROM diagnosis_job WHERE case_id=?",id).isEmpty());
         return response;
     }

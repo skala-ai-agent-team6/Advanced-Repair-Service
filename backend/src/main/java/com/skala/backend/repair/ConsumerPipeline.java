@@ -12,15 +12,14 @@ import java.util.*;
 /** [출장] 고객 접수 → (출장이면) 출장기사 자동 배정 → 사진 품질 통과분으로 AI 진단 자동 시작.
  *  기사 화면에는 진단 리포트가 준비된 상태로 보인다. 경고 사진은 사람이 확인해야 하므로 자동으로 쓰지 않는다
  *  (통과 사진이 하나도 없으면 진단을 시작하지 않고 기사 확인을 기다린다). app.consumer.auto-pipeline=true 일 때만 동작
- *  경고 사진이 있으면 고객이 다시 올리거나 [그대로 진행]할 때까지 기다린다 (photo-wait-minutes 지나면 통과 사진으로 진행).
+ *  경고 사진이 있으면 고객이 다시 올려 대체할 때까지 기다린다.
  *  AI가 추가 사진을 요청하면 고객이 올린 사진이 품질 통과한 뒤 진단을 재개한다 */
 @Component
 public class ConsumerPipeline {
     static final Logger log=LoggerFactory.getLogger(ConsumerPipeline.class);
-    final Store db;final RepairService repairs;final PhotoQualityService quality;final TransactionTemplate tx;final boolean enabled;final int waitMinutes;
-    public ConsumerPipeline(Store db,RepairService repairs,PhotoQualityService quality,PlatformTransactionManager manager,@Value("${app.consumer.auto-pipeline:false}") boolean enabled,
-                            @Value("${app.consumer.photo-wait-minutes:30}") int waitMinutes){
-        this.db=db;this.repairs=repairs;this.quality=quality;this.tx=new TransactionTemplate(manager);this.enabled=enabled;this.waitMinutes=waitMinutes;}
+    final Store db;final RepairService repairs;final PhotoQualityService quality;final TransactionTemplate tx;final boolean enabled;
+    public ConsumerPipeline(Store db,RepairService repairs,PhotoQualityService quality,PlatformTransactionManager manager,@Value("${app.consumer.auto-pipeline:false}") boolean enabled){
+        this.db=db;this.repairs=repairs;this.quality=quality;this.tx=new TransactionTemplate(manager);this.enabled=enabled;}
 
     @Scheduled(fixedDelayString="${app.consumer.poll-ms:5000}") public void run(){
         if(!enabled) return;
@@ -50,11 +49,8 @@ public class ConsumerPipeline {
         // 사진 품질 검사가 끝나기 전에는 기다린다
         var photos=db.list("SELECT a.id,q.status,q.verdict FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? AND a.use_status='AVAILABLE' ORDER BY a.id",id);
         if(photos.isEmpty() || photos.stream().anyMatch(p->p.get("status")==null || !Set.of("COMPLETED","ERROR").contains(p.get("status")))) return;
-        // 경고 사진: 고객이 다시 올리거나 [그대로 진행]할 때까지 (최대 photo-wait-minutes) 기다린다
-        boolean warned=photos.stream().anyMatch(p->"WARNING".equals(p.get("verdict")));
-        boolean accepted=!db.list("SELECT id FROM audit_log WHERE action='CONSUMER_PHOTO_WARNING_ACCEPTED' AND entity_type='repair_case' AND entity_id=?",id).isEmpty();
-        boolean expired=!db.list("SELECT id FROM repair_case WHERE id=? AND created_at<now()-make_interval(mins=>?)",id,waitMinutes).isEmpty();
-        if(warned && !accepted && !expired) return;
+        // 경고 사진: 고객이 다시 올려 대체할 때까지 기다린다
+        if(photos.stream().anyMatch(p->"WARNING".equals(p.get("verdict")))) return;
         Long tech=(Long)r.get("assigned_technician_id");
         if(r.get("service_type").equals("FIELD") && tech==null) tech=assign(id,(Long)r.get("center_id"));
         if(tech==null) tech=(Long)r.get("technician_id");
