@@ -10,6 +10,7 @@ Spring에 진행 상황을 알릴 땐 emit(config, 이벤트종류, 내용)을 �
 
 import json
 import os
+import uuid
 from typing import Annotated, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -17,7 +18,7 @@ from langgraph.types import interrupt
 
 from . import config as C
 from . import tools
-from . import enrichment
+from . import enrichment, measurement
 from .harness import LimitExceeded, observed
 from .tool_policy import (check_image_result, check_object,
                           failure_output, limitation_note)
@@ -264,7 +265,14 @@ async def check_parts(state: State, config) -> dict:
                              f"호환 부품: {tools.compact([{k: p.get(k) for k in ('id', 'part_number', 'name', 'category')} for p in parts], 3000)}")]
     findings, calls = [], 0
     for turn in range(C.MAX_PART_TOOL_CALLS + 1):
-        ai = await tools.ask_parts_agent(llm, messages, turn)
+        # 실행 분기는 그대로 유지하고, 실제로 버려진 응답만 측정 로그로 구분한다.
+        measurement_group = uuid.uuid4().hex
+        with measurement.scope(parts_call_group=measurement_group, parts_turn=turn + 1):
+            ai = await tools.ask_parts_agent(llm, messages, turn)
+        measurement.emit("parts.response_usage", parts_call_group=measurement_group,
+                         parts_turn=turn + 1,
+                         usage=("discarded_tool_request" if ai.tool_calls and calls >= C.MAX_PART_TOOL_CALLS
+                                else "tool_request" if ai.tool_calls else "summary"))
         messages.append(ai)
         if not ai.tool_calls or calls >= C.MAX_PART_TOOL_CALLS:
             break

@@ -1,0 +1,204 @@
+기존 접수 사용: repairId=12
+사진 23: 품질검사 WARNING ['LOW_RESOLUTION']
+사진 24: 품질검사 PASS []
+진단 시작: repairId=12 taskId=11 status=QUEUED
+  상태 QUEUED         stage=None
+  상태 RUNNING        stage=SPLITTING_TEXT
+  상태 RUNNING        stage=PCB_ANALYSIS
+  상태 RUNNING        stage=SIMILAR_CASE_SEARCH
+  상태 RUNNING        stage=PARTS_CHECK_SYNTHESIS
+  상태 SUCCEEDED      stage=PARTS_CHECK_SYNTHESIS
+
+== 진단 결과 (GET /api/repairs/{id}/diagnosis) ==
+{
+  "summary": "로봇청소기 충전 불가 및 바퀴 모터에서 소음 발생 문제에 대한 진단 리포트입니다. MCP 검사 결과, 바퀴 모터와 메인 PCB에서 결함이 발견되었습니다. 추가 점검이 필요합니다.",
+  "topCause": "메인 PCB 결함",
+  "urgency": null,
+  "candidates": [
+    {
+      "rank": 1,
+      "cause": "메인 PCB 결함",
+      "confidence": 0.953,
+      "explanation": "메인 PCB에서 구멍 누락이 발견되었으며, 이는 전원 공급에 영향을 줄 수 있습니다."
+    },
+    {
+      "rank": 2,
+      "cause": "바퀴 모터 결함",
+      "confidence": 0.802,
+      "explanation": "바퀴 모터에서 소음이 발생하고 있으며, MCP 검사에서 결함이 확인되었습니다."
+    }
+  ],
+  "agents": [
+    {
+      "agent": "MOTOR",
+      "summary": "inclusion, patches, scratches",
+      "verdict": "ABNORMAL",
+      "findings": [
+        "patches 0.80",
+        "patches 0.62",
+        "scratches 0.58",
+        "scratches 0.55",
+        "patches 0.39",
+        "inclusion 0.29",
+        "inclusion 0.29"
+      ],
+      "confidence": 0.802,
+      "annotations": [
+        {
+          "x": 0.8395833333333333,
+          "y": 0.07361111111111111,
+          "label": "patches",
+          "score": 0.802,
+          "width": 0.125,
+          "height": 0.16527777777777777,
+          "attachmentId": "24"
+        },
+        {
+          "x": 0.5541666666666667,
+          "y": 0.37777777777777777,
+          "label": "patches",
+          "score": 0.618,
+          "width": 0.18541666666666667,
+          "height": 0.37916666666666665,
+          "attachmentId": "24"
+        },
+        {
+          "x": 0.0,
+          "y": 0.19305555555555556,
+          "label": "scratches",
+          "score": 0.577,
+          "width": 0.08958333333333333,
+          "height": 0.4388888888888889,
+          "attachmentId": "24"
+        },
+        {
+          "x": 0.0,
+          "y": 0.0,
+          "label": "scratches",
+          "score": 0.552,
+          "width": 0.09479166666666666,
+          "height": 0.09166666666666666,
+          "attachmentId": "24"
+        },
+        {
+          "x": 0.7739583333333333,
+          "y": 0.41805555555555557,
+          "label": "patches",
+          "score": 0.394,
+          "width": 0.21145833333333333,
+          "height": 0.5722222222222222,
+          "attachmentId": "24"
+        },
+        {
+          "x": 0.11145833333333334,
+          "y": 0.7986111111111112,
+          "label": "inclusion",
+          "score": 0.288,
+          "width": 0.25729166666666664,
+          "height": 0.19444444444444445,
+          "attachmentId": "24"
+        },
+        {
+          "x": 0.14895833333333333,
+          "y": 0.19027777777777777,
+          "label": "inclusion",
+          "score": 0.286,
+          "width": 0.23958333333333334,
+          "height": 0.1527777777777778,
+          "attachmentId": "24"
+        }
+      ],
+      "attachmentIds": [
+        "24"
+      ]
+    },
+    {
+      "agent": "PCB",
+      "summary": "missing_hole",
+      "verdict": "ABNORMAL",
+      "findings": [
+        "missing_hole 0.95",
+        "missing_hole 0.90",
+        "missing_hole 0.63"
+      ],
+      "confidence": 0.953,
+      "annotations": [
+        {
+          "x": 0.37,
+          "y": 0.10666666666666667,
+          "label": "missing_hole",
+          "score": 0.953,
+          "width": 0.04833333333333333,
+          "height": 0.04,
+          "attachmentId": "23"
+        },
+        {
+          "x": 0.6983333333333334,
+          "y": 0.41833333333333333,
+          "label": "missing_hole",
+          "score": 0.895,
+          "width": 0.035,
+          "height": 0.035,
+          "attachmentId": "23"
+        },
+        {
+          "x": 0.5516666666666666,
+          "y": 0.9516666666666667,
+          "label": "missing_hole",
+          "score": 0.627,
+          "width": 0.03333333333333333,
+          "height": 0.03166666666666667,
+          "attachmentId": "23"
+        }
+      ],
+      "attachmentIds": [
+        "23"
+      ]
+    }
+  ],
+  "similarCases": [
+    {
+      "caseId": "rcint_20494",
+      "origin": "EXTERNAL",
+      "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+      "summaryKo": "안 된다. 배터리 고장; 주문해야 한다.",
+      "similarity": 0.860634,
+      "originalText": "Doet het niet. Batterij defect; moet besteld worden."
+    },
+    {
+      "caseId": "rcint_5972",
+      "origin": "EXTERNAL",
+      "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+      "summaryKo": "알 수 없다. 작동하지 않는다. 접촉이 더럽다; 청소했다.",
+      "similarity": 0.858725,
+      "originalText": "Onbekend. Loopt niet. Contacten vuil; schoongemaakt."
+    },
+    {
+      "caseId": "rcint_31678",
+      "origin": "EXTERNAL",
+      "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+      "summaryKo": "작동하지 않는다. 충전기 배터리를 교체해야 한다.",
+      "similarity": 0.857431,
+      "originalText": "werkt niet. oplader batterij moet vervangen worden."
+    }
+  ],
+  "inspectionSteps": null,
+  "repairSteps": null,
+  "sources": null
+}
+사진 요청 횟수: 0
+
+== 도구 실행 이력 ==
+ - RAG rag-mcp save_repair_case SUCCEEDED
+ - PCB pcb-detector analyze_pcb_image SUCCEEDED
+ - RAG observation-mcp normalize_observation SUCCEEDED
+ - BUSINESS business-mcp get_part_availability SUCCEEDED
+ - RAG rag-mcp retrieve_repair_context SUCCEEDED
+ - BUSINESS business-mcp get_part_availability SUCCEEDED
+ - RAG pcb-mcp interpret_pcb SUCCEEDED
+ - RAG damage-mcp interpret_damage SUCCEEDED
+ - MOTOR mechanical-mcp detect_surface_defects SUCCEEDED
+ - BUSINESS business-mcp get_part_availability SUCCEEDED
+ - BUSINESS business-mcp get_part_availability SUCCEEDED
+
+접수 상태: DIAGNOSED / 조달: PENDING

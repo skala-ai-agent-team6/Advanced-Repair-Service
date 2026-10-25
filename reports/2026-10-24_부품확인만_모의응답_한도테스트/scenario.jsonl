@@ -1,0 +1,24 @@
+{"event": "tool.started", "tool": "parts_agent_turn", "call_id": "27fa44d8-f009-4d43-8e50-281216a54416", "attempt": 1}
+{"event": "simulation.model_response", "turn": 1, "response": "tool_request", "local_ms": 0.0152}
+{"event": "tool.succeeded", "tool": "parts_agent_turn", "call_id": "27fa44d8-f009-4d43-8e50-281216a54416", "duration_ms": 0}
+{"event": "parts.response_usage", "parts_call_group": "c845f6e5d4eb428081668eaf5f74f510", "parts_turn": 1, "usage": "tool_request"}
+{"event": "simulation.business_tool", "tool": "get_part_availability", "part_id": "1"}
+{"event": "tool.started", "tool": "parts_agent_turn", "call_id": "996dd035-158e-4449-ae11-951a3a4f41a1", "attempt": 1}
+{"event": "simulation.model_response", "turn": 2, "response": "tool_request", "local_ms": 0.007}
+{"event": "tool.succeeded", "tool": "parts_agent_turn", "call_id": "996dd035-158e-4449-ae11-951a3a4f41a1", "duration_ms": 0}
+{"event": "parts.response_usage", "parts_call_group": "69e895925b0c43f4a3725d389d437571", "parts_turn": 2, "usage": "tool_request"}
+{"event": "simulation.business_tool", "tool": "get_part_availability", "part_id": "2"}
+{"event": "tool.started", "tool": "parts_agent_turn", "call_id": "2da09c73-96d4-4093-8119-1a0d942eb1f4", "attempt": 1}
+{"event": "simulation.model_response", "turn": 3, "response": "tool_request", "local_ms": 0.0068}
+{"event": "tool.succeeded", "tool": "parts_agent_turn", "call_id": "2da09c73-96d4-4093-8119-1a0d942eb1f4", "duration_ms": 0}
+{"event": "parts.response_usage", "parts_call_group": "97ba1cd46b3b43efa625a7873eb3e253", "parts_turn": 3, "usage": "tool_request"}
+{"event": "simulation.business_tool", "tool": "get_part_availability", "part_id": "3"}
+{"event": "tool.started", "tool": "parts_agent_turn", "call_id": "cc81dd04-a5df-4174-8f1f-382e33c6b09c", "attempt": 1}
+{"event": "simulation.model_response", "turn": 4, "response": "tool_request", "local_ms": 0.0095}
+{"event": "tool.succeeded", "tool": "parts_agent_turn", "call_id": "cc81dd04-a5df-4174-8f1f-382e33c6b09c", "duration_ms": 0}
+{"event": "parts.response_usage", "parts_call_group": "ebad58869b0246a998353d599062b9ea", "parts_turn": 4, "usage": "tool_request"}
+{"event": "simulation.business_tool", "tool": "get_part_availability", "part_id": "4"}
+{"event": "tool.started", "tool": "parts_agent_turn", "call_id": "36cde419-2332-4a04-9094-26885b941c3c", "attempt": 1}
+{"event": "simulation.model_response", "turn": 5, "response": "tool_request", "local_ms": 0.0047}
+{"event": "tool.succeeded", "tool": "parts_agent_turn", "call_id": "36cde419-2332-4a04-9094-26885b941c3c", "duration_ms": 0}
+{"event": "parts.response_usage", "parts_call_group": "a1b592627a8540d892c2385a8bc0ef24", "parts_turn": 5, "usage": "discarded_tool_request"}

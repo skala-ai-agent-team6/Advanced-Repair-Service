@@ -15,6 +15,7 @@ from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
 from . import config as C
 from . import report
+from .measurement import event_run
 from .context_policy import masked, check_event_size
 from .observability import configure_logging, context as execution_context, log_event
 from langgraph.errors import GraphRecursionError
@@ -69,6 +70,7 @@ async def drop_checkpoints(graph, command, result) -> None:
         log.warning("체크포인트 정리 보류: %s", type(exc).__name__)
 
 
+@event_run
 async def handle(command: dict, producer: AIOKafkaProducer, journal=None, graph=None):
     """완료 결과·이벤트를 먼저 저장하고 전송. 전송 재시도에서는 모델을 다시 부르지 않는다."""
     owned = journal is None

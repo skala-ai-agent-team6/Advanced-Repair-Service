@@ -1,0 +1,230 @@
+[
+  {
+    "kind": "DIAGNOSIS_PROGRESS",
+    "payload": {
+      "stage": "PARTS_CHECK_SYNTHESIS"
+    }
+  },
+  {
+    "kind": "TOOL_EXECUTED",
+    "payload": {
+      "tool": "get_part_availability",
+      "toolVersion": "1",
+      "agentType": "BUSINESS",
+      "mcpServer": "business-mcp",
+      "input": {
+        "part_id": 1
+      },
+      "output": {
+        "part": {
+          "id": 1,
+          "part_number": "MOTOR-001",
+          "name": "Wheel motor",
+          "category": "MOTOR"
+        },
+        "warehouses": [
+          {
+            "warehouse_id": 1,
+            "warehouse_name": "Central warehouse",
+            "region": "Seoul",
+            "warehouse_location": "Demo warehouse",
+            "on_hand": 10,
+            "reserved": 0,
+            "available": 10
+          }
+        ],
+        "suppliers": [
+          {
+            "factory_id": 1,
+            "factory_name": "Demo factory",
+            "country": "KR",
+            "region": "Gyeonggi",
+            "address": "Demo factory address",
+            "phone": "031-000-0000",
+            "contact_name": null,
+            "email": null,
+            "lead_days": 3,
+            "estimated_arrival_date": "2026-10-27",
+            "unit_price": null
+          }
+        ],
+        "compatible_models": [
+          {
+            "model_id": 1,
+            "model_code": "R1",
+            "model_name": "Robot R1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "kind": "TOOL_EXECUTED",
+    "payload": {
+      "tool": "get_part_availability",
+      "toolVersion": "1",
+      "agentType": "BUSINESS",
+      "mcpServer": "business-mcp",
+      "input": {
+        "part_id": 3
+      },
+      "output": {
+        "part": {
+          "id": 3,
+          "part_number": "PCB-001",
+          "name": "Main PCB",
+          "category": "PCB"
+        },
+        "warehouses": [
+          {
+            "warehouse_id": 1,
+            "warehouse_name": "Central warehouse",
+            "region": "Seoul",
+            "warehouse_location": "Demo warehouse",
+            "on_hand": 0,
+            "reserved": 0,
+            "available": 0
+          }
+        ],
+        "suppliers": [
+          {
+            "factory_id": 1,
+            "factory_name": "Demo factory",
+            "country": "KR",
+            "region": "Gyeonggi",
+            "address": "Demo factory address",
+            "phone": "031-000-0000",
+            "contact_name": null,
+            "email": null,
+            "lead_days": 7,
+            "estimated_arrival_date": "2026-10-31",
+            "unit_price": null
+          }
+        ],
+        "compatible_models": [
+          {
+            "model_id": 1,
+            "model_code": "R1",
+            "model_name": "Robot R1"
+          },
+          {
+            "model_id": 2,
+            "model_code": "R2",
+            "model_name": "Robot R2"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "kind": "TOOL_EXECUTED",
+    "payload": {
+      "tool": "get_part_availability",
+      "toolVersion": "1",
+      "agentType": "BUSINESS",
+      "mcpServer": "business-mcp",
+      "input": {
+        "part_id": 1
+      },
+      "output": {
+        "part": {
+          "id": 1,
+          "part_number": "MOTOR-001",
+          "name": "Wheel motor",
+          "category": "MOTOR"
+        },
+        "warehouses": [
+          {
+            "warehouse_id": 1,
+            "warehouse_name": "Central warehouse",
+            "region": "Seoul",
+            "warehouse_location": "Demo warehouse",
+            "on_hand": 10,
+            "reserved": 0,
+            "available": 10
+          }
+        ],
+        "suppliers": [
+          {
+            "factory_id": 1,
+            "factory_name": "Demo factory",
+            "country": "KR",
+            "region": "Gyeonggi",
+            "address": "Demo factory address",
+            "phone": "031-000-0000",
+            "contact_name": null,
+            "email": null,
+            "lead_days": 3,
+            "estimated_arrival_date": "2026-10-27",
+            "unit_price": null
+          }
+        ],
+        "compatible_models": [
+          {
+            "model_id": 1,
+            "model_code": "R1",
+            "model_name": "Robot R1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "kind": "TOOL_EXECUTED",
+    "payload": {
+      "tool": "get_part_availability",
+      "toolVersion": "1",
+      "agentType": "BUSINESS",
+      "mcpServer": "business-mcp",
+      "input": {
+        "part_id": 3
+      },
+      "output": {
+        "part": {
+          "id": 3,
+          "part_number": "PCB-001",
+          "name": "Main PCB",
+          "category": "PCB"
+        },
+        "warehouses": [
+          {
+            "warehouse_id": 1,
+            "warehouse_name": "Central warehouse",
+            "region": "Seoul",
+            "warehouse_location": "Demo warehouse",
+            "on_hand": 0,
+            "reserved": 0,
+            "available": 0
+          }
+        ],
+        "suppliers": [
+          {
+            "factory_id": 1,
+            "factory_name": "Demo factory",
+            "country": "KR",
+            "region": "Gyeonggi",
+            "address": "Demo factory address",
+            "phone": "031-000-0000",
+            "contact_name": null,
+            "email": null,
+            "lead_days": 7,
+            "estimated_arrival_date": "2026-10-31",
+            "unit_price": null
+          }
+        ],
+        "compatible_models": [
+          {
+            "model_id": 1,
+            "model_code": "R1",
+            "model_name": "Robot R1"
+          },
+          {
+            "model_id": 2,
+            "model_code": "R2",
+            "model_name": "Robot R2"
+          }
+        ]
+      }
+    }
+  }
+]

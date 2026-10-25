@@ -1,0 +1,136 @@
+{
+  "command": {
+    "eventId": "27576f59-c8b3-4397-bf8a-f29d89c00db5",
+    "eventType": "DIAGNOSIS_REQUESTED",
+    "schemaVersion": 2,
+    "occurredAt": "2026-10-20T01:00:00Z",
+    "repairId": "82510288",
+    "taskId": "parts-limit-simulation",
+    "correlationId": "1b20e0b4-9d4b-46ec-866d-975a4c9e939a",
+    "inputRevision": 1,
+    "executionId": "e28aabd7-4b95-4f7a-9303-a9c22a0ea3da",
+    "sequence": 0,
+    "payload": {
+      "repair": {
+        "id": "82510288",
+        "product_snapshot": {
+          "id": "1",
+          "model_code": "R1",
+          "components": [],
+          "compatibleParts": [
+            {
+              "id": "1",
+              "name": "모터"
+            },
+            {
+              "id": "2",
+              "name": "PCB"
+            },
+            {
+              "id": "3",
+              "name": "배터리"
+            },
+            {
+              "id": "4",
+              "name": "센서"
+            },
+            {
+              "id": "5",
+              "name": "필터"
+            }
+          ]
+        },
+        "symptom": "충전이 안 되고 바퀴 모터에서 소음",
+        "error_codes": [
+          "E05"
+        ],
+        "firmware_version": "1.2",
+        "user_input": {
+          "customerDescription": "펌웨어 업데이트 후부터 그렇다고 함"
+        }
+      },
+      "task": {
+        "id": "82510288"
+      },
+      "attachments": [
+        {
+          "id": "1",
+          "request_id": null,
+          "mime_type": "image/jpeg",
+          "byte_size": 103818,
+          "sha256": "75176bf7f04c5c4560d0de905206170036187c02ee7f853adc965553a9d91aab",
+          "downloadPath": "/internal/attachments/1"
+        }
+      ],
+      "attachmentIds": [
+        "1"
+      ],
+      "addedAttachmentIds": [],
+      "requestId": null,
+      "requestKey": null,
+      "round": 0,
+      "checkpoint": null
+    }
+  },
+  "result": {
+    "eventType": "DIAGNOSIS_COMPLETED",
+    "payload": {
+      "summary": "[모의 테스트] 부품 조회 한도 후 리포트 생성 확인\n\n사진 근거 없이 소견·매뉴얼 검색만으로 작성한 리포트입니다. 검색 유사도는 고장 확률이 아니므로 수리 전 해당 부위를 직접 확인해 주세요.",
+      "modelVersion": "skeleton-0.2",
+      "repairMethod": "실제 수리 판정이 아닌 제어 흐름 테스트",
+      "candidates": [
+        {
+          "rank": 1,
+          "cause": "모의 원인",
+          "confidence": 0.1,
+          "explanation": "스키마 검증용 고정 응답이며 실제 판정이 아님"
+        }
+      ],
+      "recommendedParts": [],
+      "recommendedTools": [],
+      "evidence": [],
+      "analysisResults": [
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        }
+      ],
+      "topCause": "모의 원인",
+      "agents": [],
+      "similarCases": []
+    }
+  },
+  "execution": {}
+}

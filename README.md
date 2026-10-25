@@ -3,6 +3,10 @@
 기사 접수(사진) → Spring → Kafka → LangGraph 에이전트(PCB·기계·RAG MCP + GPT) → Spring → 프론트 진단 화면 → 진단 확인 → 부품 재고·발주 → 수리 리포트 → 종결까지 돈다.
 팀원 코드를 합치면서 고친 것: **[docs/개조내역.md](docs/개조내역.md)** · 진행 상황: **[docs/진행사항.md](docs/진행사항.md)** · 에이전트 상세(하네스·LangSmith·오류 처리): **[worker/AGENT.md](worker/AGENT.md)**
 
+## V1 호출 횟수·시간 측정
+
+체크포인트 기준(`0333554`)의 측정 실행과 실시간 로그 확인: **[MEASUREMENT.md](MEASUREMENT.md)**. 최적화는 아직 적용하지 않았다.
+
 ## 빠른 실행 (처음 받는 사람)
 필요: macOS/Linux, Docker Desktop(켜 둔 상태), JDK 21, [uv](https://docs.astral.sh/uv/), Node 20+, git
 ```bash

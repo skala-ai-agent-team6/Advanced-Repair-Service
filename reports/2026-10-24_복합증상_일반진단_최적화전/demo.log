@@ -1,0 +1,202 @@
+기존 접수 사용: repairId=13
+사진 25: 품질검사 WARNING ['LOW_RESOLUTION']
+사진 26: 품질검사 PASS []
+진단 시작: repairId=13 taskId=12 status=QUEUED
+  상태 QUEUED         stage=None
+  상태 RUNNING        stage=SPLITTING_TEXT
+  상태 RUNNING        stage=PCB_ANALYSIS
+  상태 RUNNING        stage=SIMILAR_CASE_SEARCH
+  상태 RUNNING        stage=PARTS_CHECK_SYNTHESIS
+  상태 SUCCEEDED      stage=PARTS_CHECK_SYNTHESIS
+
+== 진단 결과 (GET /api/repairs/{id}/diagnosis) ==
+{
+  "summary": "로봇청소기의 충전 불안정, 이상 소음, 바퀴 고착, 흡입력 저하 증상이 확인되었습니다. MCP 분석 결과, Wheel motor와 Main PCB의 결함이 의심됩니다. 추가 점검이 필요합니다.",
+  "topCause": "Main PCB 결함으로 인한 충전 불안정 증상",
+  "urgency": null,
+  "candidates": [
+    {
+      "rank": 1,
+      "cause": "Main PCB 결함으로 인한 충전 불안정 증상",
+      "confidence": 0.953,
+      "explanation": "MCP 분석 결과, Main PCB에서 구멍 누락이 발견되어 충전 불안정이 발생할 수 있습니다."
+    },
+    {
+      "rank": 2,
+      "cause": "Wheel motor 결함으로 인한 소음 및 멈춤 증상",
+      "confidence": 0.802,
+      "explanation": "MCP 분석 결과, Wheel motor에서 소음이 발생하고 주행 중 멈추는 증상이 확인되었습니다."
+    }
+  ],
+  "agents": [
+    {
+      "agent": "MOTOR",
+      "summary": "inclusion, patches, scratches",
+      "verdict": "ABNORMAL",
+      "findings": [
+        "patches 0.80",
+        "patches 0.62",
+        "scratches 0.58",
+        "scratches 0.55",
+        "patches 0.39",
+        "inclusion 0.29",
+        "inclusion 0.29"
+      ],
+      "confidence": 0.802,
+      "annotations": [
+        {
+          "x": 0.8395833333333333,
+          "y": 0.07361111111111111,
+          "label": "patches",
+          "score": 0.802,
+          "width": 0.125,
+          "height": 0.16527777777777777,
+          "attachmentId": "26"
+        },
+        {
+          "x": 0.5541666666666667,
+          "y": 0.37777777777777777,
+          "label": "patches",
+          "score": 0.618,
+          "width": 0.18541666666666667,
+          "height": 0.37916666666666665,
+          "attachmentId": "26"
+        },
+        {
+          "x": 0.0,
+          "y": 0.19305555555555556,
+          "label": "scratches",
+          "score": 0.577,
+          "width": 0.08958333333333333,
+          "height": 0.4388888888888889,
+          "attachmentId": "26"
+        },
+        {
+          "x": 0.0,
+          "y": 0.0,
+          "label": "scratches",
+          "score": 0.552,
+          "width": 0.09479166666666666,
+          "height": 0.09166666666666666,
+          "attachmentId": "26"
+        },
+        {
+          "x": 0.7739583333333333,
+          "y": 0.41805555555555557,
+          "label": "patches",
+          "score": 0.394,
+          "width": 0.21145833333333333,
+          "height": 0.5722222222222222,
+          "attachmentId": "26"
+        },
+        {
+          "x": 0.11145833333333334,
+          "y": 0.7986111111111112,
+          "label": "inclusion",
+          "score": 0.288,
+          "width": 0.25729166666666664,
+          "height": 0.19444444444444445,
+          "attachmentId": "26"
+        },
+        {
+          "x": 0.14895833333333333,
+          "y": 0.19027777777777777,
+          "label": "inclusion",
+          "score": 0.286,
+          "width": 0.23958333333333334,
+          "height": 0.1527777777777778,
+          "attachmentId": "26"
+        }
+      ],
+      "attachmentIds": [
+        "26"
+      ]
+    },
+    {
+      "agent": "PCB",
+      "summary": "missing_hole",
+      "verdict": "ABNORMAL",
+      "findings": [
+        "missing_hole 0.95",
+        "missing_hole 0.90",
+        "missing_hole 0.63"
+      ],
+      "confidence": 0.953,
+      "annotations": [
+        {
+          "x": 0.37,
+          "y": 0.10666666666666667,
+          "label": "missing_hole",
+          "score": 0.953,
+          "width": 0.04833333333333333,
+          "height": 0.04,
+          "attachmentId": "25"
+        },
+        {
+          "x": 0.6983333333333334,
+          "y": 0.41833333333333333,
+          "label": "missing_hole",
+          "score": 0.895,
+          "width": 0.035,
+          "height": 0.035,
+          "attachmentId": "25"
+        },
+        {
+          "x": 0.5516666666666666,
+          "y": 0.9516666666666667,
+          "label": "missing_hole",
+          "score": 0.627,
+          "width": 0.03333333333333333,
+          "height": 0.03166666666666667,
+          "attachmentId": "25"
+        }
+      ],
+      "attachmentIds": [
+        "25"
+      ]
+    }
+  ],
+  "similarCases": [
+    {
+      "caseId": "rcint_17563",
+      "origin": "EXTERNAL",
+      "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+      "summaryKo": "흡입력이 충분하지 않다. 아마도 약한 배터리. 청소했지만 아마도 배터리를 교체해야 한다.",
+      "similarity": 0.859848,
+      "originalText": "zuigt niet krachtig genoeg. waarschijnlijk zwakke accu. schoongemaakt maar waarschijnlijk moet accu vervangen worden."
+    },
+    {
+      "caseId": "rcint_31280",
+      "origin": "EXTERNAL",
+      "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+      "summaryKo": "흡입하지 않는다. 프린터 고장. 프린터 수리됨. 접촉 불량 복구됨.",
+      "similarity": 0.853848,
+      "originalText": "Zuigt niet. Print kapot. Print gerepareerd. Los contact hersteld."
+    },
+    {
+      "caseId": "rcint_9100",
+      "origin": "EXTERNAL",
+      "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+      "summaryKo": "작동하지 않는다 / 전기가 없다?. 모터에 접촉 불량. 모터에 접촉 불량 수리됨.",
+      "similarity": 0.853555,
+      "originalText": "doet het niet / geen stroom?. los contact bij motor. los contact bij motor gerepareerd."
+    }
+  ],
+  "inspectionSteps": null,
+  "repairSteps": null,
+  "sources": null
+}
+사진 요청 횟수: 0
+
+== 도구 실행 이력 ==
+ - RAG pcb-mcp interpret_pcb SUCCEEDED
+ - RAG rag-mcp retrieve_repair_context SUCCEEDED
+ - BUSINESS business-mcp get_part_availability SUCCEEDED
+ - PCB pcb-detector analyze_pcb_image SUCCEEDED
+ - RAG damage-mcp interpret_damage SUCCEEDED
+ - MOTOR mechanical-mcp detect_surface_defects SUCCEEDED
+ - RAG observation-mcp normalize_observation SUCCEEDED
+ - RAG rag-mcp save_repair_case SUCCEEDED
+ - BUSINESS business-mcp get_part_availability SUCCEEDED
+
+접수 상태: DIAGNOSED / 조달: PENDING
