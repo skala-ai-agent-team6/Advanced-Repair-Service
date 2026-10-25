@@ -1,4 +1,12 @@
 """실제 OpenAI·업무 MCP 한도 경계 검증. 모의 응답은 사용하지 않는다."""
+# V1 실험 재현 코드다. V2의 현재 제어 흐름에 옛 기대값을 적용하지 않는다.
+if __name__ == "__main__":
+    from pathlib import Path as _Path
+    import json as _json
+    import sys as _sys
+    _root = _Path(__file__).resolve().parents[1]
+    if "split_text" not in _json.loads((_root / "prompts/manifest.json").read_text())["prompts"]:
+        _sys.exit("V1 전용 실험입니다. V1 폴더에서 실행하세요. V2 자동 검증: .venv/bin/python -m pytest tests/test_parts_optimization.py -q. V2 실제 전체 진단은 V2_실행방법.md를 참고하세요.")
 import os, sys, json, asyncio, copy, uuid, time
 from pathlib import Path
 from datetime import datetime
