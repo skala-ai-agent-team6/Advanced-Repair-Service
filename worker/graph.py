@@ -244,9 +244,13 @@ async def judge(state: State, config) -> dict:
     await emit(config, "DIAGNOSIS_PROGRESS", {"stage": "JUDGING"})
     photo_round = state["command"]["payload"]["round"]
     # [통합·시연용] DEMO_FORCE_PHOTO=1이면 첫 진단은 무조건 추가 사진 요청. 기계 모델이 거의 항상 뭔가를 검출해서 요청 흐름이 안 보였다
-    if os.getenv("DEMO_FORCE_PHOTO") == "1" and photo_round == 0:
+    # [출장] 고객 접수는 접수 화면에서 사진을 다 받으므로(흐린 사진 대체 + 부품 사진 추가) 강제 요청하지 않는다
+    consumer = (state["command"]["payload"].get("repair") or {}).get("intake_source") == "CONSUMER"
+    if os.getenv("DEMO_FORCE_PHOTO") == "1" and photo_round == 0 and not consumer:
         return {"decision": "PHOTO"}
-    return {"decision": decide(state["findings"], photo_round)}
+    decision = decide(state["findings"], photo_round)
+    # [출장] 고객 접수는 조회 화면에서 추가 사진을 받지 않는다 → 가진 근거로 리포트 작성
+    return {"decision": "COMPLETE" if consumer and decision == "PHOTO" else decision}
 
 
 # ── 5. 부품 확인: 모델이 업무 MCP 도구를 고른다 ──────────

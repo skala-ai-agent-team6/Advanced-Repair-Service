@@ -10,7 +10,7 @@
  * ========================================================================= */
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, Building2, Camera, CircleAlert, CircleCheck, Home, Info, Loader2, Send, ShieldCheck, TriangleAlert } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight, Building2, Camera, CircleAlert, CircleCheck, Home, Info, Loader2, Send, ShieldCheck } from 'lucide-vue-next'
 import ProductPhotoSlots from '@/components/service/ProductPhotoSlots.vue'
 import PhotoGuide from '@/components/repair/PhotoGuide.vue'
 import WarrantyPeriodNotice from '@/components/repair/WarrantyPeriodNotice.vue'
@@ -153,11 +153,6 @@ function photosReady(): boolean {
     return false
   }
   return true
-}
-function acceptProblems() {
-  problemsAccepted.value = true
-  problemDlg.value = false
-  next()
 }
 
 /* ---------- 검증 ---------- */
@@ -379,7 +374,6 @@ async function submit() {
       <ProductPhotoSlots v-model="photos" :max="5" :invalid="touched[1] && !photos.length" :example-src="EXAMPLE_IMG[form.productType] ?? '/mock/product.svg'" @quality="quality = $event" />
       <p v-if="touched[1] && errs.photos" class="error-text" role="alert">{{ errs.photos }}</p>
       <p v-if="quality.checking && qWait" class="callout tone-info"><Loader2 :size="18" class="spin" /> 사진 검사가 끝날 때까지 잠시 기다려 주세요.</p>
-      <p v-else-if="quality.problems" class="callout tone-warning" role="alert"><TriangleAlert :size="18" /> 문제 있는 사진이 {{ quality.problems }}장 있어요. 다시 찍으면 더 정확하게 확인할 수 있어요.</p>
     </section>
 
     <!-- ③ 방문·동의 -->
@@ -502,11 +496,10 @@ async function submit() {
   </form>
 
   <!-- 문제 있는 사진 → 한 번 더 확인 -->
-  <BaseModal :open="problemDlg" title="문제 있는 사진이 있어요" :width="460" @close="problemDlg = false">
-    <p>사진 {{ quality.problems }}장에 문제가 있어요. 그대로 진행하면 기사님이 다시 사진을 요청할 수 있어요.</p>
+  <BaseModal :open="problemDlg" title="사진을 마저 올려 주세요" :width="460" @close="problemDlg = false">
+    <p>사진 아래 알림 {{ quality.problems }}개를 먼저 처리해 주세요.</p>
     <template #footer>
-      <button type="button" class="btn btn-primary" @click="problemDlg = false"><Camera :size="18" /> 다시 찍기</button>
-      <button type="button" class="btn" @click="acceptProblems">이대로 진행</button>
+      <button type="button" class="btn btn-primary" @click="problemDlg = false"><Camera :size="18" /> 확인</button>
     </template>
   </BaseModal>
 
