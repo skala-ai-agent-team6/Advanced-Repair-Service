@@ -12910,6 +12910,1372 @@
         "description": "별도 운영 권한: 원래 실패 이벤트와 연결한 재처리 시도\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
       }
     },
+    "/api/field/visits": {
+      "get": {
+        "summary": "TECHNICIAN: 나에게 배정된 출장 방문 일정 (from 이후, 방문 시각 순)",
+        "operationId": "get__api_field_visits",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-10-22"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "example": [
+                  {}
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "TECHNICIAN: 나에게 배정된 출장 방문 일정 (from 이후, 방문 시각 순)\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/visit": {
+      "put": {
+        "summary": "방문 일정 지정·방문 완료 표시",
+        "operationId": "put__api_repairs__id__visit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "visitAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "done": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "visitAt",
+                  "done"
+                ]
+              },
+              "example": {
+                "visitAt": "2026-10-22T09:00:00+09:00",
+                "done": true
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "방문 일정 지정·방문 완료 표시\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/trip-parts": {
+      "get": {
+        "summary": "TECHNICIAN: AI 추천 부품별 창고 재고·이 건의 최근 예약",
+        "operationId": "get__api_repairs__id__trip_parts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "example": [
+                  {}
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "TECHNICIAN: AI 추천 부품별 창고 재고·이 건의 최근 예약\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/stock/reservations": {
+      "post": {
+        "summary": "TECHNICIAN: 출장 부품 재고 예약(24시간). 가용 부족 시 409 STOCK_CONFLICT",
+        "operationId": "post__api_stock_reservations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "partId": {
+                    "type": "integer"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "repairId": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "partId",
+                  "quantity",
+                  "repairId"
+                ]
+              },
+              "example": {
+                "partId": 1,
+                "quantity": 1,
+                "repairId": 1
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "TECHNICIAN: 출장 부품 재고 예약(24시간). 가용 부족 시 409 STOCK_CONFLICT\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/stock/reservations/{id}/cancel": {
+      "post": {
+        "summary": "TECHNICIAN: 예약 취소: 가용 재고로 복구",
+        "operationId": "post__api_stock_reservations__id__cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "TECHNICIAN: 예약 취소: 가용 재고로 복구\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/stock/reservations/{id}/release": {
+      "post": {
+        "summary": "TECHNICIAN: 출고: 보유·예약 차감",
+        "operationId": "post__api_stock_reservations__id__release",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "TECHNICIAN: 출고: 보유·예약 차감\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/parts/{id}/stock-history": {
+      "get": {
+        "summary": "TECHNICIAN: 부품 예약·취소·만료·출고 이력 (최근 50건)",
+        "operationId": "get__api_parts__id__stock_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "example": [
+                  {}
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "제품·부품"
+        ],
+        "description": "TECHNICIAN: 부품 예약·취소·만료·출고 이력 (최근 50건)\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/preparation-report": {
+      "get": {
+        "summary": "출장 방문 준비 리포트: 원인·증상 요약, 준비 공구·부품·재고, 고장 위치 (업무 MCP). 연결 실패 시 report_status=UNAVAILABLE",
+        "operationId": "get__api_repairs__id__preparation_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "접수·진단"
+        ],
+        "description": "출장 방문 준비 리포트: 원인·증상 요약, 준비 공구·부품·재고, 고장 위치 (업무 MCP). 연결 실패 시 report_status=UNAVAILABLE\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/warranty": {
+      "get": {
+        "summary": "보증 기간 기반 무상/유상 제안과 기사 확정",
+        "operationId": "get__api_repairs__id__warranty",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "보증"
+        ],
+        "description": "보증 기간 기반 무상/유상 제안과 기사 확정\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
+    "/api/repairs/{id}/warranty/decision": {
+      "post": {
+        "summary": "TECHNICIAN: 무상/유상 확정. 제안과 다르면 사유 필수",
+        "operationId": "post__api_repairs__id__warranty_decision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "description": "PostgreSQL bigint ID encoded as a decimal string"
+            },
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "example": {}
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "string",
+                    "enum": [
+                      "FREE",
+                      "PAID"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              },
+              "example": {
+                "result": "FREE",
+                "reason": "예시"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "tags": [
+          "보증"
+        ],
+        "description": "TECHNICIAN: 무상/유상 확정. 제안과 다르면 사유 필수\n\n로그인 세션과 기존 센터별 접근 권한을 적용합니다. 쓰기 요청의 CSRF 헤더는 이 Swagger UI에서 자동으로 설정합니다."
+      }
+    },
     "/internal/rag/confirmed-changes": {
       "get": {
         "summary": "RAG: 고정 high-water mark와 단조 cursor로 확정 변경분 조회",
@@ -16220,9 +17586,16 @@
             "maxLength": 10000
           },
           "purchaseDate": {
-            "type": "string",
-            "format": "date",
-            "description": "구매일; 미래 날짜 거부"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "description": "구매일; 미래 날짜 거부, 모르면 null"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "serialNumber": {
             "type": "string",
@@ -16276,11 +17649,36 @@
                 "type": "null"
               }
             ]
+          },
+          "preferredDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "description": "고객 희망 방문일 (출장)"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visitSlot": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "AM",
+                  "PM"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "symptoms",
-          "purchaseDate",
           "serialNumber",
           "modelCode",
           "centerId",

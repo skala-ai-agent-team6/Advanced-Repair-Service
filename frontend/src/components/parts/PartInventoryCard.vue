@@ -97,7 +97,18 @@ h3 {
 .pb {
   padding: 12px 20px 18px;
   display: grid;
+  /* 표·긴 이메일 때문에 좁은 화면에서 카드 밖으로 넘치지 않게 */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+}
+.pb :deep(dd) {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  .stock td,
+  .stock :deep(th) {
+    padding: 8px 10px;
+  }
 }
 .compat {
   display: flex;

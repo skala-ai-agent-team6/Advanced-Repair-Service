@@ -308,3 +308,16 @@ SELECT setval(pg_get_serial_sequence('product_component','id'),(SELECT max(id) F
 
 -- [통합] 접수 API는 firmware 필수인데 제품 정보에 없어서 프론트 접수가 400으로 실패했다
 UPDATE product SET information=information||'{"firmware":"1.0.3"}'::jsonb WHERE NOT information ? 'firmware';
+
+-- [출장] 세탁기·에어컨 확장 시연용 모델·부품 (프론트 constants/products.ts 모델 이름과 같게)
+INSERT INTO product_model(id,model_code,name,appliance_type) OVERRIDING SYSTEM VALUE VALUES
+ (201,'RC-A100','RC-A100','VACUUM_CLEANER'),(202,'WM-AW24','ROVA AirWash 24','WASHING_MACHINE'),
+ (203,'WM-AW21','ROVA AirWash 21','WASHING_MACHINE'),(204,'AC-CW18','ROVA CoolWind 18','AIR_CONDITIONER') ON CONFLICT DO NOTHING;
+INSERT INTO part(id,part_number,name,category) OVERRIDING SYSTEM VALUE VALUES
+ (201,'WM-PUMP-01','Drain pump','MOTOR'),(202,'WM-LOCK-01','Door lock switch','OTHER'),(203,'WM-PCB-01','Washer main board','PCB'),
+ (204,'AC-FILTER-01','Air filter','OTHER'),(205,'AC-FAN-01','Indoor fan motor','MOTOR'),(206,'AC-PCB-01','Indoor control board','PCB') ON CONFLICT DO NOTHING;
+INSERT INTO model_part VALUES (201,1),(201,3),(202,201),(202,202),(202,203),(203,201),(203,202),(203,203),(204,204),(204,205),(204,206) ON CONFLICT DO NOTHING;
+INSERT INTO inventory(warehouse_id,part_id,on_hand,reserved) VALUES (1,201,4,0),(1,202,6,0),(1,203,1,0),(1,204,12,0),(1,205,2,0),(1,206,0,0) ON CONFLICT DO NOTHING;
+-- [출장] 확장 모델 보증 정책 (시연용: 로봇청소기·세탁기 12개월, 에어컨 24개월)
+INSERT INTO warranty_policy(model_id,version,duration_months,effective_from,development_only) VALUES
+ (201,'DEMO-12M',12,'2000-01-01',false),(202,'DEMO-12M',12,'2000-01-01',false),(203,'DEMO-12M',12,'2000-01-01',false),(204,'DEMO-24M',24,'2000-01-01',false) ON CONFLICT DO NOTHING;

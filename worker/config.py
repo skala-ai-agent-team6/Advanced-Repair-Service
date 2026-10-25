@@ -76,6 +76,8 @@ MAX_EVENT_BYTES = int(os.getenv("MAX_EVENT_BYTES", "750000"))
 # [통합] 업무 MCP(재고·공장). 기본은 run.sh가 띄우는 로컬 mcp_servers/business (우리 DB를 그대로 읽음)
 # 팀원 ngrok 서버를 쓰려면 BUSINESS_MCP_URL=https://<ngrok>/mcp 와 아래 대응표(예: 1:47,3:46 / 1:12 / 1:12)를 준다
 BUSINESS_MCP_URL = os.getenv("BUSINESS_MCP_URL", "http://127.0.0.1:8015/mcp")
+# PCB 결함 검출 확신도 하한. 0.25→0.2: 평가셋 정상·흐린 PCB 사진은 0.05까지 검출 0건, short 결함은 0.24로 잡혀서 (eval/README.md)
+PCB_MIN_CONF = float(os.getenv("PCB_MIN_CONF", "0.2"))
 
 
 def id_map(name, default):
