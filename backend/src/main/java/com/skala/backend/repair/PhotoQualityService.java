@@ -72,7 +72,9 @@ public class PhotoQualityService {
         if(requested==null) return db.list("SELECT id FROM attachment WHERE case_id=? AND use_status='AVAILABLE' ORDER BY id",repair).stream().map(a->(Long)a.get("id")).toList();
         if(requested.isEmpty() || requested.size()!=new HashSet<>(requested).size()) throw ApiError.bad("INVALID_ATTACHMENT_SELECTION");return requested;
     }
-    void freeze(Long repair,Long job,int revision,List<Long> selected,List<Long> added) {
+    void freeze(Long repair,Long job,int revision,List<Long> selected,List<Long> added) {freeze(repair,job,revision,selected,added,null);}
+    /** confirmer: 로그인 사용자 없이(ConsumerPipeline) 경고 사진 확인자를 지정할 때 */
+    void freeze(Long repair,Long job,int revision,List<Long> selected,List<Long> added,Long confirmer) {
         if(selected.isEmpty() || selected.size()!=new HashSet<>(selected).size()) throw ApiError.bad("INVALID_ATTACHMENT_SELECTION");
         int images=0;
         for(Long id:selected) {
@@ -87,7 +89,7 @@ public class PhotoQualityService {
                     if(!q.get("status").equals("COMPLETED")) throw ApiError.conflict(q.get("status").equals("ERROR")?"PHOTO_QUALITY_ERROR":"PHOTO_QUALITY_PENDING");
                     if(!q.get("checker_version").equals(PhotoQualityChecker.VERSION) || !q.get("policy_version").equals(policy.effectiveVersion())) throw ApiError.conflict("PHOTO_POLICY_CHANGED");
                     if(q.get("verdict").equals("WARNING")) {
-                        var ack=db.list("SELECT id FROM photo_quality_confirmation WHERE result_id=? AND confirmed_by=?",result,access.user().id);
+                        var ack=db.list("SELECT id FROM photo_quality_confirmation WHERE result_id=? AND confirmed_by=?",result,confirmer!=null?confirmer:access.user().id);
                         if(ack.isEmpty()) throw ApiError.conflict("PHOTO_WARNING_NOT_CONFIRMED");confirmation=(Long)ack.getFirst().get("id");
                     }
                 }

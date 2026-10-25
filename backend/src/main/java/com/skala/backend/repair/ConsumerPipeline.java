@@ -53,10 +53,13 @@ public class ConsumerPipeline {
         Long tech=(Long)r.get("assigned_technician_id");
         if(r.get("service_type").equals("FIELD") && tech==null) tech=assign(id,(Long)r.get("center_id"));
         if(tech==null) tech=(Long)r.get("technician_id");
-        var passed=photos.stream().filter(p->"PASS".equals(p.get("verdict"))).map(p->(Long)p.get("id")).toList();
+        // [출장·시연 고정] 사진은 접수 화면에서 이미 고객이 확인했다 → 경고 사진도 배정 기사 이름으로 확인 처리하고 모두 쓴다 (검사 오류 사진만 뺌)
+        if(tech!=null) for(var p:photos) if("WARNING".equals(p.get("verdict")))
+            db.update("INSERT INTO photo_quality_confirmation(attachment_id,result_id,confirmed_by) SELECT a.id,a.latest_quality_result_id,? FROM attachment a WHERE a.id=? ON CONFLICT DO NOTHING",tech,p.get("id"));
+        var passed=photos.stream().filter(p->Set.of("PASS","WARNING").contains(p.get("verdict"))).map(p->(Long)p.get("id")).toList();
         if(passed.isEmpty() || tech==null){log.info("consumer_pipeline.waiting_technician case={} passed={} tech={}",id,passed.size(),tech);return;}
         Long task=db.insert("INSERT INTO diagnosis_job(case_id,request_key,workflow_version) VALUES (?,?,'repair-v2')",id,UUID.randomUUID());
-        quality.freeze(id,task,1,passed,List.of());
+        quality.freeze(id,task,1,passed,List.of(),tech);
         db.update("UPDATE repair_case SET technician_id=coalesce(technician_id,?),status='DIAGNOSING',version=version+1 WHERE id=?",tech,id);
         repairs.command(id,task,"DIAGNOSIS_REQUESTED",null,List.of());
         db.event(id,"DIAGNOSIS_QUEUED",Map.of("taskId",task,"auto",true));
