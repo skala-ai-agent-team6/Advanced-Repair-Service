@@ -1,6 +1,6 @@
 """가전 부품 상태 분류기 학습: CLIP 이미지 특징 + 로지스틱 회귀.
 
-라벨 우선순위: GPT 교사 라벨(gpt_label) → 없으면 검색어 라벨(query_label).
+라벨: GPT 교사 라벨(gpt_label)만 쓴다. 검색어 라벨(query_label)은 GPT 라벨과 일치율이 10%(50/480)라 학습에서 뺐다.
 gpt_label=not_relevant 인 사진은 부위 인식기의 'other' 클래스로 쓴다.
 클래스당 학습 사진이 MIN_PER_CLASS 미만인 부위는 상태 분류기를 만들지 않는다 → 서버가 uncertain으로 답한다.
 사용: python training/train_parts.py <appliance_data> [--out weights/parts_head.joblib]
@@ -26,15 +26,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from parts_spec import ITEMS  # noqa: E402
 
 CLIP, PRETRAINED = "ViT-B-32", "laion2b_s34b_b79k"
-MIN_PER_CLASS = 6
-PART_THRESHOLD = 0.4
+MIN_PER_CLASS = 5
+PART_THRESHOLD = 0.6  # 홀드아웃에서 부위 정밀도 11/17, 재현율 11/26 (0.4면 19/40, 19/26). 보류를 택해 정밀도 우선
 STATE_THRESHOLD = {2: 0.6, 3: 0.45}  # 클래스 수별 확신도 기준. 이보다 낮으면 uncertain
 
 
 def final_label(row):
-    if row.get("gpt_label"):
-        return row["gpt_label"], "gpt-teacher"
-    return row["query_label"], "query"
+    return (row["gpt_label"], "gpt-teacher") if row.get("gpt_label") else (None, "unlabeled")
 
 
 def embed(paths, cache_path):
@@ -67,8 +65,10 @@ def main():
     rows = [r for r in csv.DictReader((root / "sources.csv").open())]
     for r in rows:
         r["label"], r["label_source"] = final_label(r)
+    skipped = sum(r["label"] is None for r in rows)
+    rows = [r for r in rows if r["label"] is not None]
     x = embed([root / r["file"] for r in rows], root / "clip_cache.npz")
-    report = {"label_sources": Counter(r["label_source"] for r in rows), "items": {}}
+    report = {"label_sources": Counter(r["label_source"] for r in rows), "unlabeled_skipped": skipped, "items": {}}
 
     # 1. 부위 인식기: 관련 있는 사진은 item, not_relevant는 other
     part_y = np.array([("other" if r["label"] == "not_relevant" else r["item"]) for r in rows])

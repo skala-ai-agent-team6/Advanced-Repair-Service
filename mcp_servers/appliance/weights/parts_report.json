@@ -1,0 +1,175 @@
+{
+ "label_sources": {
+  "gpt-teacher": 680
+ },
+ "unlabeled_skipped": 598,
+ "items": {
+  "ac_filter": {
+   "counts": {
+    "heavily_dirty": 8,
+    "mildly_dirty": 7,
+    "clean": 4
+   },
+   "skipped": "클래스당 5장 미만: ['clean']"
+  },
+  "ac_drain_hose": {
+   "counts": {
+    "kinked_or_blocked": 3,
+    "ok": 2
+   },
+   "skipped": "클래스당 5장 미만: ['ok', 'kinked_or_blocked']"
+  },
+  "rv_motor": {
+   "counts": {
+    "normal": 25,
+    "burn_marks": 5
+   },
+   "holdout": {
+    "burn_marks": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1-score": 0.0,
+     "support": 2.0
+    },
+    "normal": {
+     "precision": 0.7777777777777778,
+     "recall": 1.0,
+     "f1-score": 0.875,
+     "support": 7.0
+    },
+    "accuracy": 0.7777777777777778,
+    "macro avg": {
+     "precision": 0.3888888888888889,
+     "recall": 0.5,
+     "f1-score": 0.4375,
+     "support": 9.0
+    },
+    "weighted avg": {
+     "precision": 0.6049382716049383,
+     "recall": 0.7777777777777778,
+     "f1-score": 0.6805555555555556,
+     "support": 9.0
+    }
+   },
+   "holdout_n": 9
+  },
+  "rv_wheel": {
+   "counts": {
+    "ok": 13,
+    "broken": 2,
+    "worn": 7
+   },
+   "skipped": "클래스당 5장 미만: ['broken']"
+  },
+  "wm_inlet_hose": {
+   "counts": {
+    "ok": 3,
+    "damaged": 8
+   },
+   "skipped": "클래스당 5장 미만: ['ok']"
+  },
+  "wm_drain_filter": {
+   "counts": {
+    "clean": 5,
+    "clogged": 5
+   },
+   "holdout": {
+    "clean": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1-score": 1.0,
+     "support": 2.0
+    },
+    "clogged": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1-score": 1.0,
+     "support": 1.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1-score": 1.0,
+     "support": 3.0
+    },
+    "weighted avg": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1-score": 1.0,
+     "support": 3.0
+    }
+   },
+   "holdout_n": 3
+  },
+  "wm_door_gasket": {
+   "counts": {
+    "ok": 5
+   },
+   "skipped": "클래스당 5장 미만: ['mold_or_torn']"
+  }
+ },
+ "part": {
+  "ac_drain_hose": {
+   "precision": 0.3333333333333333,
+   "recall": 1.0,
+   "f1-score": 0.5,
+   "support": 1.0
+  },
+  "ac_filter": {
+   "precision": 0.35714285714285715,
+   "recall": 1.0,
+   "f1-score": 0.5263157894736842,
+   "support": 5.0
+  },
+  "other": {
+   "precision": 1.0,
+   "recall": 0.7986111111111112,
+   "f1-score": 0.888030888030888,
+   "support": 144.0
+  },
+  "rv_motor": {
+   "precision": 0.5384615384615384,
+   "recall": 0.875,
+   "f1-score": 0.6666666666666666,
+   "support": 8.0
+  },
+  "rv_wheel": {
+   "precision": 0.4166666666666667,
+   "recall": 1.0,
+   "f1-score": 0.5882352941176471,
+   "support": 5.0
+  },
+  "wm_door_gasket": {
+   "precision": 0.16666666666666666,
+   "recall": 1.0,
+   "f1-score": 0.2857142857142857,
+   "support": 1.0
+  },
+  "wm_drain_filter": {
+   "precision": 0.2,
+   "recall": 0.3333333333333333,
+   "f1-score": 0.25,
+   "support": 3.0
+  },
+  "wm_inlet_hose": {
+   "precision": 0.5,
+   "recall": 0.3333333333333333,
+   "f1-score": 0.4,
+   "support": 3.0
+  },
+  "accuracy": 0.8,
+  "macro avg": {
+   "precision": 0.4390338827838828,
+   "recall": 0.7925347222222222,
+   "f1-score": 0.5131203655003964,
+   "support": 170.0
+  },
+  "weighted avg": {
+   "precision": 0.9104514113337643,
+   "recall": 0.8,
+   "f1-score": 0.8324602994908951,
+   "support": 170.0
+  }
+ }
+}

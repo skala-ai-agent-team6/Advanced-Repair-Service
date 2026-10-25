@@ -127,8 +127,9 @@ def inspect_appliance_part(image_path: str, product_type: str) -> dict:
     total = sum(probs.values()) or 1.0
     probs = {k: v / total for k, v in probs.items()}  # 이 가전의 부위만 놓고 다시 나눈다
     part, part_conf = max(probs.items(), key=lambda kv: kv[1])
+    part = str(part)
     result = {"image": str(path), "product_type": product_type,
-              "part_scores": {k: round(float(v), 3) for k, v in sorted(probs.items(), key=lambda kv: -kv[1])}}
+              "part_scores": {str(k): round(float(v), 3) for k, v in sorted(probs.items(), key=lambda kv: -kv[1])}}
     if part == "other" or part_conf < bundle["part_threshold"]:
         return {**result, "status": "uncertain", "part": None, "part_confidence": round(float(part_conf), 3),
                 "state": None, "severity": None, "reason": "점검 부위를 알아보지 못했다. 해당 부위를 가까이 다시 찍어야 한다"}
@@ -139,9 +140,9 @@ def inspect_appliance_part(image_path: str, product_type: str) -> dict:
                 "reason": "이 부위는 학습 사진이 부족해 상태를 판정하지 않는다"}
     sp = head["clf"].predict_proba(f)[0]
     i = int(sp.argmax())
-    state, state_conf = head["clf"].classes_[i], float(sp[i])
+    state, state_conf = str(head["clf"].classes_[i]), float(sp[i])
     out = {**base, "state": state, "state_confidence": round(state_conf, 3),
-           "state_scores": {c: round(float(p), 3) for c, p in zip(head["clf"].classes_, sp)},
+           "state_scores": {str(c): round(float(p), 3) for c, p in zip(head["clf"].classes_, sp)},
            "severity": SEVERITY[state], "trained_samples": head["counts"]}
     if state_conf < head["threshold"]:
         return {**out, "status": "uncertain", "severity": None,

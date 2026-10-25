@@ -50,10 +50,20 @@ def main():
     path = root / "sources.csv"
     rows = list(csv.DictReader(path.open()))
     client = OpenAI()
+    # 이미 라벨한 사진에서 관련 사진 비율이 20% 미만이던 검색어의 나머지 사진은 건너뛴다 (비용 절약)
+    rate = {}
+    for r in rows:
+        if r.get("gpt_label"):
+            k = (r["item"], r["query"])
+            n, ok = rate.get(k, (0, 0))
+            rate[k] = (n + 1, ok + (r["gpt_label"] != "not_relevant"))
+    poor = {k for k, (n, ok) in rate.items() if n >= 5 and ok / n < 0.2}
+    rows_to_label = [r for r in rows if (r["item"], r["query"]) not in poor]
+    print("건너뛸 검색어", len(poor), "후보", sum(1 for r in rows_to_label if not r.get("gpt_label")), flush=True)
     done = 0
     # 비용 상한(--limit) 안에서 부위가 고르게 라벨되도록 부위별로 번갈아 고른다
     by_item = {}
-    for row in rows:
+    for row in rows_to_label:
         by_item.setdefault(row["item"], []).append(row)
     order = [r for group in zip_longest(*by_item.values()) for r in group if r is not None]
     for row in order:

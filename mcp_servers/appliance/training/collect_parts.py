@@ -43,6 +43,21 @@ QUERIES = {
 }
 
 
+# 2차: 1차에서 관련 사진 비율이 높았던 검색어의 다음 페이지 + 더 구체적인 새 검색어 (GPT 교사 결과로 고름)
+QUERIES2 = {
+    "ac_filter": [("dirty air conditioner filter", "heavily_dirty"), ("air conditioner filter cleaning", "mildly_dirty"),
+                  ("split air conditioner filter", "clean"), ("HVAC filter dirty", "heavily_dirty")],
+    "rv_motor": [("electric motor armature", "normal"), ("motor winding burnt", "burn_marks"),
+                 ("burnt wire insulation", "burn_marks"), ("commutator motor", "normal")],
+    "rv_wheel": [("broken plastic wheel", "broken"), ("worn tire tread", "worn"), ("caster wheel", "ok"),
+                 ("broken caster wheel", "broken")],
+    "wm_inlet_hose": [("cracked rubber hose", "damaged"), ("rubber hose", "ok"), ("hose fitting corrosion", "damaged")],
+    "wm_drain_filter": [("washing machine filter", "clean"), ("lint filter", "clogged"), ("lint trap", "clogged")],
+    "wm_door_gasket": [("front load washer", "ok"), ("rubber door seal", "ok"), ("mouldy rubber", "mold_or_torn")],
+    "ac_drain_hose": [("condensate drain", "ok"), ("air conditioner condensate", "ok"), ("kinked hose", "kinked_or_blocked")],
+}
+
+
 def get(url, tries=3):
     for i in range(tries):
         try:
@@ -53,10 +68,10 @@ def get(url, tries=3):
     return None
 
 
-def commons(query, n):
+def commons(query, n, offset=0):
     q = urllib.parse.quote(f"{query} filetype:bitmap")
     url = ("https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6"
-           f"&gsrlimit={n}&gsrsearch={q}&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=512")
+           f"&gsrlimit={n}&gsroffset={offset}&gsrsearch={q}&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=512")
     data = get(url)
     if not data:
         return []
@@ -71,8 +86,8 @@ def commons(query, n):
     return out
 
 
-def openverse(query, n):
-    data = get(f"https://api.openverse.org/v1/images/?q={urllib.parse.quote(query)}&page_size={min(n, 20)}")
+def openverse(query, n, page=1):
+    data = get(f"https://api.openverse.org/v1/images/?q={urllib.parse.quote(query)}&page_size={min(n, 20)}&page={page}")
     if not data:
         return []
     return [{"url": r.get("thumbnail") or r["url"], "page": r.get("foreign_landing_url", ""),
@@ -89,6 +104,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("root")
     ap.add_argument("--per-query", type=int, default=40)
+    ap.add_argument("--round", type=int, default=1)
     args = ap.parse_args()
     root = Path(args.root) / "parts"
     csv_path = root / "sources.csv"
@@ -99,14 +115,18 @@ def main():
     if csv_path.exists():
         rows = list(csv.DictReader(csv_path.open()))
         seen = {r["sha1"] for r in rows}
-    for item, queries in QUERIES.items():
+    for item, queries in (QUERIES2 if args.round == 2 else QUERIES).items():
         folder = root / "images" / item
         folder.mkdir(parents=True, exist_ok=True)
         for query, label in queries:
-            key = f"{item}|{query}"
+            key = f"{item}|{query}|r{args.round}" if args.round > 1 else f"{item}|{query}"
             if key in done:
                 continue
-            hits = [h for h in commons(query, args.per_query) + openverse(query, args.per_query) if licensed(h["license"])]
+            if args.round > 1:  # 1차에서 본 첫 페이지는 건너뛴다
+                found = commons(query, args.per_query, offset=args.per_query) + openverse(query, 20, page=2) + openverse(query, 20, page=3)
+            else:
+                found = commons(query, args.per_query) + openverse(query, args.per_query)
+            hits = [h for h in found if licensed(h["license"])]
             with ThreadPoolExecutor(8) as pool:
                 blobs = list(pool.map(lambda h: get(h["url"], tries=2), hits))
             got = 0
@@ -129,10 +149,10 @@ def main():
                 got += 1
                 rows.append({"item": item, "file": str(path.relative_to(root)), "sha1": sha, "query": query,
                              "query_label": label, "source": h["source"], "license": h["license"],
-                             "page": h["page"], "title": h["title"][:120]})
+                             "page": h["page"], "title": h["title"][:120], "round": str(args.round)})
             print(f"{item:16} {query:40} {got}", flush=True)
             with csv_path.open("w", newline="") as f:
-                w = csv.DictWriter(f, fieldnames=list(rows[0].keys()) if rows else ["item"])
+                w = csv.DictWriter(f, fieldnames=list(dict.fromkeys(k for r in rows for k in r)) or ["item"])
                 w.writeheader()
                 w.writerows(rows)
             with done_path.open("a") as f:
