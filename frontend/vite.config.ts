@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // changeOrigin 은 끔: 백엔드 CORS·쿠키가 브라우저 origin(FRONTEND_ORIGIN) 기준으로 동작하도록 Host 를 유지
         '/api': { target, changeOrigin: false },
+        // [출장] 소비자 비로그인 API (백엔드 /public/**)
+        '/public': { target, changeOrigin: false },
       },
     },
     build: {

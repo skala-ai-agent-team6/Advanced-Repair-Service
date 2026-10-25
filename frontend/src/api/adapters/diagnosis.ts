@@ -105,7 +105,7 @@ function fromResultAgents(agents: BeAgent[], tools: BeToolExecution[]): AgentRes
 }
 
 /** 유사 사례 (RAG) → 화면 사례. 모델·종결일 정보는 없어 '-' */
-const toCase = (c: BeSimilarCase) => ({ receiptNo: c.caseId, model: c.origin === 'EXTERNAL' ? '외부 사례' : '내부 사례', cause: c.summaryKo, resolution: c.originalText ?? '', similarity: pct(c.similarity), closedAt: '' })
+const toCase = (c: BeSimilarCase) => ({ receiptNo: c.caseId, model: c.origin === 'EXTERNAL' ? '외부 사례' : '내부 사례', cause: c.summaryKo, resolution: c.originalText ?? '', similarity: pct(c.similarity), closedAt: '', origin: c.origin === 'EXTERNAL' ? ('EXTERNAL' as const) : ('INTERNAL' as const) })
 
 export function toDiagnosis(
   task: BeTask,
@@ -132,6 +132,7 @@ export function toDiagnosis(
     repairId: Number(task.case_id),
     version: task.input_revision,
     origin: 'AI',
+    raw: res ?? undefined,
     generatedAt: task.finished_at ?? task.updated_at,
     topCause: res?.topCause ?? sorted[0]?.cause ?? res?.summary ?? '-',
     confidence: sorted[0] ? pct(sorted[0].confidence) : 0,

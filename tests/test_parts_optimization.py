@@ -43,3 +43,21 @@ def test_completed_early_keeps_summary_without_extra_call(monkeypatch):
     result=asyncio.run(graph.check_parts(state, {'configurable':{'emit':AsyncMock()}}))
     assert request.await_count == 1
     assert result['findings'][-1]['output']['note']=='추가 조회 불필요'
+
+
+def test_lookup_failure_is_error_not_zero_inventory(monkeypatch):
+    import json
+    monkeypatch.setattr(C, 'USE_GPT', True)
+    monkeypatch.setattr(tools, 'business_tool_specs', AsyncMock(return_value=[]))
+    monkeypatch.setattr(tools, 'parts_agent_llm', lambda specs: object())
+    monkeypatch.setattr(tools, 'call_business_tool', AsyncMock(side_effect=ConnectionError('offline')))
+    monkeypatch.setattr(tools, 'ask_parts_agent', AsyncMock(side_effect=[
+        AIMessage(content='', tool_calls=[{'name':'get_part_availability','args':{'part_id':1},'id':'one'}]),
+        AIMessage(content='재고 미확인: 조회 오류로 직접 확인이 필요합니다.')]))
+    state={'command':{'payload':{'repair':{'product_snapshot':{'compatibleParts':[{'id':'1'}]}}}},'text':'증상','findings':[]}
+    result=asyncio.run(graph.check_parts(state, {'configurable':{'emit':AsyncMock()}}))
+    failure=json.loads(result['findings'][0]['output']['result'])
+    assert failure['status']=='failed'
+    assert failure['failurePolicy']=='optional'
+    assert 'available' not in failure and 'quantity' not in failure
+    assert '미확인' in result['findings'][1]['output']['note']

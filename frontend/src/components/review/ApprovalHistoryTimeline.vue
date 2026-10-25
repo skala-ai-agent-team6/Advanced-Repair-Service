@@ -35,7 +35,7 @@ const TARGET = { DIAGNOSIS: '진단', REPORT: '수리 리포트', ORDER: '발주
         <div class="row">
           <span class="badge" :class="`tone-${ACTION[r.action].tone}`">{{ TARGET[r.target] }} · {{ ACTION[r.action].label }}</span>
           <strong>{{ r.actor }}</strong>
-          <span class="faint">{{ r.actorRole === 'AI' ? 'AI Agent' : ROLE_LABEL[r.actorRole] }}</span>
+          <span class="faint">{{ r.actorRole === 'AI' ? 'AI Agent' : r.actorRole === 'CUSTOMER' ? '고객' : ROLE_LABEL[r.actorRole] }}</span>
         </div>
         <p v-if="r.comment" class="cm">{{ r.comment }}</p>
         <span class="faint">{{ formatDateTime(r.at) }}</span>

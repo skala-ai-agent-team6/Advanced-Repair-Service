@@ -85,7 +85,11 @@ public class RepairService {
         db.audit(access.user().email,"ATTACHMENT_CREATED",id,Map.of("attachmentId",id));return Map.of("attachmentId",id,"mimeType",saved.mime(),"size",saved.size(),"sha256",saved.hash(),"quality",quality.get(id));
     }
     @Transactional public Map<String,Object> resume(Long repair,Inputs.Resume input) {
-        access.technician();access.repair(repair);db.one("SELECT id FROM repair_case WHERE id=? FOR UPDATE",repair);var task=db.one("SELECT * FROM diagnosis_job WHERE case_id=? ORDER BY created_at DESC,id DESC LIMIT 1 FOR UPDATE",repair);
+        access.technician();access.repair(repair);return resumeChecked(repair,input);
+    }
+    /** [출장] 권한 확인 뒤 재개. 고객 추가 사진은 ConsumerPipeline이 품질 통과 후 이걸로 재개한다 */
+    Map<String,Object> resumeChecked(Long repair,Inputs.Resume input) {
+        db.one("SELECT id FROM repair_case WHERE id=? FOR UPDATE",repair);var task=db.one("SELECT * FROM diagnosis_job WHERE case_id=? ORDER BY created_at DESC,id DESC LIMIT 1 FOR UPDATE",repair);
         var request=db.one("SELECT * FROM photo_request WHERE id=? AND job_id=? FOR UPDATE",input.requestId(),task.get("id"));
         if(request.get("status").equals("SUBMITTED")) {
             if(!input.submissionKey().equals(request.get("submission_key"))) throw ApiError.conflict("REQUEST_ALREADY_FULFILLED");

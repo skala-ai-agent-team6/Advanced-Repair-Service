@@ -20,8 +20,8 @@ class Client:
                   "application/x-www-form-urlencoded")
         self.token = self.call("GET", "/api/auth/csrf")["token"]
 
-    def call(self, method, path, data=None, ctype="application/json"):
-        headers = {"Content-Type": ctype}
+    def call(self, method, path, data=None, ctype="application/json", extra=None):
+        headers = {"Content-Type": ctype, **(extra or {})}
         if method != "GET":
             headers["X-CSRF-TOKEN"] = self.token
         if data is not None and not isinstance(data, bytes):
@@ -82,7 +82,8 @@ def ensure_diagnosis(c, repair, accept_warnings=False, timeout=120):
                     raise RuntimeError(f"사진 {aid}: 품질 경고 확인 필요. 화면에서 확인하거나 테스트 사진을 그대로 쓰려면 --repair-id {repair} --accept-quality-warnings로 재실행하세요.")
                 c.call("POST", f"/api/attachments/{aid}/quality/acknowledgment", {"resultId": int(latest["id"])})
             break
-    started = c.call("POST", f"/api/repairs/{repair}/diagnosis", {"attachmentIds": [int(a["id"]) for a in attachments]})
+    started = c.call("POST", f"/api/repairs/{repair}/diagnosis", {"attachmentIds": [int(a["id"]) for a in attachments]},
+                     extra={"Idempotency-Key": str(uuid.uuid4())})
     print(f"진단 시작: repairId={repair} taskId={started.get('taskId')} status={started.get('status')}", flush=True)
     return started
 

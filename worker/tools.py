@@ -74,7 +74,7 @@ async def call_pcb_mcp(path: str) -> dict:
     transport = StdioTransport(command=C.PCB_MCP_PYTHON, args=[C.PCB_MCP_SERVER], log_file=C.HERE / "pcb_mcp.log")
     # 옛 서버가 내는 경고(server/discover 모름)는 터미널 대신 로그 파일로. 동작엔 문제없음
     async with Client(transport) as c:
-        r = await c.call_tool("analyze_pcb_image", {"image_path": path})
+        r = await c.call_tool("analyze_pcb_image", {"image_path": path, "conf": C.PCB_MIN_CONF})
         check_response(r, "analyze_pcb_image")
         return check_image_result(json.loads(r.content[0].text), "analyze_pcb_image")
         # 옛 mcp 1.x 서버라 결과가 글(JSON 문자열)로 온다

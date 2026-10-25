@@ -2,11 +2,12 @@
  *  - 실서버: 세션 쿠키(HttpOnly)만 사용. 앱 시작 시 GET /api/auth/me 로 복원하고 브라우저 저장소에 아무것도 두지 않는다.
  *  - Mock: 서버가 없으므로 사용자 정보를 localStorage 에 두어 새로고침·새 탭에서도 유지 */
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { authApi } from '@/api'
 import { USE_MOCK } from '@/api/http'
 import { ROLE_LABEL } from '@/constants/status'
-import type { Role, User } from '@/types'
+import type { Role, TechnicianType, User } from '@/types'
+import { setWorkScope } from '@/utils/workScope'
 
 const MOCK_USER_KEY = 'robotcare-user'
 
@@ -38,11 +39,13 @@ try {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(readMockUser())
-  authApi.restore(user.value)
+  const user = ref<User | null>(authApi.restore(readMockUser()))
+  writeMockUser(user.value)
 
   const isLoggedIn = computed(() => !!user.value)
   const role = computed<Role | null>(() => user.value?.role ?? null)
+  /** 기사 유형 (기사가 아니면 null). 로그인 응답의 technicianType 사용, 값이 없으면 CENTER */
+  const technicianType = computed<TechnicianType | null>(() => (role.value !== 'TECHNICIAN' ? null : (user.value?.technicianType ?? 'CENTER')))
 
   /** 앱 시작 시 한 번: 실서버면 /auth/me 로 세션 복원 (401 → 로그아웃 상태) */
   let initPromise: Promise<void> | null = null
@@ -80,5 +83,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const hasRole = (...roles: Role[]) => !!role.value && roles.includes(role.value)
 
-  return { user, isLoggedIn, role, init, login, logout, clear, hasRole }
+  // 데이터 레이어가 쓰는 업무 범위 (담당 기사 ID · 기사 유형)
+  watch(
+    user,
+    (u) => setWorkScope(u ? { role: u.role, employeeId: u.employeeId, id: u.id, technicianType: u.role === 'TECHNICIAN' ? (u.technicianType ?? 'CENTER') : null } : null),
+    { immediate: true },
+  )
+
+  return { user, isLoggedIn, role, technicianType, init, login, logout, clear, hasRole }
 })
