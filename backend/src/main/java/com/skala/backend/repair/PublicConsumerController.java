@@ -17,6 +17,8 @@ public class PublicConsumerController {
     public ResponseEntity<?> create(@Valid @RequestPart("data") V2Inputs.ConsumerIntake data,@RequestPart("files") List<MultipartFile> files){return ResponseEntity.accepted().body(service.create(data,files));}
     @GetMapping("/cases/{number}") public Map<String,Object> get(@PathVariable String number,@RequestHeader(value="Authorization",required=false) String key){return service.get(number,key);}
     @PostMapping(value="/cases/{number}/attachments",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Map<String,Object> upload(@PathVariable String number,@RequestHeader(value="Authorization",required=false) String key,@RequestPart MultipartFile file){return service.upload(number,key,file);}
+    public Map<String,Object> upload(@PathVariable String number,@RequestHeader(value="Authorization",required=false) String key,@RequestPart MultipartFile file,@RequestParam(required=false) Long replaces){return service.upload(number,key,file,replaces);}
+    // [출장] 경고 사진 그대로 진행
+    @PostMapping("/cases/{number}/photos/accept") public Map<String,Object> accept(@PathVariable String number,@RequestHeader(value="Authorization",required=false) String key){return service.acceptPhotos(number,key);}
     @GetMapping("/cases/{number}/attachments/{id}") public ResponseEntity<Resource> file(@PathVariable String number,@PathVariable Long id,@RequestHeader(value="Authorization",required=false) String key){return ApiController.attachment(service.attachment(number,key,id),files);}
 }

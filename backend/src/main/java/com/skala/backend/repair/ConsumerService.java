@@ -51,17 +51,47 @@ public class ConsumerService {
         var rows=db.list("SELECT r.id FROM repair_case r JOIN consumer_access c ON c.case_id=r.id WHERE r.case_number=? AND c.key_hash=? AND c.expires_at>now()",number,hash(key));
         if(rows.isEmpty()) throw ApiError.missing();return (Long)rows.getFirst().get("id");
     }
-    Long save(Long caseId,MultipartFile upload) {
+    Long save(Long caseId,MultipartFile upload) {return save(caseId,upload,null,"GENERAL");}
+    Long save(Long caseId,MultipartFile upload,Long request,String target) {
         var saved=files.save(upload);
         // Public filenames are not persisted: a client may put personal data in a filename.
-        Long id=db.insert("INSERT INTO attachment(case_id,kind,target,object_key,original_name,mime_type,byte_size,sha256) VALUES (?,'IMAGE','GENERAL',?,'consumer-photo',?,?,?)",caseId,saved.key(),saved.mime(),saved.size(),saved.hash());
+        Long id=db.insert("INSERT INTO attachment(case_id,request_id,kind,target,object_key,original_name,mime_type,byte_size,sha256) VALUES (?,?,'IMAGE',?,?,'consumer-photo',?,?,?)",caseId,request,target,saved.key(),saved.mime(),saved.size(),saved.hash());
         quality.uploaded(id,"IMAGE");return id;
     }
-    public Map<String,Object> upload(String number,String authorization,MultipartFile file) {
+    public Map<String,Object> upload(String number,String authorization,MultipartFile file) {return upload(number,authorization,file,null);}
+    /** [출장] replaces: 품질 경고 사진을 새 사진으로 교체 (진단 시작 전만).
+     *  진단 중 AI 추가 사진 요청이 열려 있으면 그 요청의 사진으로 저장 → ConsumerPipeline이 품질 통과 후 진단 재개 */
+    public Map<String,Object> upload(String number,String authorization,MultipartFile file,Long replaces) {
         Long id=authorized(number,authorization);validatePhotos(List.of(file));
-        return tx.execute(s->{db.one("SELECT id FROM repair_case WHERE id=? FOR UPDATE",id);if(!db.list("SELECT id FROM diagnosis_job WHERE case_id=?",id).isEmpty()) throw ApiError.conflict("TECHNICIAN_PHOTO_REQUEST_REQUIRED");
+        return tx.execute(s->{db.one("SELECT id FROM repair_case WHERE id=? FOR UPDATE",id);
             if(Json.number(db.one("SELECT count(*) AS n FROM attachment WHERE case_id=?",id).get("n"))>=20) throw ApiError.conflict("PHOTO_LIMIT");
-            return Map.of("attachmentId",save(id,file),"status","STORED");});
+            if(!db.list("SELECT id FROM diagnosis_job WHERE case_id=?",id).isEmpty()) {
+                var open=openRequest(id);
+                if(open==null || replaces!=null) throw ApiError.conflict("TECHNICIAN_PHOTO_REQUEST_REQUIRED");
+                Long saved=save(id,file,(Long)open.get("id"),RepairService.target((String)open.get("target")));
+                db.audit("consumer","CONSUMER_PHOTO_REQUEST_UPLOADED",id,Map.of("requestId",open.get("id"),"attachmentId",saved));
+                return Map.of("attachmentId",saved,"status","STORED","requestId",open.get("id"));
+            }
+            if(replaces!=null) {
+                var old=db.list("SELECT id FROM attachment WHERE id=? AND case_id=? AND use_status='AVAILABLE' AND request_id IS NULL FOR UPDATE",replaces,id);
+                if(old.isEmpty()) throw ApiError.bad("INVALID_REPLACEMENT");
+            }
+            Long saved=save(id,file);
+            if(replaces!=null) {db.update("UPDATE attachment SET use_status='REPLACED',replaced_by_id=? WHERE id=?",saved,replaces);
+                db.audit("consumer","CONSUMER_PHOTO_REPLACED",id,Map.of("replaced",replaces,"attachmentId",saved));}
+            return Map.of("attachmentId",saved,"status","STORED");});
+    }
+    /** [출장] 고객이 경고 사진을 그대로 두고 진행 → ConsumerPipeline이 기다리지 않고 통과 사진으로 진단 */
+    public Map<String,Object> acceptPhotos(String number,String authorization) {
+        Long id=authorized(number,authorization);
+        tx.executeWithoutResult(s->{db.one("SELECT id FROM repair_case WHERE id=? FOR UPDATE",id);
+            if(!photoWarningAccepted(id)) db.audit("consumer","CONSUMER_PHOTO_WARNING_ACCEPTED",id,Map.of());});
+        return get(number,authorization);
+    }
+    boolean photoWarningAccepted(Long id) {return !db.list("SELECT id FROM audit_log WHERE action='CONSUMER_PHOTO_WARNING_ACCEPTED' AND entity_type='repair_case' AND entity_id=?",id).isEmpty();}
+    Map<String,Object> openRequest(Long id) {
+        var rows=db.list("SELECT p.id,p.target,p.instruction,p.round_no FROM photo_request p JOIN diagnosis_job j ON j.id=p.job_id WHERE j.case_id=? AND j.status='WAITING_INPUT' AND p.status='OPEN' ORDER BY p.id DESC LIMIT 1",id);
+        return rows.isEmpty()?null:rows.getFirst();
     }
     public Map<String,Object> get(String number,String authorization) {
         Long id=authorized(number,authorization);var r=db.one("SELECT status FROM repair_case WHERE id=?",id);
@@ -72,7 +102,12 @@ public class ConsumerService {
         var info=db.one("SELECT r.created_at,r.visit_at,m.name AS product_name,u.name AS technician_name FROM repair_case r JOIN product p ON p.id=r.product_id JOIN product_model m ON m.id=p.model_id LEFT JOIN app_user u ON u.id=coalesce(r.assigned_technician_id,r.technician_id) WHERE r.id=?",id);
         response.put("productName",info.get("product_name"));response.put("receivedAt",info.get("created_at"));response.put("technicianName",info.get("technician_name"));response.put("visitAt",info.get("visit_at"));
         var decision=db.list("SELECT result FROM warranty_decision WHERE case_id=? ORDER BY id DESC LIMIT 1",id);response.put("warrantyDecision",decision.isEmpty()?null:decision.getFirst().get("result"));
-        response.put("photos",db.list("SELECT a.id,coalesce(q.status,CASE WHEN a.quality_required THEN 'PENDING' ELSE 'LEGACY_UNCHECKED' END) AS status,q.verdict,q.issues FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? ORDER BY a.id",id));
+        // [출장] 교체된 사진은 빼고, AI 추가 사진 요청(열린 것)과 경고 사진 진행 동의 여부를 함께 준다
+        response.put("photos",db.list("SELECT a.id,coalesce(q.status,CASE WHEN a.quality_required THEN 'PENDING' ELSE 'LEGACY_UNCHECKED' END) AS status,q.verdict,q.issues,a.request_id FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? AND a.use_status='AVAILABLE' ORDER BY a.id",id));
+        var open=openRequest(id);
+        response.put("photoRequest",open==null?null:Map.of("requestId",open.get("id"),"target",open.get("target"),"instruction",open.get("instruction"),"round",open.get("round_no")));
+        response.put("photoWarningAccepted",photoWarningAccepted(id));
+        response.put("diagnosisStarted",!db.list("SELECT id FROM diagnosis_job WHERE case_id=?",id).isEmpty());
         return response;
     }
     public Map<String,Object> attachment(String number,String authorization,Long attachment) {Long id=authorized(number,authorization);var rows=db.list("SELECT * FROM attachment WHERE id=? AND case_id=?",attachment,id);if(rows.isEmpty()) throw ApiError.missing();return rows.getFirst();}

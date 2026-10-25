@@ -217,8 +217,9 @@ add('/public/intake-options','get','비로그인 접수용 센터·모델 목록
 op=add('/public/cases','post','소비자 비로그인 접수; Agent 자동 실행 안 함',ref('ConsumerAccepted'),code=202)
 op['requestBody']={'required':True,'content':{'multipart/form-data':{'schema':obj({'data':ref('ConsumerIntake'),'files':array(string(format='binary'))}),'encoding':{'data':{'contentType':'application/json'},'files':{'contentType':'image/png, image/jpeg'}}}}}
 add('/public/cases/{number}','get','접수번호와 조회 키로 고객 공개 정보 조회',ref('CustomerView'))
-op=add('/public/cases/{number}/attachments','post','조회 키로 초기 재촬영 저장; 진단 시작 후 기사에게 인계',obj({'attachmentId':uid,'status':string()}))
+op=add('/public/cases/{number}/attachments','post','조회 키로 초기 재촬영 저장(replaces=교체할 사진); 진단 중엔 열린 AI 사진 요청에만 제출',obj({'attachmentId':uid,'status':string()}))
 op['requestBody']={'required':True,'content':{'multipart/form-data':{'schema':obj({'file':string(format='binary')})}}}
+add('/public/cases/{number}/photos/accept','post','[출장] 경고 사진을 그대로 두고 진단 진행',ref('CustomerView'))
 add('/public/cases/{number}/attachments/{id}','get','본인 접수의 원본 사진; 조회 키 필요',string(format='binary'),media='application/octet-stream')
 add('/api/repairs/{id}/work-report','get','기사 통합 리포트·출장 준비·보증·부품·공개본',ref('WorkReport'))
 add('/api/repairs/{id}/assignment','post','QUALITY_MANAGER: 기사 배정·재배정 및 이력',ref('WorkReport'),ref('Assignment'))

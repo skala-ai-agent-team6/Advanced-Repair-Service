@@ -10063,7 +10063,7 @@
     },
     "/public/cases/{number}/attachments": {
       "post": {
-        "summary": "조회 키로 초기 재촬영 저장; 진단 시작 후 기사에게 인계",
+        "summary": "조회 키로 초기 재촬영 저장(replaces=교체할 사진); 진단 중엔 열린 AI 사진 요청에만 제출",
         "operationId": "post__public_cases__number__attachments",
         "parameters": [
           {
@@ -10246,7 +10246,187 @@
         "tags": [
           "소비자 접수·조회"
         ],
-        "description": "조회 키로 초기 재촬영 저장; 진단 시작 후 기사에게 인계\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
+        "description": "조회 키로 초기 재촬영 저장(replaces=교체할 사진); 진단 중엔 열린 AI 사진 요청에만 제출\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
+      }
+    },
+    "/public/cases/{number}/photos/accept": {
+      "post": {
+        "summary": "[출장] 경고 사진을 그대로 두고 진단 진행",
+        "operationId": "post__public_cases__number__photos_accept",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "발급된 caseNumber; 비밀값이 아님"
+            },
+            "example": "예시"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerView"
+                },
+                "example": {
+                  "caseNumber": "예시",
+                  "status": "RECEIVED",
+                  "warranty": {
+                    "result": "WITHIN_PERIOD",
+                    "reason": "예시",
+                    "purchase_date": "2026-10-22",
+                    "assessed_on": "2026-10-22",
+                    "policy_version": "예시",
+                    "expires_on_exclusive": "2026-10-22"
+                  },
+                  "report": {
+                    "version": 1,
+                    "kind": "ESTIMATE",
+                    "cause_summary": "예시",
+                    "planned_work": "예시",
+                    "published_at": "2026-10-22T09:00:00+09:00"
+                  },
+                  "photos": [
+                    {
+                      "id": "1",
+                      "status": "예시",
+                      "verdict": "예시",
+                      "issues": [
+                        "예시"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FORBIDDEN_OR_CSRF",
+                  "status": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "See docs/API.md error policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 500
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 429
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "요청량 제한 또는 이미지 검증 포화·처리 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "API_ERROR",
+                  "status": 503
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ConsumerKey": []
+          }
+        ],
+        "tags": [
+          "소비자 접수·조회"
+        ],
+        "description": "[출장] 경고 사진을 그대로 두고 진단 진행\n\n직원 로그인 없이 호출합니다. 본인 조회·첨부에는 ConsumerKey Bearer 토큰이 필요합니다. 접수번호만으로 조회할 수 없으며 실패는 동일한 404입니다. CSRF 없이 요청량 제한을 적용합니다."
       }
     },
     "/public/cases/{number}/attachments/{id}": {
