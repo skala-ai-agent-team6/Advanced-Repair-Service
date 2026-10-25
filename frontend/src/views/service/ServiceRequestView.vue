@@ -52,9 +52,9 @@ const agreed = ref(false)
 /* [시연] 고객이 하나하나 입력하지 않도록 그럴듯한 값을 미리 채움 (사진만 올리면 됨). 비우려면 이 블록 삭제 */
 const inDays = (n: number) => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE') }
 Object.assign(form, {
-  productType: 'washing_machine', manufacturer: 'ROVA', model: 'ROVA AirWash 24', serial: 'WM24A0318752', purchaseDate: '2025-03-14',
+  productType: 'washing_machine', manufacturer: 'ROVA', model: 'ROVA AirWash 24', serial: 'WM24A0318752', purchaseDate: '2026-03-14',
   symptomText: '세탁이 끝나도 물이 안 빠지고 E21 에러가 떠요. 탈수할 때 덜컹거리는 소리도 납니다.',
-  customerName: '김민지', phone: '010-4821-7365', serviceType: 'VISIT', preferredDate: inDays(2), visitSlot: 'PM',
+  customerName: '김민지', phone: '010-4821-7365', serviceType: 'VISIT', preferredDate: inDays(0), visitSlot: 'PM',
 })
 visitAddress.value = { postalCode: '04030', roadAddress: '서울 마포구 양화로 45', jibunAddress: '서울 마포구 합정동 369', detailAddress: '101동 1203호', buildingName: '메세나폴리스' }
 agreed.value = true

@@ -102,14 +102,24 @@ interface BePublicCase {
   warrantyDecision?: 'FREE' | 'PAID' | null
   report?: { kind: string; cause_summary: string; planned_work: string } | null
   photos?: { id: string; status: string; verdict?: string | null; issues?: string[] | null }[]
-  photoRequest?: { requestId: string; instruction: string } | null
+  photoRequest?: { requestId: string; instruction: string; target?: string } | null
   diagnosisStarted?: boolean
+  diagnosisStatus?: 'QUEUED' | 'RUNNING' | 'WAITING_INPUT' | 'SUCCEEDED' | 'FAILED' | null
+}
+
+/** [출장] AI 추가 사진 요청을 고객이 알아듣는 말로 (원문은 기사용 분석 요약이라 그대로 보여주지 않음) */
+function customerInstruction(target?: string, product?: string): string {
+  if (target === 'PCB') return '제품 안쪽 기판(회로판)을 밝은 곳에서 가까이 찍어 주세요.'
+  const parts = /wash|세탁/i.test(product ?? '') ? '배수 펌프, 배수 필터, 도어 잠금장치' : /cool|에어컨/i.test(product ?? '') ? '실외기 팬, 필터, 배관 연결부' : '바퀴, 브러시, 모터 부분'
+  return `고장 원인을 정확히 보려고 해요. ${parts}처럼 이상이 의심되는 부품을 가까이에서 한 장 더 찍어 주세요.`
 }
 
 function toCustomerReport(b: BePublicCase): CustomerReport {
   const checking = (b.photos ?? []).some((p) => p.status === 'PENDING' || p.status === 'RUNNING')
+  // [출장] AI 진단이 도는 중(대기·분석·추가 사진 대기)이면 '사진 확인', 끝나면 '진단 완료'
+  const analyzing = b.diagnosisStatus === 'QUEUED' || b.diagnosisStatus === 'RUNNING' || b.diagnosisStatus === 'WAITING_INPUT'
   const stage: CustomerStage = b.status === 'COMPLETED' ? 'COMPLETED' : b.status === 'REPAIRING' ? 'VISIT_SCHEDULED'
-    : b.status === 'UNDER_REVIEW' ? (b.report ? 'DIAGNOSED' : checking ? 'PHOTO_CHECK' : 'DIAGNOSED') : 'RECEIVED'
+    : b.status === 'UNDER_REVIEW' ? (b.report ? 'DIAGNOSED' : checking || analyzing ? 'PHOTO_CHECK' : 'DIAGNOSED') : checking || analyzing ? 'PHOTO_CHECK' : 'RECEIVED'
   return {
     receiptNo: b.caseNumber,
     productName: b.productName ?? '제품',
@@ -124,7 +134,7 @@ function toCustomerReport(b: BePublicCase): CustomerReport {
     cancelled: b.status === 'CANCELLED',
     // [출장] 경고 사진은 진단 시작 전에만 대체할 수 있다
     warnPhotos: b.diagnosisStarted ? [] : (b.photos ?? []).filter((p) => p.verdict === 'WARNING').map((p) => ({ id: p.id, issues: p.issues ?? [] })),
-    photoRequest: b.photoRequest ?? null,
+    photoRequest: b.photoRequest ? { ...b.photoRequest, instruction: customerInstruction(b.photoRequest.target, b.productName) } : null,
     notice: b.photoRequest ? '기사님 확인을 위해 사진이 더 필요해요. 아래에서 사진을 추가해 주세요.'
       : !b.diagnosisStarted && (b.photos ?? []).some((p) => p.verdict === 'WARNING') ? '흐리거나 어두운 사진이 있어요. 다시 찍어 올려 주시면 바로 확인을 시작해요.' : undefined,
   }

@@ -4,7 +4,7 @@
  *    - 짧은 변 480px 미만 · 밝기 25 미만 → WARNING
  *    - 파일 이름에 error 가 있으면 검사 자체가 실패(ERROR) → [재검사]
  *  실서버: 아직 API 없음 → FEATURES.photoQualityCheck 가 false 면 화면에서 검사 단계를 건너뛴다 */
-import { ApiError, http, mockDelay, USE_MOCK } from './http'
+import { API_ORIGIN, ApiError, http, mockDelay, USE_MOCK } from './http'
 import { FEATURES } from './features'
 import type { PhotoQualityIssue, PhotoQualityMetrics, PhotoQualityResult } from '@/types'
 
@@ -55,11 +55,11 @@ async function mockCheck(file: File): Promise<PhotoQualityResult> {
 export async function checkPhotoQuality(file: File, target: PhotoQualityTarget): Promise<PhotoQualityResult> {
   if (USE_MOCK) return mockCheck(file)
   if (!FEATURES.photoQualityCheck) throw new ApiError(501, '사진 품질 검사는 아직 백엔드에서 지원하지 않습니다.', 'NOT_SUPPORTED')
-  // 백엔드 API 가 생기면 FEATURES.photoQualityCheck 만 켜면 된다. (경로·필드 이름은 백엔드 확정 후 맞출 것)
+  // [출장] 백엔드 POST /public/photos/quality-check (접수 후 서버 검사와 같은 검사기, 저장 안 함)
+  void target
   const f = new FormData()
   f.append('file', file)
-  f.append('target', target)
-  return (await http.post<PhotoQualityResult>('/photos/quality-check', f)).data
+  return (await http.post<PhotoQualityResult>('/public/photos/quality-check', f, { baseURL: API_ORIGIN, skipAuthExpired: true })).data
 }
 
 /** 결과의 판정 (status 가 없는 응답은 ok 로 판단) */

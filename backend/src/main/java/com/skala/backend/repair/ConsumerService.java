@@ -98,7 +98,9 @@ public class ConsumerService {
         response.put("photos",db.list("SELECT a.id,coalesce(q.status,CASE WHEN a.quality_required THEN 'PENDING' ELSE 'LEGACY_UNCHECKED' END) AS status,q.verdict,q.issues,a.request_id FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? AND a.use_status='AVAILABLE' ORDER BY a.id",id));
         var open=openRequest(id);
         response.put("photoRequest",open==null?null:Map.of("requestId",open.get("id"),"target",open.get("target"),"instruction",open.get("instruction"),"round",open.get("round_no")));
-        response.put("diagnosisStarted",!db.list("SELECT id FROM diagnosis_job WHERE case_id=?",id).isEmpty());
+        var job=db.list("SELECT status FROM diagnosis_job WHERE case_id=? ORDER BY id DESC LIMIT 1",id);
+        response.put("diagnosisStarted",!job.isEmpty());
+        response.put("diagnosisStatus",job.isEmpty()?null:job.getFirst().get("status"));  // 진행 단계 표시용 (결과 내용은 주지 않음)
         return response;
     }
     public Map<String,Object> attachment(String number,String authorization,Long attachment) {Long id=authorized(number,authorization);var rows=db.list("SELECT * FROM attachment WHERE id=? AND case_id=?",attachment,id);if(rows.isEmpty()) throw ApiError.missing();return rows.getFirst();}
