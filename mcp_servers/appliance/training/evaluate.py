@@ -15,12 +15,13 @@ os.environ["YOLO_VERBOSE"] = "False"
 from ultralytics import YOLO  # noqa: E402
 
 root = Path(sys.argv[1])
+DEVICE = os.getenv("EVAL_DEVICE", "cpu")  # 학습 중인 GPU와 겹치지 않게 기본은 CPU
 weights = Path(__file__).resolve().parents[1] / "weights"
 report = {}
 
 if (weights / "defects.pt").exists():
     m = YOLO(str(weights / "defects.pt"))
-    r = m.val(data=str(root / "defects/data.yaml"), split="test", conf=0.25, iou=0.6, plots=False, verbose=False)
+    r = m.val(data=str(root / "defects/data.yaml"), split="test", conf=0.25, iou=0.6, plots=False, verbose=False, device=DEVICE)
     rows = {}
     for i, c in enumerate(r.box.ap_class_index):
         p, rc, ap50, _ = r.box.class_result(i)
@@ -35,7 +36,7 @@ if (weights / "severity.pt").exists():
     pairs = []
     for cls_dir in sorted((root / "severity/val").iterdir()):
         for img in sorted(cls_dir.iterdir()):
-            pairs.append((cls_dir.name, m.names[int(m.predict(str(img), verbose=False)[0].probs.top1)]))
+            pairs.append((cls_dir.name, m.names[int(m.predict(str(img), verbose=False, device=DEVICE)[0].probs.top1)]))
     tp, pred, true = Counter(), Counter(p for _, p in pairs), Counter(t for t, _ in pairs)
     for t, p in pairs:
         tp[t] += t == p

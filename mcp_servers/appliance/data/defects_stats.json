@@ -1,0 +1,17 @@
+{
+ "test_crack": 264,
+ "test_dent": 153,
+ "test_images": 254,
+ "test_rust": 231,
+ "test_scratch": 313,
+ "train_crack": 1446,
+ "train_dent": 1361,
+ "train_images": 1938,
+ "train_rust": 1773,
+ "train_scratch": 4209,
+ "val_crack": 879,
+ "val_dent": 148,
+ "val_images": 420,
+ "val_rust": 400,
+ "val_scratch": 474
+}
