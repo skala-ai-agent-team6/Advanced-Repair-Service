@@ -50,7 +50,7 @@ const reachable = (i: number) => i <= Math.max(curIdx.value, props.repair.status
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   text-decoration: none;
   color: var(--text-2);
   font-weight: 600;

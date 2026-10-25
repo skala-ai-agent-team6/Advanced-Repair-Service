@@ -18,7 +18,7 @@ defineProps<{ steps: string[]; current: number }>()
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(var(--n, 3), 1fr);
+  grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
   grid-auto-flow: column;
   gap: 8px;
 }
@@ -70,6 +70,30 @@ li.done {
 @media (max-width: 700px) {
   .txt small {
     display: none;
+  }
+}
+@media (max-width: 900px) {
+  li {
+    gap: 8px;
+    padding: 10px;
+  }
+}
+/* 휴대폰: 번호만 보이고 단계 이름은 화면 낭독기용으로 (현재 단계 이름은 각 섹션 제목에 표시됨) */
+@media (max-width: 600px) {
+  .steps {
+    gap: 6px;
+  }
+  li {
+    justify-content: center;
+    padding: 8px 4px;
+  }
+  .txt {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }
 </style>

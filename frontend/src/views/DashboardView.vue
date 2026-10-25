@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /* 품질 대시보드 — 사람이 승인한 고장 데이터만 집계. 그래프를 누르면 관련 수리 목록을 조회 */
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ClipboardList, CircleCheck, Sparkles, Target, TrendingUp, TrendingDown, Minus, X, ShieldCheck, MousePointerClick } from 'lucide-vue-next'
 import DefectStatisticsChart from '@/components/dashboard/DefectStatisticsChart.vue'
 import StateView from '@/components/common/StateView.vue'
@@ -11,10 +12,14 @@ import { FEATURES } from '@/api/features'
 import { formatDate, formatNumber, repairId } from '@/utils/format'
 
 const store = useDashboardStore()
+const route = useRoute()
 const drillEl = ref<HTMLElement | null>(null)
-onMounted(() => {
+onMounted(async () => {
   store.clearDrill()
-  void store.fetch()
+  await store.fetch()
+  // 홈 '부품별 고장 TOP 5' 막대에서 넘어오면 그 부품 필터(기존 부품 드릴다운)를 바로 적용
+  const part = route.query.part
+  if (typeof part === 'string' && part) await drill('part', part)
 })
 
 const d = computed(() => store.data)
@@ -46,7 +51,7 @@ const kpis = computed(() =>
     <div class="page-head">
       <div>
         <h1>품질 대시보드</h1>
-        <p class="sub"><ShieldCheck :size="16" /> 기사가 확정한 수리 리포트만 집계합니다.<template v-if="extras"> 그래프 항목을 누르면 관련 수리 목록을 볼 수 있습니다.</template></p>
+        <p class="sub"><ShieldCheck :size="16" /> 확정된 수리 데이터를 기준으로 제품과 부품의 품질 현황을 분석합니다. (AI 초안 제외)<template v-if="extras"> 그래프 항목을 누르면 관련 수리 목록을 볼 수 있습니다.</template></p>
       </div>
       <div class="row">
         <label for="period" class="label">기간</label>
@@ -82,10 +87,10 @@ const kpis = computed(() =>
             :series="
               extras
                 ? [
-                    { name: '접수', data: d.trend.map((t) => t.received), color: '#8b97b0' },
-                    { name: '승인된 고장', data: d.trend.map((t) => t.defects), color: '#1f3672' },
+                    { name: '접수', data: d.trend.map((t) => t.received), color: '#a5b4fc' },
+                    { name: '승인된 고장', data: d.trend.map((t) => t.defects), color: '#2563eb' },
                   ]
-                : [{ name: '확정된 고장', data: d.trend.map((t) => t.defects), color: '#1f3672' }]
+                : [{ name: '확정된 고장', data: d.trend.map((t) => t.defects), color: '#2563eb' }]
             "
             chart-label="월별 접수 및 승인 고장 건수 추이"
             :height="280"
@@ -111,7 +116,7 @@ const kpis = computed(() =>
         <section class="card">
           <div class="card-head"><h2>서비스센터 지점별 접수 건수</h2></div>
           <div class="card-body">
-            <DefectStatisticsChart type="hbar" :labels="d.byBranch.map((x) => x.label)" :series="[{ name: '접수', data: d.byBranch.map((x) => x.count), color: '#2c4a92' }]" :selected="sel('branch')" chart-label="지점별 접수 건수" @select="drill('branch', $event)" />
+            <DefectStatisticsChart type="hbar" :labels="d.byBranch.map((x) => x.label)" :series="[{ name: '접수', data: d.byBranch.map((x) => x.count), color: '#60a5fa' }]" :selected="sel('branch')" chart-label="지점별 접수 건수" @select="drill('branch', $event)" />
           </div>
         </section>
         <section class="card">
@@ -200,18 +205,23 @@ const kpis = computed(() =>
   gap: 6px;
 }
 .kpi {
-  padding: 18px 20px;
+  padding: 22px 24px;
   display: grid;
-  gap: 4px;
-  border-top: 4px solid var(--navy-700);
+  gap: 6px;
 }
-.kpi.tone-success { border-top-color: var(--success); }
-.kpi.tone-ai { border-top-color: var(--ai); }
-.kpi.tone-warning { border-top-color: #e08a00; }
-.kpi.tone-info { border-top-color: var(--info); }
 .kpi .ic {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--neutral-bg);
   color: var(--text-2);
 }
+.kpi.tone-info .ic { color: var(--primary); background: var(--blue-50); }
+.kpi.tone-warning .ic { color: var(--warning); background: var(--warning-bg); }
+.kpi.tone-ai .ic { background: var(--ai-bg); }
+.kpi.tone-success .ic { background: var(--success-bg); }
 .kpi.tone-ai .ic { color: var(--ai); }
 .kpi.tone-success .ic { color: var(--success); }
 .lbl {
@@ -219,10 +229,11 @@ const kpis = computed(() =>
   color: var(--text-2);
 }
 .val {
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1.1;
-  color: var(--navy-900);
+  font-size: var(--fs-num);
+  font-weight: var(--fw-num);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--ink);
 }
 .val small {
   font-size: var(--fs-md);
@@ -235,9 +246,7 @@ const kpis = computed(() =>
 .kpi.tone-info {
   background: var(--surface);
   color: var(--text);
-  border-left-color: var(--border);
-  border-right-color: var(--border);
-  border-bottom-color: var(--border);
+  border-color: var(--card-border);
 }
 .hint {
   display: inline-flex;
@@ -245,7 +254,7 @@ const kpis = computed(() =>
   gap: 6px;
 }
 .drill {
-  border: 2px solid var(--navy-700);
+  box-shadow: inset 0 0 0 2px var(--primary), var(--shadow);
   scroll-margin-top: calc(var(--topbar-h) + 16px);
 }
 .scroll {

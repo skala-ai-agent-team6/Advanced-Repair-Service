@@ -9,6 +9,7 @@
 import { computed, ref, watch } from 'vue'
 import { CircleCheck, CircleX, Send, Package, CircleAlert, Factory, Warehouse } from 'lucide-vue-next'
 import AiBadge from '@/components/common/AiBadge.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 import ConfidenceBar from '@/components/common/ConfidenceBar.vue'
 import { ORDER_STATUS_META, ROLE_LABEL } from '@/constants/status'
 import type { Part, PurchaseOrder, Role } from '@/types'
@@ -58,7 +59,14 @@ function decide(action: 'APPROVE' | 'REJECT') {
     return
   }
   err.value = null
-  emit('decide', { action, comment: comment.value.trim() })
+  pending.value = action
+}
+/** 승인·반려 전 확인 모달 (US-06) — 확인을 눌러야 요청이 나간다 */
+const pending = ref<'APPROVE' | 'REJECT' | null>(null)
+function confirmDecide() {
+  if (!pending.value || props.busy) return
+  emit('decide', { action: pending.value, comment: comment.value.trim() })
+  pending.value = null
 }
 </script>
 
@@ -155,7 +163,7 @@ function decide(action: 'APPROVE' | 'REJECT') {
           <div v-if="order.decision.state !== 'PENDING'" class="decided" :class="order.decision.state === 'APPROVED' ? 'human-zone' : 'neg'">
             <AiBadge v-if="order.decision.state === 'APPROVED'" kind="human" label="본사 품질 담당자 승인" />
             <dl class="kv">
-              <dt>승인자</dt>
+              <dt>{{ order.decision.state === 'APPROVED' ? '승인자' : '반려자' }}</dt>
               <dd>{{ order.decision.decidedBy }} · {{ order.decision.decidedByRole ? ROLE_LABEL[order.decision.decidedByRole] : '' }}</dd>
               <dt>처리 시각</dt>
               <dd>{{ formatDateTime(order.decision.decidedAt) }}</dd>
@@ -182,6 +190,26 @@ function decide(action: 'APPROVE' | 'REJECT') {
         </template>
       </div>
     </div>
+
+    <BaseModal :open="!!pending" :title="pending === 'APPROVE' ? '발주를 승인하시겠습니까?' : '발주를 반려하시겠습니까?'" :width="460" @close="pending = null">
+      <dl class="kv">
+        <dt>부품</dt>
+        <dd>{{ order.partName }} · {{ order.quantity }}개</dd>
+        <dt>출고 창고</dt>
+        <dd>{{ order.fromWarehouse }}</dd>
+        <template v-if="comment.trim()">
+          <dt>{{ pending === 'APPROVE' ? '승인 의견' : '반려 사유' }}</dt>
+          <dd>{{ comment.trim() }}</dd>
+        </template>
+      </dl>
+      <p class="faint">{{ pending === 'APPROVE' ? '승인하면 발주가 등록되고 출고 창고 재고가 차감됩니다.' : '반려하면 기사에게 사유가 전달되고, 기사가 다시 요청할 수 있습니다.' }}</p>
+      <template #footer>
+        <button type="button" class="btn" @click="pending = null">취소</button>
+        <button type="button" class="btn btn-lg" :class="pending === 'APPROVE' ? 'btn-success' : 'btn-danger'" :disabled="busy" @click="confirmDecide">
+          {{ pending === 'APPROVE' ? '승인' : '반려' }}
+        </button>
+      </template>
+    </BaseModal>
   </article>
 </template>
 
