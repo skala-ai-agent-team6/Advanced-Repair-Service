@@ -9,6 +9,7 @@ SPECS = {
     "classify_photo": ("PhotoKind", set()),
     "split_text": ("Clues", {"text"}),
     "write_report": ("Report", {"text", "findings", "compatible_parts"}),
+    "polish_report": ("Polished", {"candidates"}),  # [통합] 근거 설명을 기사가 알아듣는 말로 다듬기
 }
 
 

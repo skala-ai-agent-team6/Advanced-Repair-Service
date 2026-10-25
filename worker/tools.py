@@ -261,6 +261,26 @@ async def write_report(text: str, findings: list[dict], compatible_parts=None, *
     return result
 
 
+class Polished(BaseModel):
+    explanations: list[str] = Field(description="후보 순서대로 다듬은 근거 설명")
+
+
+async def polish_candidates(candidates: list[dict]) -> list[dict]:
+    """[통합] 리포트 검토: 후보별 근거 설명을 기사가 바로 알아듣는 말로 다듬는다.
+    사실은 바꾸지 않게 지시하고, 실패하거나 개수가 안 맞으면 원문을 그대로 쓴다 (리포트 자체는 막지 않음)."""
+    if not C.USE_GPT or not candidates:
+        return candidates
+    try:
+        brief = [{"cause": c["cause"], "explanation": c["explanation"]} for c in candidates]
+        result = await gpt(Polished).ainvoke(render("polish_report", Polished, candidates=json.dumps(masked(brief), ensure_ascii=False)))
+        texts = [t.strip() for t in result.explanations]
+        if len(texts) != len(candidates) or not all(texts):
+            return candidates
+        return [{**c, "explanation": t} for c, t in zip(candidates, texts)]
+    except Exception:
+        return candidates
+
+
 # ── 4. 부품 확인 Agent (업무 MCP) / 사례 저장 (rag-mcp) ───────────────
 # [통합] 평가표 "모델이 도구를 선택" + "business-mcp를 Agent가 호출". 조회 도구만 연다. 발주 초안은 Spring이 만든다.
 

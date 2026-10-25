@@ -316,6 +316,7 @@ async def report(state: State, config) -> dict:
     # [통합] 점수 높은 순으로 순위를 다시 매긴다. GPT가 준 순서 그대로면 0.79가 1순위, 0.95가 2순위가 되기도 했다
     ranked = sorted((c.model_dump() for c in r.candidates), key=lambda c: -c["confidence"])
     candidates = [{"rank": i + 1, **c} for i, c in enumerate(ranked)]
+    candidates = await tools.polish_candidates(candidates)  # [통합] 근거 설명을 사람이 알아듣게 한 번 검토·다듬기
     evidence = []  # 근거는 코드가 MCP 결과에서 직접 만든다 (GPT가 사진 번호를 지어내지 않게)
     for f in state["findings"]:
         if f["found"]:
