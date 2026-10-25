@@ -9,6 +9,7 @@
  *  실서버: 접수 API 가 아직 없어 FEATURES.customerIntake 가 false 면 안내만 보이고 접수 버튼은 비활성
  * ========================================================================= */
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowLeft, ArrowRight, Building2, Camera, CircleAlert, CircleCheck, Home, Info, Loader2, Send, ShieldCheck, TriangleAlert } from 'lucide-vue-next'
 import ProductPhotoSlots from '@/components/service/ProductPhotoSlots.vue'
 import PhotoGuide from '@/components/repair/PhotoGuide.vue'
@@ -30,6 +31,7 @@ import type { UploadItem } from '@/types/upload'
 const available = USE_MOCK || FEATURES.customerIntake
 const today = kstToday()
 const STEPS = ['제품·증상', '사진', '방문·동의']
+const router = useRouter()
 const step = ref(0)
 
 const form = reactive({ ...({ productType: '', productTypeDetail: '' } as ProductTypeForm), manufacturer: '', model: '', serial: '', purchaseDate: '', symptomText: '', customerName: '', phone: '', preferredDate: '', serviceType: '' as ServiceType | '', centerId: '', visitSlot: '' as VisitSlot | '' })
@@ -259,6 +261,8 @@ async function submit() {
       photos.value.map((p) => ({ file: p.file, dataUrl: p.dataUrl })),
     )
     done.value = { receiptNo: res.receiptNo, token: res.token, serviceType: form.serviceType as ServiceType, centerName: selectedCenter.value?.name }
+    // [출장] 실서버: 사진 품질 검사는 접수 뒤 서버에서 하므로 바로 조회 화면으로 (경고 사진이면 거기서 다시 올리기)
+    if (!USE_MOCK && res.token) return void router.push(`/service/track/${res.token}`)
     doneDlg.value = true
     window.scrollTo({ top: 0 })
   } catch (e) {
@@ -367,7 +371,7 @@ async function submit() {
 
     <!-- ② 사진 -->
     <section v-show="step === 1" :hidden="step !== 1" class="card form-card stack" aria-label="사진">
-      <p class="muted">제품 전체가 보이도록 촬영해 주세요. 올린 사진마다 품질 검사 결과가 표시돼요.</p>
+      <p class="muted">제품 전체가 보이도록 촬영해 주세요. {{ FEATURES.photoQualityCheck ? '올린 사진마다 품질 검사 결과가 표시돼요.' : '접수 후 품질 검사 결과를 알려드려요.' }}</p>
       <PhotoGuide kind="PRODUCT" />
       <!-- 가로 3칸: 제품 전체 · 고장 난 부분 · 촬영 예시 (1장 이상, 최대 5장) -->
       <ProductPhotoSlots v-model="photos" :max="5" :invalid="touched[1] && !photos.length" example-src="/mock/product.svg" @quality="quality = $event" />
