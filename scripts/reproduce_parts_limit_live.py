@@ -70,9 +70,9 @@ async def main():
         end=ends[cid]; usage=usages.get(r.get('parts_call_group'),{}).get('usage','리포트 생성')
         lines.append(f"| {r.get('node')} | {i} | {end['duration_ms']/1000:.3f}초 | {end.get('status')} | {usage} |")
     lines+=['','## 해석','',
-            '5번째 실제 GPT 응답도 도구를 요청했지만 기존 루프는 이미 도구 4회를 사용해 이를 폐기했다. 후보 ④의 실제 응답 시간이 위 표의 discarded_tool_request 행이다.',
+            '5번째 실제 GPT 응답도 도구를 요청했지만 기존 루프는 이미 도구 4회를 사용해 이를 폐기했다. 후보 ③의 실제 응답 시간이 위 표의 discarded_tool_request 행이다.',
             '최적화 후 마지막 호출을 정상 요약으로 대체하면 5회→5회일 수 있다. 이 테스트로 API 횟수 감소나 전체 절감 시간을 주장하지 않는다.',
-            '① split_text와 ② RAG 최종 소견은 이번 부품 집중 테스트 범위가 아니다.','',
+            '① split_text와 * RAG 최종 소견은 이번 부품 집중 테스트 범위가 아니다.','',
             '## 원본 증거','', '- [API 원본 JSONL](api.jsonl)','- [업무 MCP 반환 결과](tool-events.json)','',
             '## 재실행','', '```bash',f'cd {ROOT}', 'uv run --env-file .env python scripts/reproduce_parts_limit_live.py','```']
     (OUT/'실제API_부품한도_검증리포트.md').write_text('\n'.join(lines)+'\n')

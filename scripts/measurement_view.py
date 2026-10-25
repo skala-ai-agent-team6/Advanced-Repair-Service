@@ -109,10 +109,10 @@ class Viewer:
                 if detail['tool'] == 'parts_agent_turn' and detail['group'] not in self.parts_usage:
                     unknown.add('discarded_parts')
                 self.write(f"{number:02} | {NAMES.get(call_node, call_node)} / {self.call_name(detail)} | {seconds} | {mark}")
-            self.write('\n①~④ 항목별 API 시간 (② 유지·③ 팀원 개선 포함)')
-            labels = {'split_text': '① split_text', 'rag_final_opinion': '② RAG 최종 소견',
-                      'rag_normalization': '③ RAG 중복 소견 정규화',
-                      'discarded_parts': '④ 부품 확인에서 버려진 응답'}
+            self.write('\n①~③ 및 별첨(*) 항목별 API 시간 (* 보류·유지·② 팀원 개선 포함)')
+            labels = {'split_text': '① split_text', 'rag_final_opinion': '* RAG 최종 소견',
+                      'rag_normalization': '② RAG 중복 소견 정규화',
+                      'discarded_parts': '③ 부품 확인에서 버려진 응답'}
             for key, items in candidates.items():
                 if key in unknown:
                     self.write(f"{labels[key]} | 판별 불가: 이전 로그에 식별 정보 없음")
@@ -122,7 +122,7 @@ class Viewer:
                     self.write(f"{labels[key]} | {len(items)}회 | {elapsed/1000:.2f}초" + (f" (미완료 {pending}회 제외)" if pending else ''))
             known = [item for key, items in candidates.items() if key not in unknown for item in items]
             self.write(f"표시 항목 합계 (절감량 아님): {len(known)}회 · API 시간 {sum(item['ms'] or 0 for item in known)/1000:.2f}초 (미확인·미완료 시간 제외)")
-            self.write('※ ④ 정상 요약은 유지. 요약 호출로 대체하면 호출 수가 줄지 않을 수 있습니다.')
+            self.write('※ ③ 정상 요약은 유지. 요약 호출로 대체하면 호출 수가 줄지 않을 수 있습니다.')
             self.write('※ 같은 이름도 요청별로 별도 표시. 이 시간의 합을 그대로 절감 시간으로 볼 수는 없습니다.\n')
 
 
@@ -138,13 +138,13 @@ class Viewer:
         if detail['tool'] == 'split_text':
             return 'split_text', '[후보 ①] 불필요한 소견 분리'
         if detail['operation'] == 'rag_final_opinion':
-            return 'rag_final_opinion', '[② 유지] RAG 최종 소견'
+            return 'rag_final_opinion', '[* 보류·유지] RAG 최종 소견'
         if detail['tool'] == 'call_rag_mcp' and detail['operation'] == 'normalize_observation':
-            return 'rag_normalization', '[③ 팀원 개선] RAG 중복 소견 정규화'
+            return 'rag_normalization', '[② 팀원 개선] RAG 중복 소견 정규화'
         if detail['tool'] == 'parts_agent_turn':
             usage = self.parts_usage.get(detail['group'])
             if usage == 'discarded_tool_request':
-                return 'discarded_parts', '[후보 ④] 한도 도달 후 버려진 응답'
+                return 'discarded_parts', '[후보 ③] 한도 도달 후 버려진 응답'
             if usage == 'summary':
                 return None, '유지: 부품 확인 요약'
             if usage == 'tool_request':
@@ -181,9 +181,9 @@ class SimpleViewer(Viewer):
             name = {'summary':'부품 확인 요약','tool_request':'조회 도구 선택',
                     'discarded_tool_request':'추가 조회 요청'}.get(self.parts_usage.get(d['group']),'부품 확인(용도 미확인)')
         key, _ = self.candidate(d)
-        mark = {'split_text':' ← 제거 후보 ①','rag_final_opinion':' ← ② 유지',
-                'rag_normalization':' ← ③ 팀원 개선: 중복 정규화',
-                'discarded_parts':' ← 개선 후보 ④: 한도 초과로 폐기'}.get(key,'')
+        mark = {'split_text':' ← 제거 후보 ①','rag_final_opinion':' ← * 보류·유지',
+                'rag_normalization':' ← ② 팀원 개선: 중복 정규화',
+                'discarded_parts':' ← 개선 후보 ③: 한도 초과로 폐기'}.get(key,'')
         error = '' if d['status'] == 200 else f" · 응답 {d['status']}"
         self.output(f"  {d['number']:02}. {name}  {d['ms']/1000:.2f}초{mark}{error}")
         self.printed.add(cid)

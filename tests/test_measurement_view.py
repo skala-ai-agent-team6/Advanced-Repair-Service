@@ -50,9 +50,9 @@ def test_four_items_distinguish_rag_duplicate_from_first_normalization():
     view.feed({**base,'event':'execution.finished','duration_ms':5000})
     text='\n'.join(out)
     assert '① split_text | 1회 | 1.00초' in text
-    assert '② RAG 최종 소견 | 1회 | 1.00초' in text
-    assert '④ 부품 확인에서 버려진 응답 | 1회 | 1.00초' in text
-    assert '③ RAG 중복 소견 정규화 | 1회 | 1.00초' in text
+    assert '* RAG 최종 소견 | 1회 | 1.00초' in text
+    assert '③ 부품 확인에서 버려진 응답 | 1회 | 1.00초' in text
+    assert '② RAG 중복 소견 정규화 | 1회 | 1.00초' in text
     assert '유지: 부품 확인 요약' in text
 
 
@@ -60,7 +60,7 @@ def test_old_log_does_not_guess_rag_call_order():
     out=[]; view=Viewer(out.append)
     view.feed({'event_id':'e','event':'openai.started','call_id':'a','tool':'call_rag_mcp'})
     view.feed({'event_id':'e','event':'execution.finished'})
-    assert any('② RAG 최종 소견 | 판별 불가' in line for line in out)
+    assert any('* RAG 최종 소견 | 판별 불가' in line for line in out)
 
 
 def test_live_numbers_match_summary_with_out_of_order_responses():
@@ -71,7 +71,7 @@ def test_live_numbers_match_summary_with_out_of_order_responses():
     for cid in ['b','a']:
         view.feed({**base,'event':'openai.finished','call_id':cid,'duration_ms':1250,'status':200})
     view.feed({**base,'event':'execution.finished','duration_ms':2000})
-    assert any('API #02 응답' in line and 'generate_final_opinion' in line and '[② 유지]' in line for line in out)
+    assert any('API #02 응답' in line and 'generate_final_opinion' in line and '[* 보류·유지]' in line for line in out)
     assert any(line.startswith('02 |') and 'generate_final_opinion' in line for line in out)
     assert any('API #01 응답' in line and 'normalize_observations' in line for line in out)
 
@@ -83,7 +83,7 @@ def test_parts_usage_is_announced_after_response():
     view.feed({**base,'event':'openai.finished','call_id':'a','duration_ms':600,'status':200})
     view.feed({**base,'event':'parts.response_usage','parts_call_group':'g','usage':'discarded_tool_request'})
     assert any('API #01 응답' in line and '0.60초' in line and '용도 판정 대기' in line for line in out)
-    assert any('API #01 판정' in line and '[후보 ④]' in line for line in out)
+    assert any('API #01 판정' in line and '[후보 ③]' in line for line in out)
 
 
 def test_simple_prints_each_call_once_with_late_parts_label():
@@ -95,5 +95,5 @@ def test_simple_prints_each_call_once_with_late_parts_label():
     v.feed({**base,'event':'parts.response_usage','parts_call_group':'g','usage':'discarded_tool_request'})
     v.feed({**base,'event':'execution.finished','result_type':'DIAGNOSIS_COMPLETED','duration_ms':1000})
     assert sum('01.' in line for line in out)==1
-    assert any('0.62초' in line and '개선 후보 ④' in line for line in out)
+    assert any('0.62초' in line and '개선 후보 ③' in line for line in out)
     assert not any('시작' in line or '누적' in line for line in out)
