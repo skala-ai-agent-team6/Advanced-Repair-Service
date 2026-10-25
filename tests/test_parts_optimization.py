@@ -4,8 +4,8 @@ import pytest
 from langchain_core.messages import AIMessage
 from worker import graph, tools, config as C
 
-@pytest.mark.parametrize('batch', [1, 2])
-def test_exhausted_budget_forces_summary_without_extra_tool(monkeypatch, batch):
+@pytest.mark.parametrize('batch', [1, 2, 3, 5])
+def test_exhausted_budget_stops_before_extra_llm_call(monkeypatch, batch):
     monkeypatch.setattr(C, 'USE_GPT', True)
     monkeypatch.setattr(C, 'MAX_PART_TOOL_CALLS', 4)
     monkeypatch.setattr(tools, 'business_tool_specs', AsyncMock(return_value=[]))
@@ -25,9 +25,12 @@ def test_exhausted_budget_forces_summary_without_extra_tool(monkeypatch, batch):
     state={'command':{'payload':{'repair':{'product_snapshot':{'compatibleParts':[{'id':'1'}]}}}}, 'text':'소견', 'findings':[]}
     result=asyncio.run(graph.check_parts(state, {'configurable':{'emit':AsyncMock()}}))
     assert tool.await_count == 4
-    assert request.await_count == 4//batch+1
-    assert choices == [None, 'none']
-    assert result['findings'][-1]['output']['note'] == '조회한 부품의 재고를 확인했습니다.'
+    assert request.await_count == (4+batch-1)//batch
+    assert choices == [None]
+    assert result['findings'][-1]['output']['status'] == 'limit_reached'
+    assert result['findings'][-1]['output']['toolCalls'] == 4
+    assert '미확인' in result['findings'][-1]['output']['note']
+    assert sum('result' in f['output'] and 'quantity' in f['output']['result'] for f in result['findings']) == 4
 
 
 def test_completed_early_keeps_summary_without_extra_call(monkeypatch):

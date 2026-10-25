@@ -272,16 +272,14 @@ async def check_parts(state: State, config) -> dict:
     messages = [SystemMessage(tools.PARTS_AGENT_PROMPT.format(max_calls=C.MAX_PART_TOOL_CALLS)),
                 HumanMessage(f"증상: {state['text']}\n검출 라벨: {labels}\n"
                              f"호환 부품: {tools.compact([{k: p.get(k) for k in ('id', 'part_number', 'name', 'category')} for p in parts], 3000)}")]
-    findings, calls = [], 0
-    for turn in range(C.MAX_PART_TOOL_CALLS + 1):
-        # 조회 예산을 소진하면 마지막 호출은 요약만 생성한다.
-        summary_only = calls >= C.MAX_PART_TOOL_CALLS
-        turn_llm = tools.parts_agent_llm(specs, tool_choice="none") if summary_only else llm
+    findings, calls, ai = [], 0, None
+    for turn in range(C.MAX_PART_TOOL_CALLS):
+        # 조회 한도에 도달하면 요약을 위한 추가 GPT 호출도 하지 않는다.
+        if calls >= C.MAX_PART_TOOL_CALLS:
+            break
         measurement_group = uuid.uuid4().hex
         with measurement.scope(parts_call_group=measurement_group, parts_turn=turn + 1):
-            ai = await tools.ask_parts_agent(turn_llm, messages, turn)
-        if summary_only and ai.tool_calls:
-            raise ValueError("Summary-only response must not request tools")
+            ai = await tools.ask_parts_agent(llm, messages, turn)
         measurement.emit("parts.response_usage", parts_call_group=measurement_group,
                          parts_turn=turn + 1,
                          usage=("discarded_tool_request" if ai.tool_calls and calls >= C.MAX_PART_TOOL_CALLS
@@ -290,11 +288,11 @@ async def check_parts(state: State, config) -> dict:
         if not ai.tool_calls or calls >= C.MAX_PART_TOOL_CALLS:
             break
         for call in ai.tool_calls:
-            calls += 1
             name, args = call["name"], call["args"]
-            if calls > C.MAX_PART_TOOL_CALLS:
+            if calls >= C.MAX_PART_TOOL_CALLS:
                 out = {"error": "LimitExceeded", "tool": name, "status": "skipped"}
             else:
+                calls += 1
                 try:
                     out = await tools.call_business_tool(name, args)
                 except LimitExceeded:
@@ -306,8 +304,13 @@ async def check_parts(state: State, config) -> dict:
             findings.append({"source": "BUSINESS", "attachmentId": None, "found": False,
                              "output": {"tool": name, "arguments": args, "result": tools.compact(out)}})
             messages.append(ToolMessage(tools.compact(out, 4000), tool_call_id=call["id"]))
-    note = ai.content if isinstance(ai.content, str) else ""
-    if note.strip() and not ai.tool_calls:
+    if calls >= C.MAX_PART_TOOL_CALLS:
+        findings.append({"source": "BUSINESS", "attachmentId": None, "found": False,
+                         "output": {"tool": "parts_lookup_limit", "status": "limit_reached",
+                                    "toolCalls": calls, "note": "부품 조회 한도에 도달했습니다. 조회하지 못했거나 조회에 실패한 부품의 재고는 미확인이며 재고 없음으로 판단하지 않습니다."}})
+        measurement.emit("parts.limit_reached", tool_calls=calls, additional_llm_call=False)
+    note = ai.content if ai is not None and isinstance(ai.content, str) else ""
+    if note.strip() and ai is not None and not ai.tool_calls:
         findings.append({"source": "BUSINESS", "attachmentId": None, "found": False,
                          "output": {"tool": "parts_agent", "note": note.strip()[:800], "toolCalls": calls}})
     return {"findings": findings}
@@ -320,6 +323,8 @@ async def report(state: State, config) -> dict:
     parts = state["command"]["payload"]["repair"].get("product_snapshot", {}).get("compatibleParts", [])
     r = await tools.write_report(state["text"], state["findings"], parts,
                                  product_type=state.get("product_type", "unknown"))
+    if any(f.get("output", {}).get("tool") == "parts_lookup_limit" for f in state["findings"]):
+        r.repairMethod += "\n부품 조회 한도 도달: 조회하지 못했거나 조회 실패한 부품의 재고는 미확인입니다. 재고 없음과 구분해 추가 확인하세요."
     # [통합] 점수 높은 순으로 순위를 다시 매긴다. GPT가 준 순서 그대로면 0.79가 1순위, 0.95가 2순위가 되기도 했다
     ranked = sorted((c.model_dump() for c in r.candidates), key=lambda c: -c["confidence"])
     candidates = [{"rank": i + 1, **c} for i, c in enumerate(ranked)]
