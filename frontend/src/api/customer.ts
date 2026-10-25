@@ -21,6 +21,9 @@ export async function getCustomerReport(receiptNo: string, phoneLast4: string): 
     // [출장] 실서버는 접수번호+조회 키(접수 완료 때 발급)로만 조회한다. 휴대폰 뒷자리 대입을 막기 위함
     void phoneLast4
     if (receiptNo.includes('.')) return await getCustomerReportByToken(receiptNo)
+    // [출장] 이 브라우저에서 접수한 건이면 그때 받은 조회 키로 조회 (시연에서 조회 화면을 벗어나도 다시 들어오게)
+    const saved = savedTokens()[receiptNo.trim()]
+    if (saved) return await getCustomerReportByToken(saved)
     throw new ApiError(404, CUSTOMER_NOT_FOUND, 'NOT_FOUND')
   } catch (e) {
     // 없음·불일치·형식 오류는 모두 같은 문구로 (어떤 값이 틀렸는지 노출하지 않음)
@@ -70,7 +73,15 @@ export async function submitCustomerRequest(req: CustomerIntakeRequest, photos: 
   f.append('data', new Blob([JSON.stringify(body)], { type: 'application/json' }))
   photos.forEach((p) => f.append('files', p.file))
   const res = (await http.post<{ caseNumber: string; lookupKey: string }>('/public/cases', f, { baseURL: API_ORIGIN, skipAuthExpired: true })).data
-  return { receiptNo: res.caseNumber, token: `${res.caseNumber}.${res.lookupKey}` }
+  const token = `${res.caseNumber}.${res.lookupKey}`
+  try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ ...savedTokens(), [res.caseNumber]: token })) } catch { /* 저장 못 해도 링크로 조회 가능 */ }
+  return { receiptNo: res.caseNumber, token }
+}
+
+/** [출장] 이 브라우저에서 접수한 건의 조회 토큰 (접수번호 → 토큰). 다른 기기·브라우저에서는 조회 링크가 필요 */
+const TOKEN_KEY = 'customer-case-tokens'
+function savedTokens(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(TOKEN_KEY) ?? '{}') as Record<string, string> } catch { return {} }
 }
 
 /** 서비스센터 목록 (센터 방문 · 수리 방법 변경) — 실서버는 FEATURES.visitInfo 일 때만 조회, 아니면 빈 목록 */
