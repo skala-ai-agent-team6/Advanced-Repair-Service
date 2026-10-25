@@ -34,7 +34,12 @@ uv run pytest -q                 # 단위 시험 + 가중치가 있으면 실제
 
 ## 결과 (홀드아웃, `uv run python training/evaluate.py <appliance_data>` → `weights/eval_report.json`)
 
-### 공통 결함 탐지 (`weights/defects.pt`, YOLO11n, test 254장, conf 0.25)
+### 공통 결함 탐지 (`weights/defects.pt`, 10/26 YOLO11s로 교체)
+
+10/26 교체: YOLO11s 640 (`yolo11s.pt`에서 학습). ultralytics val 기준 test mAP50 0.363 → 0.397, 재현율 rust 0.60→0.62·dent 0.18→0.20·crack 0.49→0.50·scratch 0.13→0.16. 평가셋 정상 사진(펌프·DC 모터·세탁기·실외기) 오탐 0건 (옛 모델은 DC 모터 구리 코일을 rust로 봄).
+합성 데이터(정상 가전 사진에 결함 조각 붙이기, `training/synth_defects.py`)로 추가 학습한 모델은 val mAP50 0.309로 더 낮아 쓰지 않았다.
+
+아래는 옛 모델(YOLO11n, `training/evaluate.py`, test 254장, conf 0.25):
 | 결함 | 정밀도 | 재현율 | mAP50 |
 |---|---|---|---|
 | rust | 0.79 | 0.58 | 0.57 |
