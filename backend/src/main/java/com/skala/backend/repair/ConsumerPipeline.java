@@ -12,7 +12,7 @@ import java.util.*;
 /** [출장] 고객 접수 → (출장이면) 출장기사 자동 배정 → 사진 품질 통과분으로 AI 진단 자동 시작.
  *  기사 화면에는 진단 리포트가 준비된 상태로 보인다. 경고 사진은 사람이 확인해야 하므로 자동으로 쓰지 않는다
  *  (통과 사진이 하나도 없으면 진단을 시작하지 않고 기사 확인을 기다린다). app.consumer.auto-pipeline=true 일 때만 동작
- *  경고 사진이 있으면 고객이 다시 올려 대체할 때까지 기다린다.
+ *  사진 다시 찍기·추가는 접수 화면에서 끝낸다 (접수 후 조회 화면에서는 사진을 다시 요청하지 않음).
  *  AI가 추가 사진을 요청하면 고객이 올린 사진이 품질 통과한 뒤 진단을 재개한다 */
 @Component
 public class ConsumerPipeline {
@@ -49,8 +49,7 @@ public class ConsumerPipeline {
         // 사진 품질 검사가 끝나기 전에는 기다린다
         var photos=db.list("SELECT a.id,q.status,q.verdict FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? AND a.use_status='AVAILABLE' ORDER BY a.id",id);
         if(photos.isEmpty() || photos.stream().anyMatch(p->p.get("status")==null || !Set.of("COMPLETED","ERROR").contains(p.get("status")))) return;
-        // 경고 사진: 고객이 다시 올려 대체할 때까지 기다린다
-        if(photos.stream().anyMatch(p->"WARNING".equals(p.get("verdict")))) return;
+        // 경고 사진은 접수 화면에서 이미 다시 받는다 → 접수 후에는 기다리지 않고 통과 사진으로 진단
         Long tech=(Long)r.get("assigned_technician_id");
         if(r.get("service_type").equals("FIELD") && tech==null) tech=assign(id,(Long)r.get("center_id"));
         if(tech==null) tech=(Long)r.get("technician_id");
