@@ -6,7 +6,8 @@ import { useRouter } from 'vue-router'
 import { CircleCheck, Copy, Check, Search, Home } from 'lucide-vue-next'
 
 /** serviceType 이 있으면 수리 방법에 맞는 안내 (방문 수리: 기사 연락 / 센터 방문: 예약일에 센터로) */
-const props = defineProps<{ receiptNo: string; serviceType?: 'VISIT' | 'CENTER'; centerName?: string }>()
+/** token: [출장] 실서버 조회 키 링크. 있으면 접수번호·뒷자리 입력 없이 바로 조회 */
+const props = defineProps<{ receiptNo: string; serviceType?: 'VISIT' | 'CENTER'; centerName?: string; token?: string }>()
 const emit = defineEmits<{ navigate: [] }>()
 const router = useRouter()
 const copied = ref(false)
@@ -49,7 +50,7 @@ function go(to: Parameters<typeof router.push>[0]) {
 
     <div class="acts">
       <!-- 접수번호는 주소창이 아닌 history state 로 넘겨 자동 입력 -->
-      <button type="button" class="btn btn-primary btn-lg btn-block" @click="go({ path: '/service/track', state: { receiptNo } })"><Search :size="20" /> 접수 내역 조회</button>
+      <button type="button" class="btn btn-primary btn-lg btn-block" @click="go(token ? `/service/track/${token}` : { path: '/service/track', state: { receiptNo } })"><Search :size="20" /> 접수 내역 조회</button>
       <button type="button" class="btn btn-lg btn-block" @click="go('/service')"><Home :size="20" /> 홈으로</button>
     </div>
   </div>

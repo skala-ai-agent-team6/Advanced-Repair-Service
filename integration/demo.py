@@ -19,8 +19,8 @@ class Client:
                   "application/x-www-form-urlencoded")
         self.token = self.call("GET", "/api/auth/csrf")["token"]
 
-    def call(self, method, path, data=None, ctype="application/json"):
-        headers = {"Content-Type": ctype}
+    def call(self, method, path, data=None, ctype="application/json", extra=None):
+        headers = {"Content-Type": ctype, **(extra or {})}
         if method != "GET":
             headers["X-CSRF-TOKEN"] = self.token
         if data is not None and not isinstance(data, bytes):
@@ -43,11 +43,32 @@ def intake(c):
     return c.call("POST", "/api/repairs" + query, b"".join(parts), "multipart/form-data; boundary=" + b)
 
 
+def start_diagnosis(c, created):
+    """[통합] 사진 품질 검사 이후 접수만으로는 진단이 안 시작됨: 품질 대기 → 경고 사진 확인 → 진단 시작 (프론트 repairs.ts와 같은 순서)"""
+    if not created.get("requiresDiagnosisRequest"):
+        return
+    ids = [a["attachmentId"] for a in created.get("attachments") or []]
+    deadline = time.monotonic() + 30
+    while True:
+        qs = [c.call("GET", f"/api/attachments/{i}/quality") for i in ids]
+        if all(q["status"] not in ("PENDING", "RUNNING") for q in qs) or time.monotonic() > deadline:
+            break
+        time.sleep(1)
+    for i, q in zip(ids, qs):
+        latest = q.get("latest") or {}
+        print(f"  사진 {i} 품질 {q['status']} {latest.get('verdict')}")
+        if latest.get("verdict") == "WARNING":
+            c.call("POST", f"/api/attachments/{i}/quality/acknowledgment", {"resultId": int(latest["id"])})
+    c.call("POST", f"/api/repairs/{created['repairId']}/diagnosis", {"attachmentIds": [int(i) for i in ids]},
+           extra={"Idempotency-Key": str(uuid.uuid4())})
+
+
 def main():
     c = Client("tech1")
     created = intake(c)
     repair = created["repairId"]
     print(f"접수 완료: repairId={repair} taskId={created['taskId']} status={created['status']}")
+    start_diagnosis(c, created)
     deadline, last = time.monotonic() + 240, None
     while time.monotonic() < deadline:
         d = c.call("GET", f"/api/repairs/{repair}/diagnosis")

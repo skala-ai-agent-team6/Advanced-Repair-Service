@@ -47,6 +47,15 @@ const visitAddress = ref<VisitAddress>(emptyVisitAddress())
 const chips = ref<string[]>([])
 const photos = ref<UploadItem[]>([])
 const agreed = ref(false)
+/* [시연] 고객이 하나하나 입력하지 않도록 그럴듯한 값을 미리 채움 (사진만 올리면 됨). 비우려면 이 블록 삭제 */
+const inDays = (n: number) => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE') }
+Object.assign(form, {
+  productType: 'washing_machine', manufacturer: 'ROVA', model: 'ROVA AirWash 24', serial: 'WM24A0318752', purchaseDate: '2025-03-14',
+  symptomText: '세탁이 끝나도 물이 안 빠지고 E21 에러가 떠요. 탈수할 때 덜컹거리는 소리도 납니다.',
+  customerName: '김민지', phone: '010-4821-7365', serviceType: 'VISIT', preferredDate: inDays(2), visitSlot: 'PM',
+})
+visitAddress.value = { postalCode: '04030', roadAddress: '서울 마포구 양화로 45', jibunAddress: '서울 마포구 합정동 369', detailAddress: '101동 1203호', buildingName: '메세나폴리스' }
+agreed.value = true
 const touched = reactive([false, false, false])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -208,7 +217,7 @@ function prev() {
 }
 
 /* ---------- 접수 → 완료 팝업 (닫아도 페이지에 같은 내용 유지) ---------- */
-const done = ref<{ receiptNo: string; serviceType: ServiceType; centerName?: string } | null>(null)
+const done = ref<{ receiptNo: string; token?: string; serviceType: ServiceType; centerName?: string } | null>(null)
 const doneDlg = ref(false)
 
 async function submit() {
@@ -249,7 +258,7 @@ async function submit() {
       },
       photos.value.map((p) => ({ file: p.file, dataUrl: p.dataUrl })),
     )
-    done.value = { receiptNo: res.receiptNo, serviceType: form.serviceType as ServiceType, centerName: selectedCenter.value?.name }
+    done.value = { receiptNo: res.receiptNo, token: res.token, serviceType: form.serviceType as ServiceType, centerName: selectedCenter.value?.name }
     doneDlg.value = true
     window.scrollTo({ top: 0 })
   } catch (e) {
@@ -263,7 +272,7 @@ async function submit() {
 <template>
   <!-- 접수 완료 후: 팝업을 닫아도 같은 내용이 페이지에 남음 -->
   <section v-if="done" class="card done-page">
-    <ReceiptDone :receipt-no="done.receiptNo" :service-type="done.serviceType" :center-name="done.centerName" />
+    <ReceiptDone :receipt-no="done.receiptNo" :service-type="done.serviceType" :center-name="done.centerName" :token="done.token" />
   </section>
 
   <form v-else class="request" novalidate @submit.prevent="step === STEPS.length - 1 ? submit() : next()">
@@ -497,7 +506,7 @@ async function submit() {
 
   <!-- 접수 완료 팝업 -->
   <BaseModal :open="doneDlg && !!done" title="접수 완료" :width="440" @close="doneDlg = false">
-    <ReceiptDone v-if="done" :receipt-no="done.receiptNo" :service-type="done.serviceType" :center-name="done.centerName" @navigate="doneDlg = false" />
+    <ReceiptDone v-if="done" :receipt-no="done.receiptNo" :service-type="done.serviceType" :center-name="done.centerName" :token="done.token" @navigate="doneDlg = false" />
   </BaseModal>
 </template>
 
