@@ -50,8 +50,9 @@ export function useFieldVisits() {
   /** 오늘 방문 일정 (방문 시간 순) */
   const todayVisits = computed(() => visits.value.filter((v) => v.visitDate === today).sort(byTime))
   const scheduledToday = computed(() => todayVisits.value.filter((v) => v.visitStatus !== 'DONE'))
-  /** 다음 방문: 아직 방문하지 않은 가장 빠른 일정 (오늘 이후 포함) */
-  const nextVisit = computed(() => [...visits.value].sort(byTime).find((v) => v.visitStatus !== 'DONE') ?? null)
+  /** 다음 방문: 아직 방문하지 않은 가장 빠른 일정 (오늘 이후 포함)
+   *  [출장] 방문일이 없는 건(일정 미정)·지난 날짜는 빼야 'undefined월'로 안 나온다 */
+  const nextVisit = computed(() => [...visits.value].sort(byTime).find((v) => v.visitStatus !== 'DONE' && !!v.visitDate && v.visitDate >= today) ?? null)
 
   /** 홈 숫자 — 오늘 출장 기준
    *  부품 확인 필요: 진단을 확인해 부품을 챙겨야 하는 예정 방문(TECHNICIAN_REVIEW)
