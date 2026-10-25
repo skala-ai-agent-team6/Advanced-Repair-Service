@@ -90,7 +90,9 @@ interface BePublicCase {
   visitAt?: string | null
   warrantyDecision?: 'FREE' | 'PAID' | null
   report?: { kind: string; cause_summary: string; planned_work: string } | null
-  photos?: { status: string }[]
+  photos?: { id: string; status: string; verdict?: string | null; issues?: string[] | null }[]
+  photoRequest?: { requestId: string; instruction: string } | null
+  diagnosisStarted?: boolean
 }
 
 function toCustomerReport(b: BePublicCase): CustomerReport {
@@ -109,5 +111,21 @@ function toCustomerReport(b: BePublicCase): CustomerReport {
     warranty: b.warrantyDecision ?? null,
     visit: { confirmedDate: b.visitAt ?? undefined },
     cancelled: b.status === 'CANCELLED',
+    // [출장] 경고 사진은 진단 시작 전에만 대체할 수 있다
+    warnPhotos: b.diagnosisStarted ? [] : (b.photos ?? []).filter((p) => p.verdict === 'WARNING').map((p) => ({ id: p.id, issues: p.issues ?? [] })),
+    photoRequest: b.photoRequest ?? null,
+    notice: b.photoRequest ? '기사님 확인을 위해 사진이 더 필요해요. 아래에서 사진을 추가해 주세요.'
+      : !b.diagnosisStarted && (b.photos ?? []).some((p) => p.verdict === 'WARNING') ? '흐리거나 어두운 사진이 있어요. 다시 찍어 올려 주시면 바로 확인을 시작해요.' : undefined,
   }
+}
+
+/** [출장] 고객 사진 올리기 — replaces 가 있으면 그 사진을 대체 (진단 전), 없으면 AI 추가 사진 요청에 추가.
+ *  POST /public/cases/{number}/attachments (조회 키는 Authorization 헤더로만) */
+export async function uploadCustomerPhoto(token: string, file: File, replaces?: string): Promise<void> {
+  const dot = token.lastIndexOf('.')
+  const f = new FormData()
+  f.append('file', file)
+  await http.post(`/public/cases/${encodeURIComponent(token.slice(0, dot))}/attachments`, f, {
+    baseURL: API_ORIGIN, headers: { Authorization: `Bearer ${token.slice(dot + 1)}` }, params: replaces ? { replaces } : undefined, skipAuthExpired: true,
+  })
 }

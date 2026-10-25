@@ -210,6 +210,10 @@ export interface CustomerReport {
   warranty: 'FREE' | 'PAID' | null
   visit: { preferredDate?: string; confirmedDate?: string }
   cancelled?: boolean
+  /** [출장] 실서버: 품질 경고 사진 (진단 시작 전이면 고객이 다시 올려 대체) */
+  warnPhotos?: { id: string; issues: string[] }[]
+  /** [출장] 실서버: AI 추가 사진 요청 (고객이 사진을 추가하면 진단 재개) */
+  photoRequest?: { requestId: string; instruction: string } | null
 }
 
 /* ---------------- 출장 준비 · 재고 예약 ----------------

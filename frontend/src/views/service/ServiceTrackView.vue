@@ -5,11 +5,11 @@
  *  표시: 접수 상태 · 방문 예정일 · 담당 기사 · 기사가 확정한 고장 원인 · 무상/유상 · 최종 수리 결과
  *  표시하지 않음: 미확정 AI 진단 · AI 판단 점수 · 재고 · 생산 공장 · MCP 실행 결과 · 내부 코멘트 (응답에 없음)
  * ========================================================================= */
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Search, Loader2, Check, CalendarDays, Wallet, Stethoscope, RotateCcw, Info, CircleAlert, UserRound, Wrench } from 'lucide-vue-next'
+import { Search, Loader2, Check, CalendarDays, Wallet, Stethoscope, RotateCcw, Info, CircleAlert, UserRound, Wrench, Camera } from 'lucide-vue-next'
 import StateView from '@/components/common/StateView.vue'
-import { getCustomerReport, getCustomerReportByToken, CUSTOMER_NOT_FOUND, toErrorMessage, USE_MOCK } from '@/api'
+import { getCustomerReport, getCustomerReportByToken, uploadCustomerPhoto, CUSTOMER_NOT_FOUND, toErrorMessage, USE_MOCK } from '@/api'
 import { ApiError } from '@/api/http'
 import { FEATURES } from '@/api/features'
 import type { CustomerReport, CustomerStage } from '@/types'
@@ -53,6 +53,34 @@ onMounted(() => {
 })
 // 조회 링크로 들어오면 바로 조회
 watch(token, (t) => t && available && void run(() => getCustomerReportByToken(t)), { immediate: true })
+
+/* ---------- [출장] 사진: 경고 사진 대체 · AI 추가 사진 요청에 추가 (조회 링크로 들어온 경우만) ---------- */
+const ISSUE_LABEL: Record<string, string> = { BLURRY: '흐림', TOO_DARK: '어두움', TOO_BRIGHT: '너무 밝음', LOW_RESOLUTION: '해상도 낮음' }
+const uploading = ref(false)
+const photoError = ref<string | null>(null)
+async function refresh() {
+  if (!token.value || uploading.value) return
+  try { report.value = await getCustomerReportByToken(token.value) } catch { /* 다음 주기에 다시 */ }
+}
+async function sendPhoto(e: Event, replaces?: string) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !token.value) return
+  uploading.value = true
+  photoError.value = null
+  try {
+    await uploadCustomerPhoto(token.value, file, replaces)
+  } catch (err) {
+    photoError.value = toErrorMessage(err)
+  } finally {
+    uploading.value = false
+  }
+  await refresh()
+}
+// 진행 중이면 5초마다 새로 조회 (AI 사진 요청·진단 진행이 바로 보이도록)
+const timer = window.setInterval(() => report.value && !report.value.cancelled && report.value.stage !== 'COMPLETED' && void refresh(), 5000)
+onBeforeUnmount(() => window.clearInterval(timer))
 
 const errs = computed(() => ({
   receiptNo: !form.receiptNo.trim() ? '접수번호를 입력해 주세요.' : null,
@@ -140,6 +168,31 @@ function niceDate(d?: string): string {
       </section>
 
       <p v-if="report.notice" class="callout" :class="report.cancelled ? 'tone-neutral' : 'tone-info'"><Info :size="20" /> {{ report.notice }}</p>
+
+      <!-- [출장] 사진 다시 올리기(대체) · 추가 사진 -->
+      <section v-if="token && (report.warnPhotos?.length || report.photoRequest)" class="card pad photo-fix" aria-label="사진 보내기">
+        <template v-if="report.photoRequest">
+          <h3><Camera :size="18" /> 추가 사진 요청</h3>
+          <p class="pre">{{ report.photoRequest.instruction }}</p>
+          <label class="btn btn-primary btn-block" :class="{ disabled: uploading }">
+            <Loader2 v-if="uploading" :size="18" class="spin" /><Camera v-else :size="18" /> 사진 추가하기
+            <input type="file" accept="image/jpeg,image/png" hidden :disabled="uploading" @change="sendPhoto($event)" />
+          </label>
+        </template>
+        <template v-else>
+          <h3><Camera :size="18" /> 다시 찍어 주세요</h3>
+          <ul class="warn-list">
+            <li v-for="(p, i) in report.warnPhotos" :key="p.id">
+              <span>사진 {{ i + 1 }} · {{ p.issues.map((x) => ISSUE_LABEL[x] ?? '확인 필요').join(', ') }}</span>
+              <label class="btn btn-outline btn-sm" :class="{ disabled: uploading }">
+                다시 올리기
+                <input type="file" accept="image/jpeg,image/png" hidden :disabled="uploading" @change="sendPhoto($event, p.id)" />
+              </label>
+            </li>
+          </ul>
+        </template>
+        <p v-if="photoError" class="error-text" role="alert">{{ photoError }}</p>
+      </section>
 
       <!-- 접수 상태 -->
       <section v-if="!report.cancelled" class="card pad" aria-labelledby="h-steps">
@@ -344,4 +397,10 @@ h1 {
   font-size: var(--fs-xs);
   margin-top: 8px;
 }
+/* [출장] 사진 다시 올리기 · 추가 사진 */
+.photo-fix h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 16px; }
+.photo-fix .pre { white-space: pre-line; margin: 0 0 12px; }
+.photo-fix .warn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.photo-fix .warn-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.photo-fix label.disabled { opacity: 0.6; pointer-events: none; }
 </style>
