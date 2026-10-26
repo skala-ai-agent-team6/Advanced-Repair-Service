@@ -116,7 +116,8 @@ watch(
 )
 const qOf = (id: string) => quality[id]
 /* [출장·시연 고정] 알림 조건 */
-const wholeNeedsRetake = computed(() => !!slots.whole && !!problemOf(slots.whole.id))
+/** 흐린 사진이 올라간 칸 (화면 순서대로 첫 번째). 어느 칸이든 다시 올리기 알림 */
+const retakeSlot = computed(() => SLOTS.find((s) => !!slots[s.key] && !!problemOf(slots[s.key]!.id)) ?? null)
 const needsPartPhoto = computed(() => !!slots.part && !slots.extras.length)
 const problemOf = (id: string) => {
   const q = quality[id]
@@ -126,7 +127,7 @@ watch(
   () => ({
     checking: all.value.filter((it) => checkingOn && (!quality[it.id] || quality[it.id] === 'checking')).length,
     // [출장·시연 고정] 알림 2개: ① 1번 사진(제품 전체)에 문제 → 다시 올리기 ② 2번 사진(고장 난 부분) 뒤에 부품 사진 1장 추가
-    problems: (wholeNeedsRetake.value ? 1 : 0) + (needsPartPhoto.value ? 1 : 0),
+    problems: (retakeSlot.value ? 1 : 0) + (needsPartPhoto.value ? 1 : 0),
   }),
   (v) => emit('quality', v),
   { immediate: true, deep: true },
@@ -193,10 +194,10 @@ const canAddMore = computed(() => !!slots.whole && !!slots.part && all.value.len
     </button>
 
     <!-- [출장·시연 고정] 알림 2개 (각각 처리하면 사라짐) -->
-    <div v-if="wholeNeedsRetake" class="notice warn" role="alert">
+    <div v-if="retakeSlot" class="notice warn" role="alert">
       <TriangleAlert :size="16" aria-hidden="true" />
-      <span><b>제품 전체 사진이 흐려요.</b> 초점을 맞춰 밝은 곳에서 다시 찍어 올려 주세요.</span>
-      <button type="button" class="btn btn-sm retake" :disabled="!!busy" @click="pick('whole')">다시 올리기</button>
+      <span><b>{{ retakeSlot.label }} 사진이 흐려요.</b> 초점을 맞춰 밝은 곳에서 다시 찍어 올려 주세요.</span>
+      <button type="button" class="btn btn-sm retake" :disabled="!!busy" @click="pick(retakeSlot.key)">다시 올리기</button>
     </div>
     <div v-if="needsPartPhoto" class="notice info" role="alert">
       <Plus :size="16" aria-hidden="true" />
