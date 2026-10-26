@@ -80,7 +80,7 @@ async function submit() {
 
 <template>
   <div class="signup">
-    <BrandLogo hide-when-empty :max-width="320" :height="72" class="logo" />
+    <BrandLogo class="logo" />
 
     <form class="card form-card form form-grid" novalidate @submit.prevent="submit">
       <div class="span-2 head">

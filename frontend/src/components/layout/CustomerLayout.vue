@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /* 고객(비회원) 공개 화면 레이아웃 — /service 아래 모든 화면.
  * 직원용 사이드바·상단 메뉴·알림·직원 정보·로그아웃을 쓰지 않는다 (로그인한 직원이 들어와도 이 레이아웃)
- * 헤더: 로고(누르면 /login) + 고객센터 전화(tel:). 홈은 넓게(2열), 나머지는 좁은 폭 */
+ * 헤더: 로고 + '수리들어간다' 글씨(누르면 /login) + 고객센터 전화(tel:). 홈은 넓게(2열), 나머지는 좁은 폭 */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Phone } from 'lucide-vue-next'
@@ -20,7 +20,7 @@ const isForm = computed(() => onRequest.value)
   <div class="customer">
     <header class="c-top">
       <div class="c-top-in" :class="{ wide: isHome, form: isForm }">
-        <RouterLink to="/login" class="c-logo" aria-label="로그인 화면으로 이동"><AppLogo :height="28" /></RouterLink>
+        <RouterLink to="/login" class="c-logo" aria-label="로그인 화면으로 이동"><AppLogo :height="36" with-name /></RouterLink>
         <a :href="`tel:${CS_PHONE}`" class="c-cs" :aria-label="`고객센터 ${CS_PHONE} 전화 걸기`">
           <Phone :size="16" aria-hidden="true" />
           <span class="c-cs-label">고객센터</span>

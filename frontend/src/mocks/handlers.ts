@@ -921,12 +921,12 @@ export function customerIntake(req: CustomerIntakeRequest, photos: { name: strin
   if (!isProductType(req.productType)) throw new ApiError(422, '제품 종류를 선택해 주세요.')
   const productType = req.productType
   const productTypeDetail = productType === 'unknown' ? req.productTypeDetail?.trim() : undefined
-  if (productType === 'unknown' && !productTypeDetail) throw new ApiError(422, '제품 종류를 입력해 주세요.')
   if (productTypeDetail && productTypeDetail.length > PRODUCT_TYPE_DETAIL_MAX) throw new ApiError(422, `제품 종류는 ${PRODUCT_TYPE_DETAIL_MAX}자 이하로 입력해 주세요.`)
   /** 화면에 보일 제품 종류 이름 (기타 → 직접 입력값) */
   const catLabel = productTypeDetail || PRODUCT_TYPE_LABEL[productType]
   // 시리얼 필수 · 제조사 선택 (화면 검사와 같은 기준)
   if (!req.serial?.trim()) throw new ApiError(422, '시리얼 번호를 입력해 주세요.')
+  if (!req.manufacturer?.trim()) throw new ApiError(422, '제조사를 입력해 주세요.')
   if (!req.model?.trim()) throw new ApiError(422, '제품 모델명을 입력해 주세요.')
   if (req.symptom.trim().length < 5) throw new ApiError(422, '고장 증상을 5자 이상 적어 주세요.')
   if (!photos.length) throw new ApiError(422, '제품 사진을 1장 이상 올려 주세요.')

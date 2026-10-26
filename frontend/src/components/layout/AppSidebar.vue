@@ -64,8 +64,7 @@ function onNavigate(e: MouseEvent) {
 <template>
   <aside class="app-sidebar" :class="{ 'is-open': open }" aria-label="주 메뉴">
     <RouterLink to="/" class="sb-brand" :aria-label="`${PAGE_LABEL.home}으로 이동`" @click="onNavigate">
-      <AppLogo class="sb-logo" :height="28" />
-      <small class="sidebar-label sb-sub">고장 진단 지원 시스템</small>
+      <AppLogo class="sb-logo" :height="36" />
     </RouterLink>
 
     <nav class="sb-nav">
@@ -88,7 +87,7 @@ function onNavigate(e: MouseEvent) {
       </RouterLink>
     </nav>
 
-    <p class="sidebar-label sb-foot">© 2026 ROVIA<br />All rights reserved.</p>
+    <p class="sidebar-label sb-foot">© 2026 수리들어간다<br />All rights reserved.</p>
   </aside>
 </template>
 
@@ -123,21 +122,9 @@ function onNavigate(e: MouseEvent) {
   flex: none;
 }
 .sb-logo {
-  /* 접힘: 아이콘 칸 폭에 맞춤 / 펼침: 원래 크기 */
+  /* 그림 로고(높이 36px · 너비 약 44px)를 아이콘 칸 가운데에 — 접힘·펼침 때 움직이지 않음 */
   justify-self: start;
-  max-width: calc(var(--ic-w) + (150px - var(--ic-w)) * var(--open));
-  transition: max-width var(--sidebar-dur) ease;
-}
-.sb-logo :deep(img) {
-  max-width: 100%;
-  height: auto;
-}
-.sb-sub {
-  font-size: 11px;
-  color: var(--text-3);
-  margin-top: calc(3px * var(--open));
-  max-height: calc(16px * var(--open));
-  overflow: hidden;
+  margin-left: calc((var(--ic-w) - 44px) / 2);
 }
 .sb-brand:focus-visible {
   outline: 3px solid var(--primary);
@@ -270,8 +257,7 @@ function onNavigate(e: MouseEvent) {
   .app-sidebar,
   .sidebar-label,
   .sb-dot,
-  .sb-logo,
-  .sb-sub {
+  .sb-logo {
     transition: none;
   }
 }

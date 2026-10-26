@@ -1,39 +1,55 @@
 <script setup lang="ts">
-/* 기업 로고 영역 (로그인·회원가입). 경로는 src/config/brand.ts 의 BRAND_LOGO_SRC 하나로 관리.
- *  - 로고가 있으면: 가운데 정렬, 비율 유지(object-fit: contain), 최대 너비 maxWidth
- *  - 로고가 없거나 불러오지 못하면: 글자·깨진 이미지 없이 높이만 유지(기본) 또는 hideWhenEmpty 로 영역 숨김 */
-import { computed, ref } from 'vue'
-import { BRAND_LOGO_ALT, BRAND_LOGO_SRC } from '@/config/brand'
+/* 전체 로고 (그림 위 · 글씨 아래) — 로그인 전 화면(로그인 · 회원가입 · 고객 홈)
+ *  가운데 정렬(align="start" 면 왼쪽 정렬) · 너비 최대 240px(휴대폰 180px) · 비율 유지. tagline 이면 로고 아래 서비스 소개 한 줄
+ *  이미지를 못 불러오면 깨진 이미지 없이 이름만 글자로 */
+import { ref } from 'vue'
+import { BRAND_LOGO_ALT, BRAND_LOGO_FULL_SRC, BRAND_NAME, BRAND_TAGLINE } from '@/config/brand'
 
-const props = withDefaults(defineProps<{ maxWidth?: number; height?: number; hideWhenEmpty?: boolean }>(), {
-  maxWidth: 420,
-  height: 96,
-  hideWhenEmpty: false,
-})
+defineProps<{ tagline?: boolean; align?: 'center' | 'start' }>()
 const failed = ref(false)
-const src = computed(() => (failed.value ? '' : BRAND_LOGO_SRC))
-const style = computed(() => ({ maxWidth: `${props.maxWidth}px`, height: `${props.height}px`, '--logo-h': `${props.height}px` }))
 </script>
 
 <template>
-  <div v-if="src || !hideWhenEmpty" class="brand-logo" :class="{ empty: !src }" :style="style">
-    <img v-if="src" :src="src" :alt="BRAND_LOGO_ALT" draggable="false" @error="failed = true" />
+  <div class="brand-logo" :class="{ start: align === 'start' }">
+    <img v-if="!failed" :src="BRAND_LOGO_FULL_SRC" :alt="BRAND_LOGO_ALT" draggable="false" @error="failed = true" />
+    <strong v-else class="brand-name">{{ BRAND_NAME }}</strong>
+    <p v-if="tagline" class="tagline">{{ BRAND_TAGLINE }}</p>
   </div>
 </template>
 
 <style scoped>
 .brand-logo {
-  width: 100%;
-  margin-inline: auto;
   display: grid;
-  place-items: center;
+  justify-items: center;
+  text-align: center;
+}
+.brand-logo.start {
+  justify-items: start;
+  text-align: left;
 }
 .brand-logo img {
-  max-width: 100%;
-  /* 그리드 안에서 % 높이가 적용되지 않을 수 있어 영역 높이를 직접 지정 */
-  max-height: var(--logo-h);
-  width: auto;
+  width: 100%;
+  max-width: 240px;
   height: auto;
   object-fit: contain;
+}
+.brand-name {
+  font-size: var(--fs-2xl);
+}
+/* 로고 바로 아래 한 줄: 본문 기본 글자색 · 20px · 굵게(700) · 간격 12px (휴대폰 18px) */
+.tagline {
+  margin: 12px 0 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@media (max-width: 767px) {
+  .brand-logo img {
+    max-width: 180px;
+  }
+  .tagline {
+    font-size: 18px;
+  }
 }
 </style>
