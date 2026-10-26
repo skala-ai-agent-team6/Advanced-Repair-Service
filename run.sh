@@ -70,6 +70,8 @@ if [ ! -d Rag_mcp/.runtime/qdrant ] || [ "$(cat Rag_mcp/.runtime/index.stamp 2>/
   (cd Rag_mcp && env -u OPENAI_API_KEY uv run --env-file ../.env repair-mcp index > "$ROOT/logs/rag-index.log" 2>&1)
   echo "$stamp" > Rag_mcp/.runtime/index.stamp
 fi
+# 세탁기·에어컨 가상 데모 사례 6건 (안 넣으면 세탁기·에어컨은 유사 사례 0건). 이미 있으면 그대로
+(cd Rag_mcp && env -u OPENAI_API_KEY uv run --env-file ../.env repair-mcp seed-demo-cases > "$ROOT/logs/rag-seed.log" 2>&1) || echo "    데모 사례 넣기 실패: logs/rag-seed.log"
 for s in observation:8011 pcb:8012 damage:8013 rag:8014; do
   (cd Rag_mcp; nohup env -u OPENAI_API_KEY uv run --env-file ../.env repair-mcp serve ${s%%:*} --transport http --port ${s##*:} > "$ROOT/logs/rag-${s%%:*}.log" 2>&1 &)
 done
