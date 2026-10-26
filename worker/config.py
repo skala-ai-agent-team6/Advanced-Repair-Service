@@ -79,6 +79,8 @@ MAX_EVENT_BYTES = int(os.getenv("MAX_EVENT_BYTES", "750000"))
 BUSINESS_MCP_URL = os.getenv("BUSINESS_MCP_URL", "http://127.0.0.1:8015/mcp")
 # PCB 결함 검출 확신도 하한. 0.25→0.2: 평가셋 정상·흐린 PCB 사진은 0.05까지 검출 0건, short 결함은 0.24로 잡혀서 (eval/README.md)
 PCB_MIN_CONF = float(os.getenv("PCB_MIN_CONF", "0.2"))
+# [통합] 기계(표면·찌그러짐) 검출 확신도 하한. 0.25 → 0.5: 세탁기 등 실사진에서 결함이 아닌 곳에 약한 박스가 여러 개 잡혀서
+MECH_MIN_CONF = float(os.getenv("MECH_MIN_CONF", "0.5"))
 
 
 def id_map(name, default):
