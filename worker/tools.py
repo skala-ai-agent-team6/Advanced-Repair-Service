@@ -187,7 +187,7 @@ def gpt(schema):
 
 @guarded()
 async def translate_cases(texts: list[str]) -> list[str]:
-    """[통합] 유사사례 원문(네덜란드어 등)을 화면용 한국어 한 줄로. GPT가 없거나 실패하면 원문 그대로."""
+    """[통합] 유사사례 원문(네덜란드어 등)을 화면용 한국어 짧은 한 줄(증상 → 조치)로. GPT가 없거나 실패하면 원문 그대로."""
     if not C.USE_GPT or not texts:
         return texts
     from pydantic import BaseModel
@@ -195,7 +195,7 @@ async def translate_cases(texts: list[str]) -> list[str]:
     class Ko(BaseModel):
         lines: list[str]
     try:
-        out = await gpt(Ko).ainvoke("각 줄을 순서대로 한국어 한 줄로 직역해. 꾸밈말 금지.\n" + "\n".join(f"{i}. {t}" for i, t in enumerate(texts)))
+        out = await gpt(Ko).ainvoke("각 줄을 순서대로 한국어로 짧게 요약해. 줄마다 '증상 → 조치' 형태로 40자 이내, 꾸밈말 금지.\n" + "\n".join(f"{i}. {t}" for i, t in enumerate(texts)))
         return out.lines if len(out.lines) == len(texts) else texts
     except Exception:
         return texts
