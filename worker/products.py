@@ -1,6 +1,6 @@
 """Read product metadata supplied by Spring; never infer it from symptom text."""
 PRODUCT_NAMES = {"vacuum": "청소기", "washing_machine": "세탁기",
-                 "air_conditioner": "에어컨", "unknown": "제품 종류 미확인"}
+                 "air_conditioner": "에어컨", "other": "기타 가전", "unknown": "제품 종류 미확인"}
 
 
 def normalize_product_type(value):

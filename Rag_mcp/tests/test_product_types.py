@@ -16,7 +16,7 @@ from test_confirmed_sync import report, store_at, public_index, synchronizer
 from test_normalize_openai import fake_openai
 from test_opinion_openai import install_fake_client, sample_evidence
 
-TYPES = ['vacuum', 'washing_machine', 'air_conditioner']
+TYPES = ['vacuum', 'washing_machine', 'air_conditioner', 'other']
 
 
 def appliance_report(kind, report_id=42):

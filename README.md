@@ -192,7 +192,7 @@ cd backend && ./gradlew test
 | PCB 결함 사진·라벨 | PCB 모델, 평가셋 A·C | PCB 결함 데이터셋 (test 폴더) | `eval/README.md` |
 | 표면 결함 | 기계 모델, 평가셋 B | NEU 강판 표면 결함 데이터셋 | `eval/README.md` |
 | PCB·외형 손상 수리 문서 | RAG 지침 | Circuit Technology Center 등 공개 문서 | `Rag_mcp/docs/pcb_damage_data_sources.md` |
-| 세탁기·에어컨 사례 6건 | RAG 데모 | **팀이 만든 가상 데모** (검색 결과에 데모 표시) | `Rag_mcp/docs/product_types.md` |
+| 세탁기·에어컨·기타 가전 사례 60건 | RAG 데모 | **팀이 만든 가상 데모** (검색 결과에 데모 표시) | `Rag_mcp/docs/product_types.md` |
 | 평가셋 사진 16장 | `eval/` | 위 데이터셋 + Wikimedia Commons | `eval/README.md` |
 
 ## 시연 사진 출처

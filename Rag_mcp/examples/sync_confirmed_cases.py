@@ -11,7 +11,7 @@ async def main():
     parser.add_argument("action", choices=["sync", "status", "search"])
     parser.add_argument("--url", default="http://127.0.0.1:8014/mcp")
     parser.add_argument("--query", default="전원이 켜지지 않아요")
-    parser.add_argument("--product-type", choices=["vacuum", "washing_machine", "air_conditioner", "unknown"],
+    parser.add_argument("--product-type", choices=["vacuum", "washing_machine", "air_conditioner", "other", "unknown"],
                         default="unknown")
     args = parser.parse_args()
     tool, payload = {

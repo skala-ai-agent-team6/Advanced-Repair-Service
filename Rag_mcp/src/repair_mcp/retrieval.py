@@ -173,6 +173,8 @@ def prepare_query(request: SearchRequest):
     warnings = ["검색 점수는 고장 확률이 아닙니다. 검색 문서는 근거 후보이며 원인 확정이 필요합니다."]
     if request.normalized_observation is None and request.raw_text.strip():
         warnings.append("표준 소견 결과가 없어 원문과 전달된 모델 라벨로 검색했습니다. RAG에서 소견을 재변환하지 않았습니다.")
+    if request.product_type == "other":
+        warnings.append("기타 가전 사례는 여러 제품을 포함합니다. 원문에 실제 제품명을 포함하고 사례의 제품과 증상 적용 여부를 확인해야 합니다.")
     if request.product_type == "unknown":
         warnings.append("제품 종류가 없어 제품별 수리 사례 검색을 생략했습니다.")
     if damage["detections"]:
