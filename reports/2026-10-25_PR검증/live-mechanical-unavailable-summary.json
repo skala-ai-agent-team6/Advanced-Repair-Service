@@ -1,0 +1,76 @@
+[
+  {
+    "scenario": "mixed",
+    "mode": "real-models-local-input-output",
+    "fault": "mechanical-unavailable",
+    "metrics": {
+      "trace_id": null,
+      "calls": 10,
+      "retries": 2,
+      "duration_ms": 5960,
+      "call_limit": 60,
+      "prompts": {},
+      "node_executions": 7,
+      "nodes": {
+        "classify_photos": 1,
+        "split_text": 1,
+        "mech_mcp": 1,
+        "pcb_mcp": 1,
+        "rag_mcp": 1,
+        "judge": 1,
+        "request_photo": 1
+      },
+      "tool_attempts": {
+        "normalize_observation": 1,
+        "call_mech_mcp": 3,
+        "call_pcb_mcp": 1,
+        "interpret_pcb": 1,
+        "call_rag_mcp": 1
+      },
+      "max_same_input_attempts_used": 3,
+      "limits_hit": [],
+      "context_actions": [],
+      "llm": {
+        "calls": 0,
+        "tokens_reserved": 0,
+        "actual_usage": {},
+        "run_token_limit": 800000,
+        "per_call_context_limit": 64000,
+        "output_token_limit": 2048,
+        "scope": "agent-direct-only; text UTF-8 upper bound; images estimated; MCP-internal excluded"
+      },
+      "limits": {
+        "same_input_attempts": 3,
+        "node_executions": 20,
+        "graph_super_steps": 20,
+        "run_seconds": 1800.0,
+        "tool_seconds": 90.0,
+        "weighted_calls": 60
+      }
+    },
+    "photo_count": 2,
+    "status": "PHOTO_REQUESTED",
+    "errors": [
+      {
+        "agentType": "SURFACE",
+        "input": {
+          "path": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-v2/worker/samples/mech_sample.jpg"
+        },
+        "mcpServer": "mechanical-mcp",
+        "output": {
+          "error": "RuntimeError",
+          "errorCode": "REQUIRED_TOOL_FAILED",
+          "failurePolicy": "required",
+          "status": "failed",
+          "tool": "detect_surface_defects"
+        },
+        "tool": "detect_surface_defects",
+        "toolVersion": "1"
+      }
+    ],
+    "technical_references": 3,
+    "report": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-v2/worker/reports/task-73943600_revision-1_고장리포트.md",
+    "json": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-v2/worker/reports/task-73943600_revision-1_고장리포트.json",
+    "events": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-v2/worker/reports/task-73943600_revision-1_고장리포트_events.json"
+  }
+]

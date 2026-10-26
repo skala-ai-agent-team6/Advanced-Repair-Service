@@ -1,0 +1,574 @@
+{
+  "command": {
+    "taskId": "22",
+    "eventId": "490a97e1-77e6-4aa5-be51-e5c81b9bc2c9",
+    "payload": {
+      "task": {
+        "id": "22",
+        "stage": null,
+        "result": null,
+        "status": "QUEUED",
+        "case_id": "23",
+        "version": 0,
+        "created_at": "2026-10-25T13:48:30.527432Z",
+        "error_code": null,
+        "updated_at": "2026-10-25T13:48:30.527432Z",
+        "finished_at": null,
+        "lease_until": null,
+        "request_key": "61d87127-6860-4dc3-9e57-00c378737e8f",
+        "retry_count": 0,
+        "execution_id": "390b8f54-7346-473d-a78f-2b0046c651a4",
+        "error_message": null,
+        "last_sequence": 0,
+        "checkpoint_ref": null,
+        "input_revision": 1,
+        "workflow_version": "repair-v2",
+        "photo_request_count": 0
+      },
+      "round": 0,
+      "repair": {
+        "id": "23",
+        "status": "DIAGNOSING",
+        "symptom": "충전이 안 되고 바퀴 모터에서 소음",
+        "version": 1,
+        "visit_at": null,
+        "center_id": "1",
+        "closed_at": null,
+        "created_at": "2026-10-25T13:48:29.423991Z",
+        "product_id": "1",
+        "user_input": {
+          "technicianNote": "펌웨어 업데이트 후부터 그렇다고 함"
+        },
+        "case_number": "R-11b1ce73-a266-48d9-b83b-10b49cca5197",
+        "error_codes": [
+          "E05"
+        ],
+        "product_type": "vacuum",
+        "service_type": "CENTER",
+        "intake_source": "STAFF",
+        "purchase_date": null,
+        "technician_id": "1",
+        "visit_done_at": null,
+        "correlation_id": "65a7caa8-2580-4619-9ed6-614f239a7689",
+        "firmware_version": "1.2",
+        "product_snapshot": {
+          "id": "1",
+          "model_id": "1",
+          "components": [
+            {
+              "id": "1",
+              "lot_id": "1",
+              "region": "Gyeonggi",
+              "part_id": "1",
+              "slot_code": "MOTOR-LEFT",
+              "factory_id": "1",
+              "lot_number": "LOT-MOTOR-001",
+              "product_id": "1",
+              "removed_at": null,
+              "factory_name": "Demo factory",
+              "installed_at": "2025-10-22T08:32:14.145825Z",
+              "component_serial": null
+            }
+          ],
+          "model_code": "R1",
+          "model_name": "Robot R1",
+          "information": {
+            "firmware": "1.0.3",
+            "manufacturer": "Demo",
+            "specifications": {
+              "batteryWh": 60
+            }
+          },
+          "product_type": "vacuum",
+          "serial_number": "ROBOT-SEOUL-001",
+          "appliance_type": "VACUUM_CLEANER",
+          "compatibleParts": [
+            {
+              "id": "1",
+              "name": "Wheel motor",
+              "category": "MOTOR",
+              "part_number": "MOTOR-001"
+            },
+            {
+              "id": "3",
+              "name": "Main PCB",
+              "category": "PCB",
+              "part_number": "PCB-001"
+            }
+          ],
+          "manufactured_on": null
+        },
+        "procurement_status": "NOT_STARTED",
+        "assigned_technician_id": null
+      },
+      "requestId": null,
+      "checkpoint": null,
+      "requestKey": null,
+      "attachments": [
+        {
+          "id": "47",
+          "kind": "IMAGE",
+          "sha256": "65df3f54e706a4203669b583278fbd44fe4930a02fa30e8c95e3e5263ef8331e",
+          "target": "PCB",
+          "byte_size": 122253,
+          "mime_type": "image/jpeg",
+          "request_id": null,
+          "downloadPath": "/internal/attachments/47",
+          "quality_gate": "CHECKED",
+          "quality_result_id": "39",
+          "warning_confirmation_id": "19"
+        },
+        {
+          "id": "48",
+          "kind": "IMAGE",
+          "sha256": "e88f1386cc8443a9d51e433ad86bf275cd1f3c34ae886361139b5de6c6e19cfa",
+          "target": "PCB",
+          "byte_size": 143747,
+          "mime_type": "image/jpeg",
+          "request_id": null,
+          "downloadPath": "/internal/attachments/48",
+          "quality_gate": "CHECKED",
+          "quality_result_id": "40",
+          "warning_confirmation_id": "20"
+        }
+      ],
+      "attachmentIds": [
+        "47",
+        "48"
+      ],
+      "addedAttachmentIds": [],
+      "excludedAttachmentIds": [],
+      "selectedAttachmentIds": [
+        "47",
+        "48"
+      ]
+    },
+    "repairId": "23",
+    "sequence": 0,
+    "eventType": "DIAGNOSIS_REQUESTED",
+    "occurredAt": "2026-10-25T13:48:30.542104Z",
+    "executionId": "390b8f54-7346-473d-a78f-2b0046c651a4",
+    "correlationId": "65a7caa8-2580-4619-9ed6-614f239a7689",
+    "inputRevision": 1,
+    "schemaVersion": 2
+  },
+  "result": {
+    "eventType": "DIAGNOSIS_COMPLETED",
+    "payload": {
+      "product_type": "vacuum",
+      "summary": "청소기의 충전 불가 및 바퀴 모터에서 소음 발생 문제에 대한 진단 리포트입니다. MCP 결과에 따르면, 메인 PCB에서 결함이 발견되었습니다. 추가 점검이 필요합니다.\n\n문맥 제한: 리포트 작성에는 길이를 줄인 입력·도구 근거를 사용했습니다. 원본 사진별 근거를 함께 확인해 주세요.",
+      "modelVersion": "skeleton-0.2",
+      "repairMethod": "메인 PCB 교체가 필요하며, 바퀴 모터의 소음 문제는 추가 점검 후 확인해야 합니다. 현재 메인 PCB는 재고가 없습니다.",
+      "candidates": [
+        {
+          "rank": 1,
+          "cause": "메인 PCB 결함으로 인한 충전 불가 및 소음 발생",
+          "confidence": 0.567,
+          "explanation": "MCP 검사 결과, 메인 PCB에서 구멍 누락 및 단락이 발견되었습니다."
+        },
+        {
+          "rank": 2,
+          "cause": "바퀴 모터의 이상 소음",
+          "confidence": 0.496,
+          "explanation": "바퀴 모터에서 소음이 발생하고 있으며, 이는 모터의 결함일 수 있습니다."
+        }
+      ],
+      "recommendedParts": [
+        {
+          "partId": "3",
+          "quantity": 1
+        }
+      ],
+      "recommendedTools": [],
+      "evidence": [
+        {
+          "type": "PHOTO",
+          "annotation": {
+            "defects": [
+              {
+                "type": "missing_hole",
+                "confidence": 0.567,
+                "box_xyxy": [
+                  222,
+                  65,
+                  254,
+                  90
+                ]
+              },
+              {
+                "type": "missing_hole",
+                "confidence": 0.496,
+                "box_xyxy": [
+                  418,
+                  253,
+                  439,
+                  273
+                ]
+              },
+              {
+                "type": "missing_hole",
+                "confidence": 0.456,
+                "box_xyxy": [
+                  331,
+                  572,
+                  352,
+                  593
+                ]
+              }
+            ],
+            "image": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-v2/mcp_servers/pcb/results/mcp_after/47.jpg"
+          },
+          "attachmentId": "47"
+        },
+        {
+          "type": "PHOTO",
+          "annotation": {
+            "defects": [
+              {
+                "type": "short",
+                "confidence": 0.354,
+                "box_xyxy": [
+                  495,
+                  364,
+                  531,
+                  394
+                ]
+              },
+              {
+                "type": "missing_hole",
+                "confidence": 0.286,
+                "box_xyxy": [
+                  489,
+                  125,
+                  512,
+                  142
+                ]
+              }
+            ],
+            "image": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-v2/mcp_servers/pcb/results/mcp_after/48.jpg"
+          },
+          "attachmentId": "48"
+        },
+        {
+          "type": "CASE",
+          "citation": "dustup:rcint_5972",
+          "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+          "score": 0.865137,
+          "excerpt": "Onbekend. Loopt niet. Contacten vuil; schoongemaakt.",
+          "origin": "EXTERNAL",
+          "sourceLabel": "공개 사례",
+          "isDemo": false,
+          "product_type": "vacuum"
+        },
+        {
+          "type": "CASE",
+          "citation": "dustup:rcint_31678",
+          "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+          "score": 0.864557,
+          "excerpt": "werkt niet. oplader batterij moet vervangen worden.",
+          "origin": "EXTERNAL",
+          "sourceLabel": "공개 사례",
+          "isDemo": false,
+          "product_type": "vacuum"
+        },
+        {
+          "type": "CASE",
+          "citation": "dustup:rcint_9100",
+          "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+          "score": 0.863516,
+          "excerpt": "doet het niet / geen stroom?. los contact bij motor. los contact bij motor gerepareerd.",
+          "origin": "EXTERNAL",
+          "sourceLabel": "공개 사례",
+          "isDemo": false,
+          "product_type": "vacuum"
+        },
+        {
+          "type": "MANUAL",
+          "citation": "pcb-label:missing_hole",
+          "excerpt": "missing_hole — 구멍 누락"
+        },
+        {
+          "type": "MANUAL",
+          "citation": "pcb-label:short",
+          "excerpt": "short — 단락"
+        },
+        {
+          "type": "MANUAL",
+          "citation": "pcb-guide:01_visual_defect_labels",
+          "excerpt": "# PCB 표면 결함 라벨 참고\n\n문서 종류: technical_reference_summary / 검색 컬렉션: pcb_documents\n\n출처: Huang, Wei, Zhang, Liu, “HRIPCB: a challenging dataset for PCB defects detection and classification” (2020).\n[논문](https://ietresearch.onlinelibrary.wiley.com/doi/10.1049/joe.2019.1183)\n\n논문에 소개된 표면 결함 분류는 missing hole, mouse bite, open circuit, short, spur, spurious copper이다. 결함 위치는 바운딩 박스로 표시한다. 논문 데이터는 이미지 편집으로 결함을 만든 데이터셋이며 실제 제품의 수리 결과 데이터는 아니다.\n\n아래 여섯 라벨은 사용자가 전달한 팀 모델의 전체 클래스 목록과 일치한다. 실제 학습 데이터가 위 논문 데이터셋인지는 확인되지 않았다. 라벨 정의와 별칭은 data/pcb_label_taxonomy.json에 기록한다.\n\n| 팀 모델 라벨 | 검색용 한국어 설명 |\n|---|---|\n| mouse_bite | 도체 패턴 가장자리의 일부가 파인 형태의 결손 |\n| open_circuit | 도체 패턴이 끊어진 형태 |\n| short | 분리되어야 하는 도체 패턴 사이의 연결 |\n| spur | 도체 가장자리에서 튀어나온 부분 |\n| spurious_copper | 불필요하게 남아 있는 구리 조각 |\n| missing_hole | 있어야 하는 홀의 누락 |\n\nRAG는 팀원이 전달한 라벨 문자열을 받는다. hole missing은 missing_hole로 통일한다. 숫자 class_id가 나중에 전달된다면 모델의 실제 매핑표가 필요하며, 이 표의 행 순서를 ID로 사용하지 않는다.\n\n적용 범위: 표면 결함 후보 설명. 특정 회로 기능, 배터리 이상, 모터 고장과의 인과관계는 추가 증거가 필요하다. mouse_bite 검출을 곧바로 전기적 단선 확정으로 바꾸지 않는다.\n\nreview_status: pending_team_review. 원문 전체·이미지는 포함하지 않은 출처 기반 요약이다.\n"
+        },
+        {
+          "type": "MANUAL",
+          "citation": "pcb-guide:03_board_power_diagnostics",
+          "excerpt": "# PCB 전원 불량과 측정 결과를 연결하는 기술 자료\n\n문서 종류: technical_guide_summary / 검색 컬렉션: pcb_documents\n\n대상 모델: MacBook Pro A1707 (2016–2017).\n\n출처: Repair Wiki contributors, [A1707 2016-2017 15” Touchbar MacBook Pro](https://repair.wiki/w/A1707_2016-2017_15%E2%80%9D_Touchbar_MacBook_Pro).\n원문 라이선스: CC BY-SA 3.0, 별도 표시가 없는 콘텐츠 기준. [사이트 안내](https://repair.wiki/w/RepairWiki%3AAbout)\n\n원문은 전원이 켜지지 않는 여러 상황을 충전 전압, 소비 전류, 전원 레일 저항과 연결해 설명한다. 특정 전원 레일의 단락과 커패시터 결함을 조사하는 경우가 있으며, 부팅되지 않는 증상에 배터리 커넥터의 도전성 이물질이 관여할 수도 있다고 설명한다.\n\n프로젝트 활용: “전원 불량”이라는 같은 증상도 측정 결과에 따라 다른 원인 후보로 이어진다는 참고자료. 모델의 표면 결함 검출 결과만으로 고장 부품을 확정하지 않고, 측정 기록과 문서를 함께 비교한다.\n\n이 모델의 회로명, 부품 번호, 전압값을 청소기에 그대로 적용하지 않는다. 자료를 검색 결과로 반환할 때 대상 제품이 다름을 명시한다. 실제 수리 사례 collection과 별도로 보관한다.\n\n변경: 한국어 요약과 프로젝트 적용 범위 설명 추가. review_status: pending_team_review.\n"
+        }
+      ],
+      "analysisResults": [
+        {
+          "source": "INTERPRETATION",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "normalize_observation",
+          "referenceCount": 0
+        },
+        {
+          "source": "PCB",
+          "attachmentId": "47",
+          "status": "DETECTED",
+          "labels": [
+            "missing_hole"
+          ],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 0
+        },
+        {
+          "source": "PCB",
+          "attachmentId": "48",
+          "status": "DETECTED",
+          "labels": [
+            "missing_hole",
+            "short"
+          ],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 0
+        },
+        {
+          "source": "INTERPRETATION",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "interpret_pcb",
+          "referenceCount": 0
+        },
+        {
+          "source": "RAG",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 7
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "parts_agent",
+          "referenceCount": 0
+        }
+      ],
+      "topCause": "메인 PCB 결함으로 인한 충전 불가 및 소음 발생",
+      "agents": [
+        {
+          "agent": "PCB",
+          "verdict": "ABNORMAL",
+          "summary": "missing_hole",
+          "findings": [
+            "missing_hole 0.57",
+            "missing_hole 0.50",
+            "missing_hole 0.46"
+          ],
+          "confidence": 0.567,
+          "attachmentIds": [
+            "47"
+          ],
+          "annotations": [
+            {
+              "attachmentId": "47",
+              "label": "missing_hole",
+              "score": 0.567,
+              "x": 0.37,
+              "y": 0.10833333333333334,
+              "width": 0.05333333333333334,
+              "height": 0.041666666666666664
+            },
+            {
+              "attachmentId": "47",
+              "label": "missing_hole",
+              "score": 0.496,
+              "x": 0.6966666666666667,
+              "y": 0.4216666666666667,
+              "width": 0.035,
+              "height": 0.03333333333333333
+            },
+            {
+              "attachmentId": "47",
+              "label": "missing_hole",
+              "score": 0.456,
+              "x": 0.5516666666666666,
+              "y": 0.9533333333333334,
+              "width": 0.035,
+              "height": 0.035
+            }
+          ]
+        },
+        {
+          "agent": "PCB",
+          "verdict": "ABNORMAL",
+          "summary": "missing_hole, short",
+          "findings": [
+            "short 0.35",
+            "missing_hole 0.29"
+          ],
+          "confidence": 0.354,
+          "attachmentIds": [
+            "48"
+          ],
+          "annotations": [
+            {
+              "attachmentId": "48",
+              "label": "short",
+              "score": 0.354,
+              "x": 0.825,
+              "y": 0.6066666666666667,
+              "width": 0.06,
+              "height": 0.05
+            },
+            {
+              "attachmentId": "48",
+              "label": "missing_hole",
+              "score": 0.286,
+              "x": 0.815,
+              "y": 0.20833333333333334,
+              "width": 0.03833333333333333,
+              "height": 0.028333333333333332
+            }
+          ]
+        }
+      ],
+      "similarCases": [
+        {
+          "caseId": "dustup:rcint_5972",
+          "origin": "EXTERNAL",
+          "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+          "summaryKo": "알 수 없음. 작동하지 않음. 접촉이 더러움; 청소됨.",
+          "similarity": 0.865137,
+          "sourceLabel": "공개 사례",
+          "isDemo": false,
+          "originalText": "Onbekend. Loopt niet. Contacten vuil; schoongemaakt."
+        },
+        {
+          "caseId": "dustup:rcint_31678",
+          "origin": "EXTERNAL",
+          "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+          "summaryKo": "작동하지 않음. 배터리 충전기를 교체해야 함.",
+          "similarity": 0.864557,
+          "sourceLabel": "공개 사례",
+          "isDemo": false,
+          "originalText": "werkt niet. oplader batterij moet vervangen worden."
+        },
+        {
+          "caseId": "dustup:rcint_9100",
+          "origin": "EXTERNAL",
+          "sourceUri": "https://github.com/openrepair/data/blob/main/quests/vacuums/dustup.csv",
+          "summaryKo": "작동하지 않음 / 전기가 없음?. 모터의 접촉 불량. 모터의 접촉 불량이 수리됨.",
+          "similarity": 0.863516,
+          "sourceLabel": "공개 사례",
+          "isDemo": false,
+          "originalText": "doet het niet / geen stroom?. los contact bij motor. los contact bij motor gerepareerd."
+        }
+      ]
+    }
+  },
+  "execution": {
+    "trace_id": null,
+    "calls": 12,
+    "retries": 0,
+    "duration_ms": 11843,
+    "call_limit": 60,
+    "prompts": {
+      "write_report": {
+        "bundle_version": "1.4.0",
+        "version": "1.3.0",
+        "sha256": "8fb7eaff97ac282d24e187f450ff168c765f4facfa47375f7eb87d292d017732",
+        "output_schema": "Report",
+        "schema_sha256": "b58d04db9e623dfab3b3f06d48900dfa25629ce8772412e46375f5783d4e5893",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "node_executions": 7,
+    "nodes": {
+      "classify_photos": 1,
+      "split_text": 1,
+      "pcb_mcp": 1,
+      "rag_mcp": 1,
+      "judge": 1,
+      "check_parts": 1,
+      "report": 1
+    },
+    "tool_attempts": {
+      "normalize_observation": 1,
+      "call_pcb_mcp": 2,
+      "interpret_pcb": 1,
+      "call_rag_mcp": 1,
+      "parts_agent_turn": 2,
+      "get_part_availability": 2,
+      "write_report": 1,
+      "translate_cases": 1,
+      "save_repair_case": 1
+    },
+    "max_same_input_attempts_used": 1,
+    "limits_hit": [],
+    "context_actions": [
+      {
+        "kind": "findings",
+        "input_count": 8,
+        "output_count": 8,
+        "input_bytes": 13583,
+        "output_bytes": 7548,
+        "truncated": true
+      },
+      {
+        "kind": "llm_reservation",
+        "reserved": 14056,
+        "image": false
+      }
+    ],
+    "llm": {
+      "calls": 1,
+      "tokens_reserved": 15506,
+      "actual_usage": {
+        "input_tokens": 4799,
+        "output_tokens": 377,
+        "total_tokens": 5176
+      },
+      "run_token_limit": 800000,
+      "per_call_context_limit": 64000,
+      "output_token_limit": 2048,
+      "scope": "agent-direct-only; text UTF-8 upper bound; images estimated; MCP-internal excluded"
+    },
+    "limits": {
+      "same_input_attempts": 3,
+      "node_executions": 20,
+      "graph_super_steps": 20,
+      "run_seconds": 1800.0,
+      "tool_seconds": 90.0,
+      "weighted_calls": 60
+    }
+  }
+}

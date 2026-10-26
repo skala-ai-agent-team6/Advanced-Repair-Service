@@ -1,0 +1,274 @@
+{
+  "command": {
+    "taskId": "26",
+    "eventId": "9fbd1d2e-8164-4808-a951-0614bfa56130",
+    "payload": {
+      "task": {
+        "id": "26",
+        "stage": "JUDGING",
+        "result": null,
+        "status": "QUEUED",
+        "case_id": "27",
+        "version": 2,
+        "created_at": "2026-10-25T13:51:49.986280Z",
+        "error_code": null,
+        "updated_at": "2026-10-25T13:52:04.256747Z",
+        "finished_at": null,
+        "lease_until": null,
+        "request_key": "e6f49c2f-0558-4d81-96a2-2d80796401d6",
+        "retry_count": 0,
+        "execution_id": "c0371ae9-f762-4120-be3d-7ad32e6d839c",
+        "error_message": null,
+        "last_sequence": 0,
+        "checkpoint_ref": "26",
+        "input_revision": 3,
+        "workflow_version": "repair-v2",
+        "photo_request_count": 2
+      },
+      "round": 2,
+      "repair": {
+        "id": "27",
+        "status": "DIAGNOSING",
+        "symptom": "충전이 안 되고 바퀴 모터에서 소음",
+        "version": 5,
+        "visit_at": null,
+        "center_id": "1",
+        "closed_at": null,
+        "created_at": "2026-10-25T13:51:48.914944Z",
+        "product_id": "1",
+        "user_input": {
+          "technicianNote": "펌웨어 업데이트 후부터 그렇다고 함"
+        },
+        "case_number": "R-d69f1b1f-39b1-486e-b0d8-1f3680fa2d77",
+        "error_codes": [
+          "E05"
+        ],
+        "product_type": "vacuum",
+        "service_type": "CENTER",
+        "intake_source": "STAFF",
+        "purchase_date": null,
+        "technician_id": "1",
+        "visit_done_at": null,
+        "correlation_id": "88faec8d-4996-46bf-b41e-78b33b51721e",
+        "firmware_version": "1.2",
+        "product_snapshot": {
+          "id": "1",
+          "model_id": "1",
+          "components": [
+            {
+              "id": "1",
+              "lot_id": "1",
+              "region": "Gyeonggi",
+              "part_id": "1",
+              "slot_code": "MOTOR-LEFT",
+              "factory_id": "1",
+              "lot_number": "LOT-MOTOR-001",
+              "product_id": "1",
+              "removed_at": null,
+              "factory_name": "Demo factory",
+              "installed_at": "2025-10-22T08:32:14.145825Z",
+              "component_serial": null
+            }
+          ],
+          "model_code": "R1",
+          "model_name": "Robot R1",
+          "information": {
+            "firmware": "1.0.3",
+            "manufacturer": "Demo",
+            "specifications": {
+              "batteryWh": 60
+            }
+          },
+          "product_type": "vacuum",
+          "serial_number": "ROBOT-SEOUL-001",
+          "appliance_type": "VACUUM_CLEANER",
+          "compatibleParts": [
+            {
+              "id": "1",
+              "name": "Wheel motor",
+              "category": "MOTOR",
+              "part_number": "MOTOR-001"
+            },
+            {
+              "id": "3",
+              "name": "Main PCB",
+              "category": "PCB",
+              "part_number": "PCB-001"
+            }
+          ],
+          "manufactured_on": null
+        },
+        "procurement_status": "NOT_STARTED",
+        "assigned_technician_id": null
+      },
+      "requestId": "7",
+      "checkpoint": "26",
+      "requestKey": "d56eb9aa-0209-5689-b5d5-f666e4d08519",
+      "attachments": [
+        {
+          "id": "54",
+          "kind": "IMAGE",
+          "sha256": "e4d10ba12645c0a0b1a6829092582f692c4abe15c8cc563b3291985c14bcaff6",
+          "target": "PCB",
+          "byte_size": 108162,
+          "mime_type": "image/jpeg",
+          "request_id": null,
+          "downloadPath": "/internal/attachments/54",
+          "quality_gate": "CHECKED",
+          "quality_result_id": "46",
+          "warning_confirmation_id": "24"
+        },
+        {
+          "id": "55",
+          "kind": "IMAGE",
+          "sha256": "e4d10ba12645c0a0b1a6829092582f692c4abe15c8cc563b3291985c14bcaff6",
+          "target": "PCB",
+          "byte_size": 108162,
+          "mime_type": "image/jpeg",
+          "request_id": "6",
+          "downloadPath": "/internal/attachments/55",
+          "quality_gate": "CHECKED",
+          "quality_result_id": "47",
+          "warning_confirmation_id": "25"
+        },
+        {
+          "id": "56",
+          "kind": "IMAGE",
+          "sha256": "e4d10ba12645c0a0b1a6829092582f692c4abe15c8cc563b3291985c14bcaff6",
+          "target": "PCB",
+          "byte_size": 108162,
+          "mime_type": "image/jpeg",
+          "request_id": "7",
+          "downloadPath": "/internal/attachments/56",
+          "quality_gate": "CHECKED",
+          "quality_result_id": "48",
+          "warning_confirmation_id": "26"
+        }
+      ],
+      "attachmentIds": [
+        "54",
+        "55",
+        "56"
+      ],
+      "addedAttachmentIds": [
+        "56"
+      ],
+      "excludedAttachmentIds": [],
+      "selectedAttachmentIds": [
+        "54",
+        "55",
+        "56"
+      ],
+      "explicitlyExcludedAttachmentIds": []
+    },
+    "repairId": "27",
+    "sequence": 0,
+    "eventType": "DIAGNOSIS_RESUMED",
+    "occurredAt": "2026-10-25T13:52:04.271634Z",
+    "executionId": "c0371ae9-f762-4120-be3d-7ad32e6d839c",
+    "correlationId": "88faec8d-4996-46bf-b41e-78b33b51721e",
+    "inputRevision": 3,
+    "schemaVersion": 2
+  },
+  "result": {
+    "eventType": "PHOTO_REQUESTED",
+    "payload": {
+      "round": 3,
+      "bodyPart": "PCB",
+      "description": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.\nPCB 전체와 결함 의심 부위를 밝고 선명하게 촬영하고 증상을 보충해 주세요.",
+      "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+      "analysisResults": [
+        {
+          "source": "INTERPRETATION",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "normalize_observation",
+          "referenceCount": 0
+        },
+        {
+          "source": "PCB",
+          "attachmentId": "54",
+          "status": "NO_DETECTION",
+          "labels": [],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 0
+        },
+        {
+          "source": "RAG",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 6
+        },
+        {
+          "source": "PCB",
+          "attachmentId": "55",
+          "status": "NO_DETECTION",
+          "labels": [],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 0
+        },
+        {
+          "source": "PCB",
+          "attachmentId": "56",
+          "status": "NO_DETECTION",
+          "labels": [],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 0
+        }
+      ],
+      "checkpoint": "26",
+      "requestKey": "76654eb9-c297-529a-8a7a-4fec52324a86"
+    }
+  },
+  "execution": {
+    "trace_id": null,
+    "calls": 3,
+    "retries": 0,
+    "duration_ms": 3845,
+    "call_limit": 75,
+    "prompts": {},
+    "node_executions": 8,
+    "nodes": {
+      "wait_input": 2,
+      "classify_photos": 1,
+      "split_text": 1,
+      "pcb_mcp": 1,
+      "rag_mcp": 1,
+      "judge": 1,
+      "request_photo": 1
+    },
+    "tool_attempts": {
+      "normalize_observation": 1,
+      "call_pcb_mcp": 1,
+      "call_rag_mcp": 1
+    },
+    "max_same_input_attempts_used": 1,
+    "limits_hit": [],
+    "context_actions": [],
+    "llm": {
+      "calls": 0,
+      "tokens_reserved": 0,
+      "actual_usage": {},
+      "run_token_limit": 800000,
+      "per_call_context_limit": 64000,
+      "output_token_limit": 2048,
+      "scope": "agent-direct-only; text UTF-8 upper bound; images estimated; MCP-internal excluded"
+    },
+    "limits": {
+      "same_input_attempts": 3,
+      "node_executions": 20,
+      "graph_super_steps": 20,
+      "run_seconds": 1800.0,
+      "tool_seconds": 90.0,
+      "weighted_calls": 75
+    }
+  }
+}

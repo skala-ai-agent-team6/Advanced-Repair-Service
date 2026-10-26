@@ -22,6 +22,7 @@ from openai import APIConnectionError
 
 from . import config as C
 from . import tracing
+from . import measurement
 from langsmith import traceable
 
 log = logging.getLogger("worker.harness")
@@ -128,6 +129,7 @@ def call_identity(fn, args, kwargs, name_arg):
 def record(event, **fields):
     budget = current.get()
     log_event(event, **{**(budget.context if budget else {}), **fields})
+    measurement.emit(event, **{**(budget.context if budget else {}), **fields})
 
 
 def transient(exc, seen=frozenset()):
@@ -163,9 +165,10 @@ def guarded(weight=1, name_arg=None):
                 record("tool.started", tool=tool, call_id=call_id, attempt=attempt + 1)
                 try:
                     async with asyncio.timeout(C.TOOL_TIMEOUT):
-                        value = await tracing.tool_attempt(
-                            fn, args, kwargs, langsmith_extra={"name": str(tool),
-                            "metadata": {"attempt": attempt + 1, "call_id": call_id}})
+                        with measurement.scope(tool=tool, attempt=attempt + 1):
+                            value = await tracing.tool_attempt(
+                                fn, args, kwargs, langsmith_extra={"name": str(tool),
+                                "metadata": {"attempt": attempt + 1, "call_id": call_id}})
                     record("tool.succeeded", tool=tool, call_id=call_id, duration_ms=round((monotonic()-started)*1000))
                     return value
                 except Exception as exc:
@@ -189,7 +192,8 @@ def observed(fn):
         record("node.started", node=fn.__name__)
         started = monotonic()
         try:
-            return await fn(state, config)
+            with measurement.scope(node=fn.__name__):
+                return await fn(state, config)
         except GraphInterrupt:
             record("node.paused", node=fn.__name__)   # 추가 자료를 기다리는 정상 멈춤이다
             raise
@@ -208,7 +212,8 @@ def thread_id(command: dict) -> str:
 
 async def invoke(graph, command, emit, metrics=None, resume=None):
     metadata = {**context(command), "thread_id": str(command["taskId"])}
-    with tracing.execution_context(metadata):
+    with tracing.execution_context(metadata), measurement.scope(
+            event_id=command["eventId"], task_id=command["taskId"]):
         return await _invoke(graph, command, emit, metrics, resume)
 
 

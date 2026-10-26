@@ -42,7 +42,6 @@ def fixture_tools(monkeypatch, tmp_path):
     monkeypatch.setattr(tools, "load_photos", AsyncMock(side_effect=lambda cmd: [
         {"attachmentId": a["id"], "path": image, "target": a.get("target", "PCB")}
         for a in cmd["payload"]["attachments"]]))
-    monkeypatch.setattr(tools, "split_text", AsyncMock(return_value=tools.Clues(pcb=[], mech=[], sw=[])))
     async def observation(text, *, product_type="unknown"):
         from worker.context_policy import prepare_text
         text = prepare_text(text)
@@ -359,6 +358,14 @@ def test_fault_runner_checks_actual_nested_error_output(fixture_tools, monkeypat
     model.__name__ = 'offline_tool'
     monkeypatch.setattr(tools, 'call_mech_mcp' if fault == 'mechanical-unavailable' else 'call_rag_mcp',
                         harness.guarded()(model))
+    if fault == 'rag-unavailable':
+        # 검색 서버가 내려가면 같은 서버의 사례 저장도 실패할 수 있다.
+        monkeypatch.setattr(C, 'SAVE_REPAIR_CASES', True)
+        monkeypatch.setattr(tools, 'save_repair_case', AsyncMock(side_effect=ConnectionError()))
+    else:
+        # 추가 사진 대기 이벤트에는 아직 최종 리포트 근거가 없다.
+        tools.call_rag_mcp.return_value = {'hits': [
+            {'kind': 'REFERENCE', 'citation': 'doc-1', 'text': '점검 자료'}]}
     rows = asyncio.run(verify_live.run('mixed', fault))
     assert rows[0]['fault'] == fault
     assert Path(rows[0]['report']).is_file()

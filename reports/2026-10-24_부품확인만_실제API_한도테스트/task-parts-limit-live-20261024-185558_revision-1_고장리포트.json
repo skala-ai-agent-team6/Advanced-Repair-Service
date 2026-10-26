@@ -1,0 +1,361 @@
+{
+  "command": {
+    "taskId": "parts-limit-live-20261024-185558",
+    "eventId": "02b12614-4a23-4672-a0be-3507e860005f",
+    "payload": {
+      "task": {
+        "id": "10",
+        "stage": null,
+        "result": null,
+        "status": "QUEUED",
+        "case_id": "11",
+        "version": 0,
+        "created_at": "2026-10-24T06:53:23.502382Z",
+        "error_code": null,
+        "updated_at": "2026-10-24T06:53:23.502382Z",
+        "finished_at": null,
+        "lease_until": null,
+        "request_key": "53d35621-581c-4956-b4be-dd2f02da9c1f",
+        "retry_count": 0,
+        "execution_id": "0c16588b-450b-4988-9f9a-e1a5b20d3279",
+        "error_message": null,
+        "last_sequence": 0,
+        "checkpoint_ref": null,
+        "input_revision": 1,
+        "workflow_version": "repair-v2",
+        "photo_request_count": 0
+      },
+      "round": 0,
+      "repair": {
+        "id": "11",
+        "status": "DIAGNOSING",
+        "symptom": "충전이 안 되고 바퀴 모터에서 소음",
+        "version": 1,
+        "center_id": "1",
+        "closed_at": null,
+        "created_at": "2026-10-24T06:53:22.378003Z",
+        "product_id": "1",
+        "user_input": {
+          "technicianNote": "펌웨어 업데이트 후부터 그렇다고 함"
+        },
+        "case_number": "R-feab4815-783c-4b80-a8b6-dfce9550b201",
+        "error_codes": [
+          "E05"
+        ],
+        "technician_id": "1",
+        "correlation_id": "3068b986-16f1-420f-8957-73f443b39ee4",
+        "firmware_version": "1.2",
+        "product_snapshot": {
+          "id": "1",
+          "model_id": "1",
+          "components": [
+            {
+              "id": "1",
+              "lot_id": "1",
+              "region": "Gyeonggi",
+              "part_id": "1",
+              "slot_code": "MOTOR-LEFT",
+              "factory_id": "1",
+              "lot_number": "LOT-MOTOR-001",
+              "product_id": "1",
+              "removed_at": null,
+              "factory_name": "Demo factory",
+              "installed_at": "2025-10-22T08:32:14.145825Z",
+              "component_serial": null
+            }
+          ],
+          "model_code": "R1",
+          "model_name": "Robot R1",
+          "information": {
+            "firmware": "1.0.3",
+            "manufacturer": "Demo",
+            "specifications": {
+              "batteryWh": 60
+            }
+          },
+          "serial_number": "ROBOT-SEOUL-001",
+          "compatibleParts": [
+            {
+              "id": "1",
+              "name": "Wheel motor",
+              "category": "MOTOR",
+              "part_number": "MOTOR-001"
+            },
+            {
+              "id": "3",
+              "name": "Main PCB",
+              "category": "PCB",
+              "part_number": "PCB-001"
+            }
+          ],
+          "manufactured_on": null
+        },
+        "procurement_status": "NOT_STARTED"
+      },
+      "requestId": null,
+      "checkpoint": null,
+      "requestKey": null,
+      "attachments": [
+        {
+          "id": "21",
+          "kind": "IMAGE",
+          "sha256": "65df3f54e706a4203669b583278fbd44fe4930a02fa30e8c95e3e5263ef8331e",
+          "target": "PCB",
+          "byte_size": 122253,
+          "mime_type": "image/jpeg",
+          "request_id": null,
+          "downloadPath": "/internal/attachments/21",
+          "quality_gate": "CHECKED",
+          "quality_result_id": "13",
+          "warning_confirmation_id": "6"
+        },
+        {
+          "id": "22",
+          "kind": "IMAGE",
+          "sha256": "432c51c522ec4e06d852e3dced960f41f72401bbd03c6dec48f8e813d44f418e",
+          "target": "MOTOR",
+          "byte_size": 166040,
+          "mime_type": "image/jpeg",
+          "request_id": null,
+          "downloadPath": "/internal/attachments/22",
+          "quality_gate": "CHECKED",
+          "quality_result_id": "14",
+          "warning_confirmation_id": null
+        }
+      ],
+      "attachmentIds": [
+        "21",
+        "22"
+      ],
+      "addedAttachmentIds": [],
+      "excludedAttachmentIds": [],
+      "selectedAttachmentIds": [
+        "21",
+        "22"
+      ]
+    },
+    "repairId": "11",
+    "sequence": 0,
+    "eventType": "DIAGNOSIS_REQUESTED",
+    "occurredAt": "2026-10-24T06:53:23.525462Z",
+    "executionId": "0c16588b-450b-4988-9f9a-e1a5b20d3279",
+    "correlationId": "3068b986-16f1-420f-8957-73f443b39ee4",
+    "inputRevision": 1,
+    "schemaVersion": 2
+  },
+  "result": {
+    "eventType": "DIAGNOSIS_COMPLETED",
+    "payload": {
+      "summary": "로봇청소기 충전 불량 및 바퀴 모터 소음 문제에 대한 진단 리포트입니다. MCP 검사 결과, 바퀴 모터와 메인 PCB에서 결함이 발견되었습니다. 추가 점검이 필요합니다.",
+      "modelVersion": "skeleton-0.2",
+      "repairMethod": "바퀴 모터를 교체하고 메인 PCB를 점검 후 필요시 교체합니다. 현재 바퀴 모터는 재고가 있으며, 메인 PCB는 재고가 없습니다. 바퀴 모터는 2026년 10월 27일에 입고 예정입니다.",
+      "candidates": [
+        {
+          "rank": 1,
+          "cause": "메인 PCB의 결함으로 인한 충전 불량",
+          "confidence": 0.953,
+          "explanation": "MCP 검사 결과 메인 PCB에서 결함이 발견되어 충전이 되지 않는 원인으로 추정됩니다."
+        },
+        {
+          "rank": 2,
+          "cause": "바퀴 모터 결함으로 인한 소음 발생",
+          "confidence": 0.802,
+          "explanation": "MCP 검사 결과 바퀴 모터에서 소음이 발생하고 있으며, 결함 확률이 높습니다."
+        }
+      ],
+      "recommendedParts": [
+        {
+          "partId": "1",
+          "quantity": 1
+        }
+      ],
+      "recommendedTools": [],
+      "evidence": [
+        {
+          "type": "PHOTO",
+          "annotation": {
+            "defects": [
+              {
+                "type": "patches",
+                "confidence": 0.802,
+                "box_xyxy": [
+                  806,
+                  53,
+                  926,
+                  172
+                ]
+              },
+              {
+                "type": "patches",
+                "confidence": 0.618,
+                "box_xyxy": [
+                  532,
+                  272,
+                  710,
+                  545
+                ]
+              },
+              {
+                "type": "scratches",
+                "confidence": 0.577,
+                "box_xyxy": [
+                  0,
+                  139,
+                  86,
+                  455
+                ]
+              },
+              {
+                "type": "scratches",
+                "confidence": 0.552,
+                "box_xyxy": [
+                  0,
+                  0,
+                  91,
+                  66
+                ]
+              },
+              {
+                "type": "patches",
+                "confidence": 0.394,
+                "box_xyxy": [
+                  743,
+                  301,
+                  946,
+                  713
+                ]
+              },
+              {
+                "type": "inclusion",
+                "confidence": 0.288,
+                "box_xyxy": [
+                  107,
+                  575,
+                  354,
+                  715
+                ]
+              },
+              {
+                "type": "inclusion",
+                "confidence": 0.286,
+                "box_xyxy": [
+                  143,
+                  137,
+                  373,
+                  247
+                ]
+              }
+            ],
+            "image": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-checkpoint/mcp_servers/mechanical/results/22_boxed.jpg"
+          },
+          "attachmentId": "22"
+        },
+        {
+          "type": "PHOTO",
+          "annotation": {
+            "defects": [
+              {
+                "type": "missing_hole",
+                "confidence": 0.953,
+                "box_xyxy": [
+                  222,
+                  64,
+                  251,
+                  88
+                ]
+              },
+              {
+                "type": "missing_hole",
+                "confidence": 0.895,
+                "box_xyxy": [
+                  419,
+                  251,
+                  440,
+                  272
+                ]
+              },
+              {
+                "type": "missing_hole",
+                "confidence": 0.627,
+                "box_xyxy": [
+                  331,
+                  571,
+                  351,
+                  590
+                ]
+              }
+            ],
+            "image": "/Users/beeyaaa/Workspace/SK-SKALA/Advanced-Repair-Service-checkpoint/mcp_servers/pcb/results/mcp_after/21.jpg"
+          },
+          "attachmentId": "21"
+        }
+      ],
+      "analysisResults": [
+        {
+          "source": "MECH",
+          "attachmentId": "22",
+          "status": "DETECTED",
+          "labels": [
+            "inclusion",
+            "patches",
+            "scratches"
+          ],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 0
+        },
+        {
+          "source": "PCB",
+          "attachmentId": "21",
+          "status": "DETECTED",
+          "labels": [
+            "missing_hole"
+          ],
+          "errorCode": null,
+          "tool": null,
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        },
+        {
+          "source": "BUSINESS",
+          "attachmentId": null,
+          "status": "REFERENCE",
+          "labels": [],
+          "errorCode": null,
+          "tool": "get_part_availability",
+          "referenceCount": 0
+        }
+      ],
+      "topCause": "메인 PCB의 결함으로 인한 충전 불량",
+      "agents": [],
+      "similarCases": []
+    }
+  },
+  "execution": {}
+}

@@ -12,7 +12,6 @@ from worker import config as C, harness, main, prompts, report, tools
 from worker.journal import Journal
 from test_integration import command, fixture_tools, Producer
 
-SPLIT_TEXT = tools.split_text
 WRITE_REPORT = tools.write_report
 
 
@@ -24,34 +23,34 @@ def copy_bundle(tmp_path, monkeypatch):
 
 
 def revise(directory, text, version='1.0.1'):
-    target = directory / 'split_text.md'
-    target.write_text(text)
+    target = directory / 'write_report.md'
+    target.write_text(text + '\n{findings}\n{compatible_parts}')
     manifest = json.loads((directory / 'manifest.json').read_text())
-    manifest['prompts']['split_text'].update(version=version, sha256=hashlib.sha256(target.read_bytes()).hexdigest())
+    manifest['prompts']['write_report'].update(version=version, sha256=hashlib.sha256(target.read_bytes()).hexdigest())
     (directory / 'manifest.json').write_text(json.dumps(manifest))
 
 
 def test_prompt_inputs_with_braces_are_not_interpreted_as_template():
     text = '소견 {findings} / {__class__} / $HOME / {{text}}'
-    result = prompts.render('split_text', tools.Clues, text=text)
-    assert result == '입력된 제품의 고장 증상을 단서별로 나눠라. 없으면 빈 목록.\n증상: ' + text
+    result = prompts.render('write_report', tools.Report, text=text, findings=[], compatible_parts=[])
+    assert text in result
     with pytest.raises(prompts.PromptConfigError):
-        prompts.render('write_report', tools.Clues, text=text)
+        prompts.render('write_report', tools.PhotoKind, text=text, findings=[], compatible_parts=[])
 
 
 @pytest.mark.parametrize('bad', ['missing', 'hash', 'placeholder', 'path', 'schema'])
 def test_invalid_bundle_fails_before_model_and_writes_failure(tmp_path, monkeypatch, bad):
     directory = copy_bundle(tmp_path, monkeypatch)
     if bad == 'missing':
-        (directory / 'split_text.md').unlink()
+        (directory / 'write_report.md').unlink()
     elif bad == 'hash':
-        (directory / 'split_text.md').write_text('changed {text}')
+        (directory / 'write_report.md').write_text('changed {text}')
     elif bad == 'placeholder':
         revise(directory, 'changed {unknown}')
     else:
         p = directory / 'manifest.json'
         manifest = json.loads(p.read_text())
-        manifest['prompts']['split_text']['file' if bad == 'path' else 'output_schema'] = '../split_text.md' if bad == 'path' else 'Report'
+        manifest['prompts']['write_report']['file' if bad == 'path' else 'output_schema'] = '../write_report.md' if bad == 'path' else 'PhotoKind'
         p.write_text(json.dumps(manifest))
     graph = SimpleNamespace(ainvoke=AsyncMock())
     monkeypatch.setattr(main, 'GRAPH', graph)
@@ -71,23 +70,22 @@ def test_invalid_bundle_fails_before_model_and_writes_failure(tmp_path, monkeypa
 
 def test_prompt_snapshot_stays_fixed_during_execution(tmp_path, monkeypatch):
     directory = copy_bundle(tmp_path, monkeypatch)
-    original = prompts.render('split_text', tools.Clues, text='소견')
-    version = json.loads((directory/'manifest.json').read_text())['prompts']['split_text']['version']
+    original = prompts.render('write_report', tools.Report, text='소견', findings=[], compatible_parts=[])
+    version = json.loads((directory/'manifest.json').read_text())['prompts']['write_report']['version']
     class Graph:
         async def ainvoke(self, *args, **kwargs):
             revise(directory, '새 지시 {text}')
-            assert prompts.render('split_text', tools.Clues, text='소견') == original
+            assert prompts.render('write_report', tools.Report, text='소견', findings=[], compatible_parts=[]) == original
             return {'result': 'ok'}
     metrics = {}
     asyncio.run(harness.invoke(Graph(), command(), AsyncMock(), metrics))
-    assert metrics['prompts']['split_text']['version'] == version
-    assert prompts.render('split_text', tools.Clues, text='소견') == '새 지시 소견'
+    assert metrics['prompts']['write_report']['version'] == version
+    assert prompts.render('write_report', tools.Report, text='소견', findings=[], compatible_parts=[]) == '새 지시 소견\n[]\n[]'
 
 
 def test_prompt_metadata_saved_and_replay_does_not_use_new_version(fixture_tools, monkeypatch, tmp_path):
     directory = copy_bundle(tmp_path, monkeypatch)
     monkeypatch.setattr(C, 'USE_GPT', True)
-    monkeypatch.setattr(tools, 'split_text', SPLIT_TEXT)
     monkeypatch.setattr(tools, 'write_report', WRITE_REPORT)
     calls = []
     def model(schema):
@@ -125,9 +123,9 @@ def test_prompt_metadata_saved_and_replay_does_not_use_new_version(fixture_tools
 def test_prompt_logs_versions_without_user_text(caplog):
     import logging
     with caplog.at_level(logging.INFO, logger='repair_agent'):
-        prompts.render('split_text', tools.Clues, text='private-technician-note')
+        prompts.render('write_report', tools.Report, text='private-technician-note', findings=[], compatible_parts=[])
     records = [r for r in caplog.records if r.getMessage() == 'prompt.used']
     assert records
     fields = records[-1].agent_fields
-    assert fields['prompt'] == 'split_text' and len(fields['sha256']) == 64
+    assert fields['prompt'] == 'write_report' and len(fields['sha256']) == 64
     assert 'private-technician-note' not in json.dumps(fields)

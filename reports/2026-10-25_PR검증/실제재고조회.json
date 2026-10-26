@@ -1,0 +1,48 @@
+{
+  "stocks": [
+    {
+      "partId": "1",
+      "warehouseId": "1",
+      "onHand": 10,
+      "reserved": 0,
+      "available": 10
+    },
+    {
+      "partId": "2",
+      "warehouseId": "1",
+      "onHand": 0,
+      "reserved": 0,
+      "available": 0
+    },
+    {
+      "partId": "3",
+      "warehouseId": "1",
+      "onHand": 0,
+      "reserved": 0,
+      "available": 0
+    }
+  ],
+  "factories": [
+    {
+      "partId": "1",
+      "factoryId": "1",
+      "region": "Gyeonggi",
+      "contact": "031-000-0000",
+      "lead_days": 3
+    },
+    {
+      "partId": "2",
+      "factoryId": "1",
+      "region": "Gyeonggi",
+      "contact": "031-000-0000",
+      "lead_days": 5
+    },
+    {
+      "partId": "3",
+      "factoryId": "1",
+      "region": "Gyeonggi",
+      "contact": "031-000-0000",
+      "lead_days": 7
+    }
+  ]
+}

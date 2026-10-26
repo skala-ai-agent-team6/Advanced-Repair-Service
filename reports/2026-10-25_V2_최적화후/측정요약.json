@@ -1,0 +1,23 @@
+{
+  "일반진단_첫실행": {
+    "task": 15,
+    "api_count": 6,
+    "duration_ms": 50460.12,
+    "discarded": 0,
+    "result": "DIAGNOSIS_COMPLETED"
+  },
+  "일반진단": {
+    "task": 16,
+    "api_count": 6,
+    "duration_ms": 11997.12,
+    "discarded": 0,
+    "result": "DIAGNOSIS_COMPLETED"
+  },
+  "조회한도_강제진단": {
+    "task": 17,
+    "api_count": 9,
+    "duration_ms": 12648.78,
+    "discarded": 0,
+    "result": "DIAGNOSIS_COMPLETED"
+  }
+}
