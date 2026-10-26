@@ -55,6 +55,8 @@ RECURSION_LIMIT = int(os.getenv("RECURSION_LIMIT", "20"))
 MAX_NODE_EXECUTIONS = int(os.getenv("MAX_NODE_EXECUTIONS", "20"))
 MAX_SAME_INPUT_ATTEMPTS = int(os.getenv("MAX_SAME_INPUT_ATTEMPTS", "3"))
 STATE_PATH = Path(os.getenv("AGENT_STATE_PATH", str(ROOT / ".local/integration.sqlite3")))
+# LangGraph 체크포인트. journal과 같은 파일을 쓰면 잠금이 겹치므로 분리한다.
+CHECKPOINT_PATH = Path(os.getenv("AGENT_CHECKPOINT_PATH", str(ROOT / ".local/checkpoints.sqlite3")))
 KAFKA_MAX_POLL_INTERVAL_MS = max(
     int((RUN_TIMEOUT + 180) * 1000),
     int(os.getenv("KAFKA_MAX_POLL_INTERVAL_MS", "0")))
@@ -64,7 +66,8 @@ KAFKA_AUTO_OFFSET_RESET = os.getenv("KAFKA_AUTO_OFFSET_RESET", "earliest")
 # 문맥 제한: UTF-8 바이트로 텍스트 토큰 수를 보수적으로 예약한다.
 MAX_MCP_RESPONSE_BYTES = int(os.getenv("MAX_MCP_RESPONSE_BYTES", "262144"))
 OBSERVATION_CONTEXT_BYTES = int(os.getenv("OBSERVATION_CONTEXT_BYTES", "6000"))
-TOOL_CONTEXT_BYTES = int(os.getenv("TOOL_CONTEXT_BYTES", "8000"))
+# [통합] 8000 → 16000: RAG 검색 결과 1건이 8KB를 넘어 평범한 접수에도 "문맥 제한" 문구가 붙었다 (전체 상한 REPORT_FINDINGS_BYTES는 그대로)
+TOOL_CONTEXT_BYTES = int(os.getenv("TOOL_CONTEXT_BYTES", "16000"))
 REPORT_FINDINGS_BYTES = int(os.getenv("REPORT_FINDINGS_BYTES", "24000"))
 MAX_CONTEXT_TOKENS = int(os.getenv("MAX_CONTEXT_TOKENS", "64000"))
 MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", "2048"))
@@ -74,6 +77,10 @@ MAX_EVENT_BYTES = int(os.getenv("MAX_EVENT_BYTES", "750000"))
 # [통합] 업무 MCP(재고·공장). 기본은 run.sh가 띄우는 로컬 mcp_servers/business (우리 DB를 그대로 읽음)
 # 팀원 ngrok 서버를 쓰려면 BUSINESS_MCP_URL=https://<ngrok>/mcp 와 아래 대응표(예: 1:47,3:46 / 1:12 / 1:12)를 준다
 BUSINESS_MCP_URL = os.getenv("BUSINESS_MCP_URL", "http://127.0.0.1:8015/mcp")
+# PCB 결함 검출 확신도 하한. 0.25→0.2: 평가셋 정상·흐린 PCB 사진은 0.05까지 검출 0건, short 결함은 0.24로 잡혀서 (eval/README.md)
+PCB_MIN_CONF = float(os.getenv("PCB_MIN_CONF", "0.2"))
+# [통합] 기계(표면·찌그러짐) 검출 확신도 하한. 0.25 → 0.5: 세탁기 등 실사진에서 결함이 아닌 곳에 약한 박스가 여러 개 잡혀서
+MECH_MIN_CONF = float(os.getenv("MECH_MIN_CONF", "0.5"))
 
 
 def id_map(name, default):

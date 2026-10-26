@@ -101,14 +101,14 @@ def test_observation_evidence_is_validated_against_sanitized_request(monkeypatch
 
 
 def test_reservation_checks_before_model_retry_and_parallel_calls(monkeypatch):
-    size = policy.text_tokens(policy.dump(tools.Clues.model_json_schema())) + 1024 + C.MAX_OUTPUT_TOKENS + 1
+    size = policy.text_tokens(policy.dump(tools.Report.model_json_schema())) + 1024 + C.MAX_OUTPUT_TOKENS + 1
     monkeypatch.setattr(C, 'MAX_RUN_TOKENS', size * 2)
     async def run():
         budget = harness.Budget('test', 20)
         token = harness.current.set(budget)
         try:
             async def reserve():
-                policy.reserve_llm(tools.Clues, 'x')
+                policy.reserve_llm(tools.Report, 'x')
             results = await asyncio.gather(*(reserve() for _ in range(3)), return_exceptions=True)
             assert sum(isinstance(r, harness.LimitExceeded) for r in results) == 1
             assert budget.tokens_reserved == size * 2 and budget.llm_calls == 2
@@ -179,7 +179,7 @@ def test_long_pii_input_large_rag_creates_masked_report_and_keeps_all_photo_evid
                 assert 'sample@example.com' not in json.dumps(event)
             assert json.loads(saved.read_text())['result'] == result and cmd == original
             # 이 레포는 유사사례 번역 LLM 호출이 하나 더 있다. 리포트 프롬프트만 센다.
-            reports = [x for x in received if x.startswith('로봇청소기 수리 기사')]
+            reports = [x for x in received if x.startswith('입력된 가전제품의 수리 기사')]
             assert len(reports) == 1 and len(rag['hits'][0]['excerpt']) > 10000
         finally:
             journal.close()

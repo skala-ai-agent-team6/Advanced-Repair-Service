@@ -42,8 +42,11 @@ export interface BeProduct {
 /** POST /api/repairs → 202 */
 export interface BeAccepted {
   repairId: BeId
-  taskId: BeId
+  taskId: BeId | null
   status?: string
+  /** [사진 품질] true 면 품질 확인 뒤 POST /repairs/{id}/diagnosis 로 진단을 따로 시작해야 한다 */
+  requiresDiagnosisRequest?: boolean
+  attachments?: { attachmentId: string }[]
 }
 
 export interface BeRepair {

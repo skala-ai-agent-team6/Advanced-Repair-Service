@@ -15,10 +15,12 @@ from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
 from . import config as C
 from . import report
+from .measurement import event_run
 from .context_policy import masked, check_event_size
 from .observability import configure_logging, context as execution_context, log_event
 from langgraph.errors import GraphRecursionError
 from .graph import build_graph
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 log = logging.getLogger("worker")
 GRAPH = build_graph()
@@ -42,7 +44,34 @@ async def flush(journal, command, producer):
         log_event("result_event.published", **fields)
 
 
-async def handle(command: dict, producer: AIOKafkaProducer, journal=None):
+async def waiting_for_input(graph, command) -> bool:
+    """이 작업이 추가 자료를 기다리며 멈춰 있는가. 체크포인터가 없으면 항상 아니다."""
+    try:
+        snapshot = await graph.aget_state({"configurable": {"thread_id": harness.thread_id(command)}})
+    except Exception:
+        return False
+    return any(task.interrupts for task in snapshot.tasks)
+
+
+async def drop_checkpoints(graph, command, result) -> None:
+    """끝난 작업의 그래프 상태를 지운다.
+
+    추가 자료를 기다리는 작업은 남겨 둔다. 결과는 journal에 있으므로 같은 이벤트가
+    다시 와도 모델을 부르지 않는다.
+    """
+    if result["eventType"] == "PHOTO_REQUESTED":
+        return
+    saver = getattr(graph, "checkpointer", None)
+    if saver is None:
+        return
+    try:
+        await saver.adelete_thread(harness.thread_id(command))
+    except Exception as exc:  # 정리 실패가 진단 결과를 바꾸지 않는다
+        log.warning("체크포인트 정리 보류: %s", type(exc).__name__)
+
+
+@event_run
+async def handle(command: dict, producer: AIOKafkaProducer, journal=None, graph=None):
     """완료 결과·이벤트를 먼저 저장하고 전송. 전송 재시도에서는 모델을 다시 부르지 않는다."""
     owned = journal is None
     journal = journal or Journal(C.STATE_PATH)
@@ -66,11 +95,16 @@ async def handle(command: dict, producer: AIOKafkaProducer, journal=None):
             await emit("DIAGNOSIS_STARTED", {"stage": "STARTED"})
             try:
                 metrics = {}
-                state = await harness.invoke(GRAPH, command, emit, metrics)
-                result = check_event_size(masked(state["result"]))
+                app = graph or GRAPH
+                resume = command["payload"] if await waiting_for_input(app, command) else None
+                state = await harness.invoke(app, command, emit, metrics, resume)
+                paused = state.get("__interrupt__")
+                result = check_event_size(masked(
+                    {"eventType": "PHOTO_REQUESTED", "payload": paused[0].value} if paused else state["result"]))
                 if result["eventType"] == "PHOTO_REQUESTED":
                     result["payload"]["requestKey"] = str(uuid.uuid5(uuid.NAMESPACE_URL, command["eventId"] + ":photo"))
                 journal.finish(command, result)  # JSON 계약 위반도 아래 실패 결과로 처리
+                await drop_checkpoints(app, command, result)
             except Exception as exc:
                 log_event("execution.failed", level=logging.ERROR, **fields,
                           error_type=type(exc).__name__)
@@ -82,6 +116,7 @@ async def handle(command: dict, producer: AIOKafkaProducer, journal=None):
                         "RUN_TIMEOUT" if isinstance(exc, TimeoutError) else "AGENT_ERROR")
                 result = {"eventType": "DIAGNOSIS_FAILED", "payload": {"errorCode": code}}
                 journal.finish(command, result)
+                await drop_checkpoints(app, command, result)
             else:
                 log_event("execution.completed", **fields, result_type=result["eventType"])
             finally:
@@ -126,6 +161,10 @@ async def handle(command: dict, producer: AIOKafkaProducer, journal=None):
 
 #  Kafka 우체국 창구
 async def run():
+    # 추가 자료 요청으로 멈춘 작업을 나중에 이어받으려면 그래프 상태가 남아 있어야 한다.
+    C.CHECKPOINT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    checkpoints = AsyncSqliteSaver.from_conn_string(str(C.CHECKPOINT_PATH))
+    app = build_graph(await checkpoints.__aenter__())
     consumer = AIOKafkaConsumer(C.COMMANDS_TOPIC, bootstrap_servers=C.KAFKA, group_id=C.GROUP_ID,
                                 enable_auto_commit=False, auto_offset_reset=C.KAFKA_AUTO_OFFSET_RESET,
                                 max_poll_records=1, max_poll_interval_ms=C.KAFKA_MAX_POLL_INTERVAL_MS)
@@ -152,7 +191,7 @@ async def run():
                           partition=msg.partition, offset=msg.offset)
                 while True:
                     try:
-                        await handle(command, producer)
+                        await handle(command, producer, graph=app)
                         break
                     except (CommandConflict, ValidationError, KeyError, TypeError):
                         await producer.send_and_wait(C.DLT_TOPIC, msg.value, key=msg.key)
@@ -172,6 +211,7 @@ async def run():
     finally:
         await consumer.stop()
         await producer.stop()
+        await checkpoints.__aexit__(None, None, None)
 
 
 if __name__ == "__main__":

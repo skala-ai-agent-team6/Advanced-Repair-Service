@@ -1,0 +1,11 @@
+{
+  "symptoms": "개발용 가상 청소기: 주행 중 멈춤",
+  "purchaseDate": "2026-01-01",
+  "serialNumber": "ROBOT-SEOUL-001",
+  "modelCode": "R1",
+  "centerId": "1",
+  "serviceType": "FIELD",
+  "contactName": "가상고객",
+  "contactPhone": "010-0000-0000",
+  "visitAddress": "개발용 가상 주소"
+}

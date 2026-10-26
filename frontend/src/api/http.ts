@@ -84,6 +84,8 @@ http.interceptors.response.use(
       }
     }
 
+    if (status === 403 && code === 'FORBIDDEN') window.dispatchEvent(new CustomEvent('auth:forbidden'))
+
     if (status === 401 && !config?.skipAuthExpired) window.dispatchEvent(new CustomEvent('auth:expired'))
     return Promise.reject(new ApiError(status, errorMessage(code, status), code))
   },

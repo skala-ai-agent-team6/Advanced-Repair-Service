@@ -1,0 +1,969 @@
+[
+  {
+    "id": "A1",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 63.7,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 2885,
+      "output_tokens": 307,
+      "total_tokens": 3192
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "missing_hole"
+    ],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "로봇청소기에서 전원은 들어오지만 흡입 모터가 회전하지 않는 문제가 발생했습니다. 메인보드의 납땜 부위 확인이 요청되었습니다. MCP 검사 결과, 흡입 모터가 돌지 않는 문제와 메인보드의 납땜 접합 불량이 확인되었습니다. 추가 점검이 필요합니다.",
+    "topCause": "납땜 접합 불량",
+    "evidence": 7,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": [
+          [
+            "missing_hole",
+            0.65
+          ],
+          [
+            "missing_hole",
+            0.6
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "A2",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 13.6,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 318,
+      "output_tokens": 22,
+      "total_tokens": 340
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['mouse_bite'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "A3",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 13.2,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 317,
+      "output_tokens": 28,
+      "total_tokens": 345
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['open_circuit'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "A4",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 14.8,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 314,
+      "output_tokens": 27,
+      "total_tokens": 341
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['short'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "A5",
+    "type": "PCB 결함",
+    "expected": "ok",
+    "seconds": 12.0,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 312,
+      "output_tokens": 22,
+      "total_tokens": 334
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['spur'])"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "B1",
+    "type": "기계 결함",
+    "expected": "ok",
+    "seconds": 35.7,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 3343,
+      "output_tokens": 305,
+      "total_tokens": 3648
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "dent",
+      "scratches"
+    ],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "로봇청소기에서 바퀴 쪽에서 긁히는 소음이 발생하고 있습니다. MCP 검사 결과, 구동부 하우징에 긁힘이 발견되었습니다. 추가 점검이 필요합니다.",
+    "topCause": "구동부 하우징의 긁힘",
+    "evidence": 8,
+    "detections": [
+      {
+        "source": "detect_surface_defects",
+        "defects": [
+          [
+            "scratches",
+            0.9
+          ],
+          [
+            "dent",
+            0.35
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "B2",
+    "type": "기계 결함",
+    "expected": "ok",
+    "seconds": 10.5,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 3304,
+      "output_tokens": 344,
+      "total_tokens": 3648
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "breakage",
+      "patches"
+    ],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "모터 덮개 표면에 얼룩과 변색이 발생했습니다. MCP 검사 결과, 얼룩과 변색이 있는 것으로 확인되었으며, 이는 표면 결함으로 분류됩니다. 그러나 추가 점검이 필요하여 원인 확정이 이루어지지 않았습니다.",
+    "topCause": "모터 덮개 표면의 얼룩 및 변색",
+    "evidence": 8,
+    "detections": [
+      {
+        "source": "detect_surface_defects",
+        "defects": [
+          [
+            "patches",
+            0.9
+          ],
+          [
+            "breakage",
+            0.28
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "B3",
+    "type": "기계 결함",
+    "expected": "ok",
+    "seconds": 9.1,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 3328,
+      "output_tokens": 285,
+      "total_tokens": 3613
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "dent",
+      "pitted_surface"
+    ],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "브러시 축 표면이 패이고 회전이 불가한 증상이 확인되었습니다. MCP 검사 결과, 브러시 축의 표면에 패임이 발견되어 회전 불가 원인으로 추정됩니다. 추가 점검이 필요합니다.",
+    "topCause": "브러시 축 표면 패임",
+    "evidence": 8,
+    "detections": [
+      {
+        "source": "detect_surface_defects",
+        "defects": [
+          [
+            "pitted_surface",
+            0.83
+          ],
+          [
+            "dent",
+            0.51
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "B4",
+    "type": "기계 결함 (실사진)",
+    "expected": "ok",
+    "seconds": 7.6,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 1482,
+      "output_tokens": 275,
+      "total_tokens": 1757
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "dent",
+      "patches"
+    ],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "로봇청소기에서 주행 중 딱딱 소리가 나고 한쪽 바퀴가 헛도는 증상이 발생했습니다. 기어 이빨 파손이 의심됩니다.\n\n근거 제한: normalize_observation, retrieve_repair_context 호출에 실패하여 해당 해석·검색 근거를 사용하지 못했습니다. 미확인 항목을 정상으로 판단하지 말고 수리 전 확인해 주세요.",
+    "topCause": "기어 이빨 파손",
+    "evidence": 1,
+    "detections": [
+      {
+        "source": "detect_surface_defects",
+        "defects": [
+          [
+            "patches",
+            0.61
+          ],
+          [
+            "patches",
+            0.37
+          ],
+          [
+            "patches",
+            0.31
+          ],
+          [
+            "dent",
+            0.55
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "B5",
+    "type": "기계 결함 (실사진)",
+    "expected": "ok",
+    "seconds": 9.0,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 2947,
+      "output_tokens": 234,
+      "total_tokens": 3181
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "dent"
+    ],
+    "pass": false,
+    "reasons": [
+      "라벨 ['dent'] (기대 ['scratches'])"
+    ],
+    "errorCode": null,
+    "summary": "본체 하단 금속판이 심하게 긁힌 증상에 대한 진단 리포트입니다. MCP 결과에 따르면, 기계적 결함이 확인되었습니다.",
+    "topCause": "본체 하단 금속판의 심한 긁힘으로 인한 손상",
+    "evidence": 7,
+    "detections": [
+      {
+        "source": "detect_surface_defects",
+        "defects": [
+          [
+            "dent",
+            0.92
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "C1",
+    "type": "정상 사진",
+    "expected": "needs_review",
+    "seconds": 10.5,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 316,
+      "output_tokens": 34,
+      "total_tokens": 350
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "C2",
+    "type": "정상 사진",
+    "expected": "needs_review",
+    "seconds": 8.9,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 306,
+      "output_tokens": 56,
+      "total_tokens": 362
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "C3",
+    "type": "정상 사진",
+    "expected": "needs_review",
+    "seconds": 17.2,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 3493,
+      "output_tokens": 601,
+      "total_tokens": 4094
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "dent",
+      "patches"
+    ],
+    "pass": false,
+    "reasons": [
+      "판정 ok (기대 needs_review)"
+    ],
+    "errorCode": null,
+    "summary": "로봇청소기의 흡입력이 약해진 증상에 대한 진단 리포트입니다. MCP 검사 결과, 모터 외관에서 결함이 발견되었습니다. 추가 점검이 필요합니다.",
+    "topCause": "모터 결함으로 인한 흡입력 저하",
+    "evidence": 8,
+    "detections": [
+      {
+        "source": "detect_surface_defects",
+        "defects": [
+          [
+            "patches",
+            0.89
+          ],
+          [
+            "patches",
+            0.54
+          ],
+          [
+            "patches",
+            0.35
+          ],
+          [
+            "patches",
+            0.35
+          ],
+          [
+            "patches",
+            0.33
+          ],
+          [
+            "patches",
+            0.29
+          ],
+          [
+            "patches",
+            0.26
+          ],
+          [
+            "dent",
+            0.41
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "C4",
+    "type": "정상 사진",
+    "expected": "needs_review",
+    "seconds": 58.6,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 3790,
+      "output_tokens": 393,
+      "total_tokens": 4183
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      },
+      "write_report": {
+        "bundle_version": "1.0.0",
+        "version": "1.1.0",
+        "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+        "output_schema": "Report",
+        "schema_sha256": "261cba7cefcee1b5970d03fb443cd8b425800649573405b39477d924fd595a36",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "ok",
+    "labels": [
+      "dent",
+      "inclusion",
+      "patches",
+      "scratches"
+    ],
+    "pass": false,
+    "reasons": [
+      "판정 ok (기대 needs_review)"
+    ],
+    "errorCode": null,
+    "summary": "로봇청소기의 모터에서 이상 소음이 발생하고 있습니다. MCP 검사 결과, 모터 부품에 여러 결함이 발견되었습니다. 추가 점검이 필요합니다.",
+    "topCause": "이상 소음",
+    "evidence": 10,
+    "detections": [
+      {
+        "source": "detect_surface_defects",
+        "defects": [
+          [
+            "inclusion",
+            0.84
+          ],
+          [
+            "inclusion",
+            0.49
+          ],
+          [
+            "patches",
+            0.38
+          ],
+          [
+            "scratches",
+            0.34
+          ],
+          [
+            "inclusion",
+            0.33
+          ],
+          [
+            "scratches",
+            0.28
+          ],
+          [
+            "inclusion",
+            0.26
+          ],
+          [
+            "dent",
+            0.67
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "D1",
+    "type": "범위 밖 (답 불가)",
+    "expected": "needs_review",
+    "seconds": 7.8,
+    "llm_calls": 2,
+    "tokens": {
+      "input_tokens": 14715,
+      "output_tokens": 60,
+      "total_tokens": 14775
+    },
+    "retries": 0,
+    "prompts": {
+      "classify_photo": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "afbd11cd7a087b3d43d26cb4dde58a1a7c587031ef6631d43ea0322a2a5c889b",
+        "output_schema": "PhotoKind",
+        "schema_sha256": "6fad8b3f6bfbac25d004147d62545d4afb5cbc0a2942551df34cc6e27c0731d8",
+        "model": "gpt-4o-mini"
+      },
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": []
+  },
+  {
+    "id": "D2",
+    "type": "범위 밖 (흐리고 어두움)",
+    "expected": "needs_review",
+    "seconds": 12.3,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 304,
+      "output_tokens": 40,
+      "total_tokens": 344
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "D3",
+    "type": "실패 유도",
+    "expected": "needs_review",
+    "seconds": 12.3,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 340,
+      "output_tokens": 52,
+      "total_tokens": 392
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 0건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "E1",
+    "type": "외부 오류 (기계 MCP 중단)",
+    "expected": "needs_review",
+    "seconds": 8.9,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 311,
+      "output_tokens": 30,
+      "total_tokens": 341
+    },
+    "retries": 2,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 1건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": []
+  },
+  {
+    "id": "E2",
+    "type": "외부 오류 (RAG 중단)",
+    "expected": "ok",
+    "seconds": 11.6,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 314,
+      "output_tokens": 27,
+      "total_tokens": 341
+    },
+    "retries": 2,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": false,
+    "reasons": [
+      "판정 needs_review (기대 ok)",
+      "라벨 없음 (기대 ['short'])",
+      "리포트에 근거 제한 문구 없음"
+    ],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 1건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": [
+      {
+        "source": "analyze_pcb_image",
+        "defects": []
+      }
+    ]
+  },
+  {
+    "id": "E3",
+    "type": "외부 오류 (PCB MCP 중단)",
+    "expected": "needs_review",
+    "seconds": 4.4,
+    "llm_calls": 1,
+    "tokens": {
+      "input_tokens": 312,
+      "output_tokens": 22,
+      "total_tokens": 334
+    },
+    "retries": 0,
+    "prompts": {
+      "split_text": {
+        "bundle_version": "1.0.0",
+        "version": "1.0.0",
+        "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
+        "output_schema": "Clues",
+        "schema_sha256": "2ab6b4a0c057ba1be8a494a92c38c9381eecf90b400b582403c9bf534c507f6f",
+        "model": "gpt-4o-mini"
+      }
+    },
+    "actual": "needs_review",
+    "labels": [],
+    "pass": true,
+    "reasons": [],
+    "errorCode": null,
+    "summary": "사진 0건에서 결함 단서를 수집했습니다. 분석·보조 도구 오류 1건. 진단은 아직 확정되지 않았습니다.",
+    "topCause": null,
+    "evidence": 0,
+    "detections": []
+  }
+]

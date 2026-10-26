@@ -3,6 +3,7 @@ import json
 from fastmcp import Client
 
 from . import config as C
+from .products import normalize_product_type
 from .context_policy import prepare_text
 from .harness import guarded
 from .tool_policy import check_object, check_response
@@ -39,10 +40,10 @@ async def call(url, name, arguments):
     return check_object(data, name)
 
 
-async def normalize_observation(text):
+async def normalize_observation(text, *, product_type="unknown"):
     text = prepare_text(text, "normalize_observation")
     data = await call(C.OBSERVATION_MCP_URL, "normalize_observation",
-                      {"raw_text": text, "origin": "technician", "technician_confirmed": True})
+                      {"product_type": normalize_product_type(product_type), "raw_text": text, "origin": "technician", "technician_confirmed": True})
     if data.get("raw_text") != text or not isinstance(data.get("observations"), list):
         raise ValueError("Invalid observation response")
     for item in data["observations"]:
@@ -52,16 +53,16 @@ async def normalize_observation(text):
     return data
 
 
-async def interpret_pcb(labels):
-    data = await call(C.PCB_INTERPRET_MCP_URL, "interpret_pcb", {"labels": labels})
+async def interpret_pcb(labels, *, product_type="unknown"):
+    data = await call(C.PCB_INTERPRET_MCP_URL, "interpret_pcb", {"labels": labels, "product_type": normalize_product_type(product_type)})
     if not isinstance(data.get("detections"), list):
         raise ValueError("Invalid PCB interpretation")
     return data
 
 
-async def interpret_damage(labels):
+async def interpret_damage(labels, *, product_type="unknown"):
     # dent/breakage만으로 bonnet/roof 등의 부위를 만들어 보내지 않는다.
-    data = await call(C.DAMAGE_MCP_URL, "interpret_damage", {"labels": labels})
+    data = await call(C.DAMAGE_MCP_URL, "interpret_damage", {"labels": labels, "product_type": normalize_product_type(product_type)})
     if not isinstance(data.get("detections"), list):
         raise ValueError("Invalid damage interpretation")
     return data

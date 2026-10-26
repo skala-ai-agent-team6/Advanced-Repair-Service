@@ -1,5 +1,5 @@
 {
-  "bundle_version": "1.0.0",
+  "bundle_version": "1.3.0",
   "prompts": {
     "classify_photo": {
       "file": "classify_photo.md",
@@ -7,17 +7,17 @@
       "sha256": "afbd11cd7a087b3d43d26cb4dde58a1a7c587031ef6631d43ea0322a2a5c889b",
       "output_schema": "PhotoKind"
     },
-    "split_text": {
-      "file": "split_text.md",
-      "version": "1.0.0",
-      "sha256": "57e2491f8cc7ee1391ade45a2998adda10bfc86ba817526fbec48b8724d717f8",
-      "output_schema": "Clues"
-    },
     "write_report": {
       "file": "write_report.md",
-      "version": "1.1.0",
-      "sha256": "16d0ed8b593674c1c341e36498eae87b3d27c6eb8513eb0c03b6d9eefcc8471a",
+      "version": "1.3.0",
+      "sha256": "8fb7eaff97ac282d24e187f450ff168c765f4facfa47375f7eb87d292d017732",
       "output_schema": "Report"
+    },
+    "polish_report": {
+      "file": "polish_report.md",
+      "version": "1.1.0",
+      "sha256": "c147dceb3f7f5005cf6cacd267abe7e4989750e9fab6256dbb09c535e99fbf7c",
+      "output_schema": "Polished"
     }
   }
 }

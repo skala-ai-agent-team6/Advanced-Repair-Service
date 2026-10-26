@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /* 수리 리포트 — 기사가 초안을 저장하고 확정한다. 확정본만 고장 DB·품질 대시보드에 반영된다.
  *  확정 후에도 수정 가능: 수정 저장 시 새 초안(revision+1), 다시 확정하면 반영 내용이 새 확정본으로 교체된다.
- *  본사 품질 담당자는 읽기 전용으로 조회만 한다. */
+ *  본사 품질 담당자는 읽기 전용으로 조회만 한다.
+ *  AI 진단은 상단 [AI 진단 참고하기] Drawer 에서 조회만 (폼에는 [AI … 불러오기]를 눌렀을 때만 복사) */
 import { computed, reactive, ref, watch } from 'vue'
 import {
   CircleCheck, CircleAlert, CircleX, Plus, Trash2, Save, Sparkles, History, Building2, Package, PencilLine, FileCheck2, RefreshCw, X,
@@ -12,10 +13,11 @@ import ImageUploader from '@/components/repair/ImageUploader.vue'
 import TechnicianCommentForm from '@/components/review/TechnicianCommentForm.vue'
 import ApprovalHistoryTimeline from '@/components/review/ApprovalHistoryTimeline.vue'
 import AiBadge from '@/components/common/AiBadge.vue'
-import ConfidenceBar from '@/components/common/ConfidenceBar.vue'
 import StateView from '@/components/common/StateView.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import CaseSyncCard from '@/components/review/CaseSyncCard.vue'
+import AiDiagnosisReference from '@/components/diagnosis/AiDiagnosisReference.vue'
 import { useRepairPage } from '@/composables/useRepairPage'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -61,6 +63,8 @@ const before = ref<UploadItem[]>([])
 const after = ref<UploadItem[]>([])
 const touched = ref<'draft' | 'confirm' | null>(null)
 const confirmOpen = ref(false)
+/** 참고용 AI 진단 Drawer (조회 전용) */
+const aiOpen = ref(false)
 const actionFromAi = ref(false)
 const conflict = ref(false)
 let filled = false
@@ -218,7 +222,7 @@ async function confirm() {
     confirmOpen.value = false
     editRequested.value = false
     touched.value = null
-    toast.success(`리포트 r${report.value?.revision}을 확정했습니다. 고장 DB와 대시보드에 반영됩니다.`)
+    toast.success(`리포트 r${report.value?.revision}을 확정했습니다. 사내 사례와 품질 통계에 반영됩니다.`)
   } catch (e) {
     confirmOpen.value = false
     await handleError(e)
@@ -258,6 +262,13 @@ const faultText = (c: ReportContent) =>
 
     <template v-else-if="repair">
       <RepairFlowNav :repair="repair" />
+      <div class="page-head">
+        <div>
+          <h1>{{ editing ? '수리 리포트 작성' : '수리 리포트' }}</h1>
+          <p class="sub">기사가 확정한 결과만 고장 DB와 품질 대시보드에 반영됩니다.</p>
+        </div>
+        <button type="button" class="btn btn-ai" aria-haspopup="dialog" @click="aiOpen = true"><Sparkles :size="18" aria-hidden="true" /> AI 진단 참고하기</button>
+      </div>
       <RepairSummaryCard :repair="repair" compact />
 
       <!-- 안내 -->
@@ -281,13 +292,13 @@ const faultText = (c: ReportContent) =>
         <PencilLine :size="22" />
         <div>
           <strong>확정된 리포트를 수정 중입니다 (초안 r{{ report?.revision }}).</strong>
-          고장 DB·대시보드에는 아직 r{{ lastConfirmed?.revision }} 확정본이 반영되어 있습니다. 다시 확정하면 새 확정본으로 교체됩니다.
+          고장 DB·품질 대시보드에는 아직 r{{ lastConfirmed?.revision }} 확정본이 반영되어 있습니다. 다시 확정하면 새 확정본으로 교체됩니다.
         </div>
       </div>
 
       <!-- ===== 작성 · 수정 (기사) ===== -->
       <div v-if="editing" class="layout">
-        <form class="stack" novalidate @submit.prevent="openConfirm">
+        <form class="stack report-form" novalidate @submit.prevent="openConfirm">
           <section class="card card-pad stack human-edge">
             <div class="row between">
               <h2 class="section-title">1. 처리 결과</h2>
@@ -340,6 +351,10 @@ const faultText = (c: ReportContent) =>
             </div>
             <p v-if="form.outcome === 'NO_FAULT_FOUND'" class="faint">처리 결과가 '고장 없음'이라 고장 부위를 기록하지 않습니다.</p>
             <template v-else>
+              <div v-if="!form.faults.length" class="empty-faults">
+                <span>등록된 고장 부위가 없습니다</span>
+                <span class="faint">아래 [고장 부위 추가]로 직접 넣거나, 위의 [AI 추천 부품 불러오기]로 AI 추천을 복사해 고칠 수 있어요.</span>
+              </div>
               <div v-for="(f, i) in form.faults" :key="i" class="fault-row">
                 <div class="field">
                   <label :for="`fa-${i}`" class="sr-only">고장 부위</label>
@@ -416,29 +431,6 @@ const faultText = (c: ReportContent) =>
           </div>
         </form>
 
-        <!-- 참고: AI 진단 (읽기 전용) -->
-        <aside class="ref">
-          <section v-if="diagnosis" class="ai-zone card-pad stack sticky">
-            <AiBadge label="참고용 AI 진단 (확정 아님)" />
-            <p class="faint">v{{ diagnosis.version }} · {{ formatDateTime(diagnosis.generatedAt) }}</p>
-            <h3>{{ diagnosis.topCause }}</h3>
-            <ConfidenceBar :value="diagnosis.confidence" size="sm" />
-            <div>
-              <p class="lbl">원인 후보</p>
-              <ol class="mini">
-                <li v-for="c in diagnosis.candidates" :key="c.rank">{{ c.cause }} <span class="faint">{{ c.confidence }}점</span></li>
-              </ol>
-            </div>
-            <div>
-              <p class="lbl">추천 부품</p>
-              <ul class="mini">
-                <li v-for="p in diagnosis.parts" :key="p.partNo">{{ p.partName }} ({{ p.partNo }}) × {{ p.quantity }}</li>
-              </ul>
-            </div>
-            <RouterLink :to="`/repairs/${repair.id}/diagnosis`" class="btn btn-sm">진단 상세 보기</RouterLink>
-          </section>
-          <section v-else class="card card-pad faint">AI 진단 없이 진행하는 건입니다.</section>
-        </aside>
       </div>
 
       <!-- ===== 읽기 전용 (확정본 조회 · 본사 품질 담당자) ===== -->
@@ -453,6 +445,10 @@ const faultText = (c: ReportContent) =>
           </div>
           <div class="card-body ro">
             <dl class="kv">
+              <dt>리포트 ID</dt>
+              <dd class="mono">{{ report.id ?? '-' }}</dd>
+              <dt>버전</dt>
+              <dd>r{{ report.revision }} <span class="faint">(저장 v{{ report.version }})</span></dd>
               <dt>처리 결과</dt>
               <dd><span class="badge" :class="`tone-${OUTCOME_META[report.content.outcome].tone}`">{{ OUTCOME_META[report.content.outcome].label }}</span> <span class="faint">수리 {{ report.content.repairSuccessful ? '성공' : '미완료' }}</span></dd>
               <dt>AI 진단</dt>
@@ -490,6 +486,9 @@ const faultText = (c: ReportContent) =>
         </section>
       </template>
 
+      <!-- 사내 사례 반영 (US-08 · Mock 전용) -->
+      <CaseSyncCard v-if="FEATURES.caseSync && lastConfirmed" :repair-id="repair.id" :revision="lastConfirmed.revision" />
+
       <!-- 확정 이력 -->
       <section v-if="report?.confirmations.length" class="card">
         <div class="card-head"><h3><FileCheck2 :size="20" /> 확정 이력</h3></div>
@@ -517,7 +516,13 @@ const faultText = (c: ReportContent) =>
       </section>
     </template>
 
-    <BaseModal :open="confirmOpen" title="리포트 확정 전 확인" :width="620" @close="confirmOpen = false">
+    <!-- 참고용 AI 진단 (오른쪽 Drawer · 휴대폰은 아래에서 올라오는 시트, 조회 전용) -->
+    <BaseModal :open="aiOpen" title="참고용 AI 진단" placement="right" @close="aiOpen = false">
+      <template #head-extra><span class="badge tone-ai ai-dash">확정된 결과가 아닙니다</span></template>
+      <AiDiagnosisReference v-if="repair" :diagnosis="diagnosis" :repair-id="repair.id" />
+    </BaseModal>
+
+    <BaseModal :open="confirmOpen" title="수리 결과 확정" :width="620" @close="confirmOpen = false">
       <dl class="kv">
         <dt>처리 결과</dt>
         <dd>{{ form.outcome ? OUTCOME_META[form.outcome].label : '-' }}</dd>
@@ -533,7 +538,8 @@ const faultText = (c: ReportContent) =>
       <div class="callout tone-info" style="margin-top: 16px">
         <FileCheck2 :size="20" />
         <div>
-          <strong>확정하면 고장 DB와 대시보드에 반영됩니다.</strong>
+          <strong>수리 결과를 확정하시겠습니까?</strong><br />
+          확정된 결과는 사내 사례와 품질 통계에 반영됩니다.
           <template v-if="lastConfirmed"> 이전 확정본(r{{ lastConfirmed.revision }})의 반영 내용은 이 확정본으로 교체됩니다.</template>
           <template v-if="form.outcome === 'NO_FAULT_FOUND'"> 단, '고장 없음'은 고장 건수에 포함되지 않습니다.</template>
           확정 후에도 [리포트 수정]으로 고칠 수 있습니다.
@@ -550,9 +556,34 @@ const faultText = (c: ReportContent) =>
 <style scoped>
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap);
+}
+/* 하단 고정 버튼이 입력 내용을 가리지 않게: 마지막 카드 아래 여백 + 포커스 이동 시 버튼 높이만큼 비켜서 */
+.report-form {
+  padding-bottom: 24px;
+}
+.report-form :is(section, .field) {
+  scroll-margin-bottom: 120px;
+}
+.empty-faults {
+  display: grid;
+  gap: 2px;
+  padding: 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-weight: 600;
+  color: var(--text-2);
+  text-align: center;
+}
+.empty-faults .faint {
+  font-weight: 400;
+  font-size: var(--fs-sm);
+}
+.ai-dash {
+  border-style: dashed;
+  font-size: var(--fs-xs);
 }
 .human-edge {
   border-left: 4px solid var(--success);
@@ -575,7 +606,7 @@ const faultText = (c: ReportContent) =>
 .o-NO_FAULT_FOUND[aria-checked='true'] { border-color: var(--navy-800); background: var(--navy-50); color: var(--navy-800); }
 .fault-row {
   display: grid;
-  grid-template-columns: 160px 1fr auto;
+  grid-template-columns: minmax(160px, 1fr) minmax(0, 2fr) auto;
   gap: 8px;
 }
 .link {
@@ -596,19 +627,6 @@ const faultText = (c: ReportContent) =>
   padding: 12px 16px;
   box-shadow: var(--shadow-lg);
   flex-wrap: wrap;
-}
-.sticky {
-  position: sticky;
-  top: calc(var(--topbar-h) + 16px);
-}
-.lbl {
-  font-weight: 700;
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-}
-.mini {
-  margin: 4px 0 0;
-  padding-left: 20px;
 }
 .ro {
   display: grid;
@@ -640,15 +658,8 @@ const faultText = (c: ReportContent) =>
   gap: 8px;
 }
 @media (max-width: 1180px) {
-  .layout,
   .ro {
     grid-template-columns: 1fr;
-  }
-  .ref {
-    order: -1;
-  }
-  .sticky {
-    position: static;
   }
 }
 @media (max-width: 640px) {

@@ -13,6 +13,7 @@
     "payload": {
       "repair": {
         "id": "1",
+        "product_type": "vacuum",
         "product_snapshot": {
           "id": "1",
           "serial_number": "ROBOT-SEOUL-001",
@@ -120,7 +121,7 @@
     "payload": {
       "requestKey": "c0000000-0000-0000-0000-000000000001",
       "round": 1,
-      "bodyPart": "wheel",
+      "bodyPart": "MOTOR",
       "description": "바퀴 하부 사진",
       "checkpoint": "langgraph-thread:checkpoint"
     }
@@ -139,6 +140,7 @@
     "payload": {
       "repair": {
         "id": "1",
+        "product_type": "vacuum",
         "product_snapshot": {
           "id": "1",
           "serial_number": "ROBOT-SEOUL-001",

@@ -46,7 +46,10 @@ const open = (r: Repair) => router.push(repairLink(r, props.role))
           </td>
           <td class="next">{{ nextAction(r, role) }}</td>
           <td class="nowrap">{{ formatDateTime(r.receivedAt) }}</td>
-          <td v-if="showTech !== false" class="nowrap">{{ r.technician }}<div class="faint">{{ r.branch }}</div></td>
+          <td v-if="showTech !== false" class="nowrap">
+            {{ r.technician }} <span v-if="r.source === 'CUSTOMER'" class="badge tone-info">고객 접수</span>
+            <div class="faint">{{ r.branch }}</div>
+          </td>
           <td><ChevronRight :size="20" class="chev" /></td>
         </tr>
       </tbody>
@@ -61,10 +64,14 @@ const open = (r: Repair) => router.push(repairLink(r, props.role))
   white-space: nowrap;
 }
 .sym {
-  max-width: 240px;
+  /* 증상은 핵심 정보: 한 줄로 자르지 않고 두 줄까지 (넘치면 title 로 전체) */
+  max-width: 320px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 .next {
   font-weight: 600;

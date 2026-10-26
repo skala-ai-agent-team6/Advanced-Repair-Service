@@ -10,6 +10,7 @@ def load_documents() -> dict[str, list[dict]]:
     for case in cases:
         case["text"] = case["search_text"]
         case["product_domain"] = "vacuum"
+        case["product_type"] = "vacuum"  # DustUp corpus contains vacuum cleaners only.
     pcb = []
     for path in sorted((DATA / "pcb_documents").rglob("*.md")):
         text = path.read_text()

@@ -258,4 +258,190 @@ FROM confirmed_fault x JOIN repair_report r ON r.id=x.report_id AND r.confirmed_
 JOIN repair_report_revision rr ON rr.report_id=r.id AND rr.revision=r.confirmed_revision
 JOIN repair_case c ON c.id=r.case_id GROUP BY 1,2,3,4,5,6;
 
+-- V6 Kafka 처리 결과 기록 (PR #4). 마이그레이션과 같게 맞춤
+ALTER TABLE outbox_event
+ ADD COLUMN agent_status text CHECK(agent_status IN ('SUCCEEDED','FAILED')),
+ ADD COLUMN agent_finished_at timestamptz;
+CREATE INDEX outbox_agent_status ON outbox_event(job_id,agent_status)
+ WHERE topic IS NOT NULL;
+
+-- V7 사진 품질
+ALTER TABLE attachment ADD COLUMN quality_required boolean NOT NULL DEFAULT false,
+ ADD COLUMN latest_quality_result_id bigint,
+ ADD COLUMN use_status text NOT NULL DEFAULT 'AVAILABLE' CHECK(use_status IN ('AVAILABLE','EXCLUDED','REPLACED')),
+ ADD COLUMN replaced_by_id bigint REFERENCES attachment;
+CREATE TABLE photo_quality_result (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ attachment_id bigint NOT NULL REFERENCES attachment,
+ previous_result_id bigint UNIQUE REFERENCES photo_quality_result,
+ attempt integer NOT NULL CHECK(attempt>0),
+ status text NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','RUNNING','COMPLETED','ERROR')),
+ verdict text CHECK(verdict IN ('PASS','WARNING')),
+ checker_version text NOT NULL, policy_version text NOT NULL,
+ original_width integer,original_height integer,inspection_width integer,inspection_height integer,
+ mean_brightness double precision,dark_ratio double precision,bright_ratio double precision,sharpness double precision,
+ issues jsonb NOT NULL DEFAULT '[]',
+ created_at timestamptz NOT NULL DEFAULT now(),started_at timestamptz,completed_at timestamptz,duration_ms bigint,
+ failure_code text,run_token uuid,lease_until timestamptz,recovery_count integer NOT NULL DEFAULT 0,
+ UNIQUE(attachment_id,attempt),UNIQUE(id,attachment_id),
+ CHECK((status='COMPLETED')=(verdict IS NOT NULL)),
+ CHECK(mean_brightness IS NULL OR mean_brightness BETWEEN 0 AND 255),
+ CHECK(dark_ratio IS NULL OR dark_ratio BETWEEN 0 AND 1),CHECK(bright_ratio IS NULL OR bright_ratio BETWEEN 0 AND 1),
+ CHECK(sharpness IS NULL OR sharpness>=0),CHECK(duration_ms IS NULL OR duration_ms>=0)
+);
+ALTER TABLE attachment ADD CONSTRAINT latest_photo_quality_fk FOREIGN KEY(latest_quality_result_id,id) REFERENCES photo_quality_result(id,attachment_id);
+CREATE INDEX photo_quality_pending ON photo_quality_result(created_at,id) WHERE status='PENDING';
+CREATE INDEX photo_quality_recovery ON photo_quality_result(lease_until) WHERE status='RUNNING';
+CREATE TABLE photo_quality_confirmation (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ attachment_id bigint NOT NULL, result_id bigint NOT NULL,
+ confirmed_by bigint NOT NULL REFERENCES app_user,confirmed_at timestamptz NOT NULL DEFAULT now(),
+ FOREIGN KEY(result_id,attachment_id) REFERENCES photo_quality_result(id,attachment_id),UNIQUE(result_id,confirmed_by)
+);
+CREATE TABLE diagnosis_input_attachment (
+ job_id bigint NOT NULL REFERENCES diagnosis_job,input_revision integer NOT NULL CHECK(input_revision>0),
+ attachment_id bigint NOT NULL REFERENCES attachment,
+ quality_result_id bigint,warning_confirmation_id bigint REFERENCES photo_quality_confirmation,
+ added boolean NOT NULL DEFAULT false,
+ quality_gate text NOT NULL DEFAULT 'LEGACY' CHECK(quality_gate IN ('CHECKED','LEGACY','DISABLED','NOT_APPLICABLE')),
+ PRIMARY KEY(job_id,input_revision,attachment_id),
+ FOREIGN KEY(quality_result_id,attachment_id) REFERENCES photo_quality_result(id,attachment_id)
+);
+-- Freeze the actual historical input where available, without starting any new diagnosis.
+INSERT INTO diagnosis_input_attachment(job_id,input_revision,attachment_id,added)
+SELECT o.job_id,(o.payload->>'inputRevision')::integer,a.id,
+ coalesce((o.payload->'payload'->'addedAttachmentIds') @> jsonb_build_array(a.id::text),false)
+FROM outbox_event o JOIN diagnosis_job j ON j.id=o.job_id
+JOIN LATERAL jsonb_array_elements_text(o.payload->'payload'->'attachmentIds') selected(id) ON true
+JOIN attachment a ON a.id=CASE WHEN selected.id ~ '^[1-9][0-9]*$' THEN selected.id::bigint END AND a.case_id=j.case_id
+WHERE o.topic IS NOT NULL AND o.event_type IN ('DIAGNOSIS_REQUESTED','DIAGNOSIS_RESUMED')
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE app_user ADD COLUMN operations_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE repair_case ALTER COLUMN technician_id DROP NOT NULL;
+ALTER TABLE repair_case ADD COLUMN intake_source text NOT NULL DEFAULT 'STAFF' CHECK(intake_source IN ('STAFF','CONSUMER')),
+ ADD COLUMN service_type text NOT NULL DEFAULT 'CENTER' CHECK(service_type IN ('CENTER','FIELD')),
+ ADD COLUMN purchase_date date, ADD COLUMN assigned_technician_id bigint REFERENCES app_user;
+ALTER TABLE product_model ADD COLUMN appliance_type text NOT NULL DEFAULT 'VACUUM_CLEANER';
+CREATE TABLE consumer_access (
+ case_id bigint PRIMARY KEY REFERENCES repair_case ON DELETE CASCADE,
+ key_hash char(64) NOT NULL UNIQUE, expires_at timestamptz NOT NULL,
+ contact_name varchar(100), contact_phone varchar(40), visit_address varchar(500), created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE warranty_policy (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, model_id bigint NOT NULL REFERENCES product_model,
+ version varchar(100) NOT NULL, duration_months integer NOT NULL CHECK(duration_months BETWEEN 1 AND 600),
+ effective_from date NOT NULL, effective_to date, development_only boolean NOT NULL DEFAULT false,
+ created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(model_id,version), CHECK(effective_to IS NULL OR effective_to>effective_from)
+);
+CREATE TABLE warranty_assessment (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, case_id bigint NOT NULL REFERENCES repair_case ON DELETE CASCADE,
+ purchase_date date, assessed_on date NOT NULL, policy_id bigint REFERENCES warranty_policy,
+ policy_version text, expires_on_exclusive date, result text NOT NULL CHECK(result IN ('WITHIN_PERIOD','OUTSIDE_PERIOD','UNKNOWN')),
+ reason text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE case_assignment (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, case_id bigint NOT NULL REFERENCES repair_case ON DELETE CASCADE,
+ technician_id bigint NOT NULL REFERENCES app_user, assigned_by bigint NOT NULL REFERENCES app_user,
+ reason varchar(1000) NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE customer_report (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, case_id bigint NOT NULL REFERENCES repair_case ON DELETE CASCADE,
+ version integer NOT NULL CHECK(version>0), status text NOT NULL DEFAULT 'DRAFT' CHECK(status IN ('DRAFT','PUBLISHED','RETIRED')),
+ kind text NOT NULL CHECK(kind IN ('ESTIMATE','CONFIRMED')), cause_summary varchar(4000) NOT NULL,
+ planned_work varchar(4000) NOT NULL, source_revision integer, author_id bigint NOT NULL REFERENCES app_user,
+ created_at timestamptz NOT NULL DEFAULT now(), published_at timestamptz, UNIQUE(case_id,version)
+);
+CREATE UNIQUE INDEX one_customer_publication ON customer_report(case_id) WHERE status='PUBLISHED';
+CREATE TABLE report_replaced_part (
+ report_id bigint NOT NULL, revision integer NOT NULL, part_id bigint NOT NULL REFERENCES part,
+ quantity integer NOT NULL CHECK(quantity BETWEEN 1 AND 100), PRIMARY KEY(report_id,revision,part_id),
+ FOREIGN KEY(report_id,revision) REFERENCES repair_report_revision ON DELETE CASCADE
+);
+CREATE TABLE rag_case_change (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, report_id bigint NOT NULL, revision integer NOT NULL,
+ confirmed_at timestamptz NOT NULL, document jsonb NOT NULL,
+ status text NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','SUCCEEDED','ERROR')),
+ succeeded_at timestamptz, error_code varchar(100), attempts integer NOT NULL DEFAULT 0,
+ updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(report_id,revision),
+ FOREIGN KEY(report_id,revision) REFERENCES repair_report_revision ON DELETE CASCADE
+);
+CREATE TABLE rag_sync_receipt (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, change_id bigint NOT NULL REFERENCES rag_case_change ON DELETE CASCADE,
+ request_key uuid NOT NULL UNIQUE, status text NOT NULL CHECK(status IN ('SUCCEEDED','ERROR')),
+ error_code varchar(100), created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE report_edit_proposal (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, report_id bigint NOT NULL, target_revision integer NOT NULL,
+ request_key uuid NOT NULL UNIQUE, original jsonb NOT NULL, proposed jsonb NOT NULL, author_service text NOT NULL,
+ state text NOT NULL DEFAULT 'PENDING' CHECK(state IN ('PENDING','ACCEPTED','REJECTED')),
+ decided_by bigint REFERENCES app_user, decided_at timestamptz, accepted_revision integer,
+ created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(report_id,target_revision) REFERENCES repair_report_revision ON DELETE CASCADE
+);
+CREATE TABLE reprocess_attempt (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, original_event_id uuid NOT NULL, job_id bigint REFERENCES diagnosis_job ON DELETE CASCADE,
+ stage text NOT NULL CHECK(stage IN ('RESULT','OUTBOX')), request_key uuid NOT NULL UNIQUE,
+ requested_by bigint NOT NULL REFERENCES app_user, state text NOT NULL CHECK(state IN ('SUCCEEDED','ERROR','QUEUED')),
+ error_code text, created_at timestamptz NOT NULL DEFAULT now(), completed_at timestamptz
+);
+ALTER TABLE outbox_event ADD COLUMN terminal_failure boolean NOT NULL DEFAULT false, ADD COLUMN last_error_code text;
+CREATE INDEX warranty_case_latest ON warranty_assessment(case_id,id DESC);
+CREATE INDEX field_assignment ON repair_case(assigned_technician_id) WHERE service_type='FIELD';
+-- New visual surface tool; historical MOTOR/SW values remain readable.
+ALTER TABLE agent_execution DROP CONSTRAINT agent_execution_agent_type_check;
+ALTER TABLE agent_execution ADD CONSTRAINT agent_execution_agent_type_check CHECK(agent_type IN ('PCB','SURFACE','MOTOR','SW','RAG','BUSINESS'));
+ALTER TABLE attachment ALTER COLUMN uploader_id DROP NOT NULL;
+ALTER TABLE received_event ADD COLUMN original_disposition text;
+UPDATE received_event SET original_disposition=disposition;
+
+-- Freeze product metadata at intake so resume/retry never depends on later catalog edits.
+ALTER TABLE product_model ALTER COLUMN appliance_type SET DEFAULT 'UNKNOWN';
+ALTER TABLE repair_case ADD COLUMN product_type text NOT NULL DEFAULT 'unknown'
+ CHECK(product_type IN ('vacuum','washing_machine','air_conditioner','unknown'));
+UPDATE repair_case r SET product_type=CASE
+ WHEN r.product_snapshot ? 'product_type' THEN CASE lower(trim(r.product_snapshot->>'product_type'))
+  WHEN 'vacuum' THEN 'vacuum' WHEN 'washing_machine' THEN 'washing_machine'
+  WHEN 'air_conditioner' THEN 'air_conditioner' ELSE 'unknown' END
+ WHEN r.product_snapshot ? 'productType' THEN CASE lower(trim(r.product_snapshot->>'productType'))
+  WHEN 'vacuum' THEN 'vacuum' WHEN 'washing_machine' THEN 'washing_machine'
+  WHEN 'air_conditioner' THEN 'air_conditioner' ELSE 'unknown' END
+ ELSE CASE upper(trim(CASE WHEN r.product_snapshot ? 'appliance_type'
+  THEN r.product_snapshot->>'appliance_type' ELSE m.appliance_type END))
+  WHEN 'VACUUM_CLEANER' THEN 'vacuum' WHEN 'VACUUM' THEN 'vacuum'
+  WHEN 'WASHING_MACHINE' THEN 'washing_machine' WHEN 'AIR_CONDITIONER' THEN 'air_conditioner'
+  ELSE 'unknown' END END
+FROM product p JOIN product_model m ON m.id=p.model_id WHERE r.product_id=p.id;
+-- Existing published/outstanding outbox payloads and RAG receipts remain immutable.
+
+-- V10 출장기사 서비스
+-- 출장기사 서비스: 기사 유형, 방문 일정, 출장 부품 재고 예약·이력, 보증 확정
+ALTER TABLE app_user ADD COLUMN technician_type text NOT NULL DEFAULT 'CENTER' CHECK(technician_type IN ('CENTER','FIELD'));
+ALTER TABLE repair_case ADD COLUMN visit_at timestamptz, ADD COLUMN visit_done_at timestamptz;
+CREATE TABLE stock_reservation (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ case_id bigint NOT NULL REFERENCES repair_case, part_id bigint NOT NULL REFERENCES part,
+ warehouse_id bigint NOT NULL REFERENCES warehouse, quantity integer NOT NULL CHECK(quantity>0),
+ status text NOT NULL DEFAULT 'RESERVED' CHECK(status IN ('RESERVED','RELEASED','CANCELLED','EXPIRED')),
+ reserved_by bigint NOT NULL REFERENCES app_user, reserved_at timestamptz NOT NULL DEFAULT now(),
+ expires_at timestamptz NOT NULL, closed_at timestamptz
+);
+CREATE TABLE stock_history (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ reservation_id bigint NOT NULL REFERENCES stock_reservation, part_id bigint NOT NULL REFERENCES part,
+ warehouse_id bigint NOT NULL REFERENCES warehouse, case_id bigint NOT NULL REFERENCES repair_case,
+ change text NOT NULL CHECK(change IN ('RESERVE','CANCEL','EXPIRE','RELEASE')),
+ delta integer NOT NULL, quantity integer NOT NULL, actor_id bigint REFERENCES app_user,
+ created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE warranty_decision (
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ case_id bigint NOT NULL REFERENCES repair_case, result text NOT NULL CHECK(result IN ('FREE','PAID')),
+ reason varchar(1000), decided_by bigint NOT NULL REFERENCES app_user, decided_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX field_visit_schedule ON repair_case(assigned_technician_id,visit_at) WHERE service_type='FIELD';
+CREATE INDEX stock_reservation_case ON stock_reservation(case_id,part_id,id DESC);
+CREATE INDEX stock_reservation_due ON stock_reservation(expires_at) WHERE status='RESERVED';
+CREATE INDEX stock_history_part ON stock_history(part_id,id DESC);
+CREATE INDEX warranty_decision_case ON warranty_decision(case_id,id DESC);
+
 COMMIT;

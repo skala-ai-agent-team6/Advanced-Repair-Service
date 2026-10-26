@@ -33,8 +33,24 @@ def upload(c, repair, request_id, target):
     return str(out["attachmentId"])
 
 
+def confirm_quality(c, ids, timeout=60):
+    """[사진 품질] 검사가 끝날 때까지 기다리고 경고 사진은 확인 처리한다. 안 하면 재개가 409로 거절된다."""
+    deadline = time.monotonic() + timeout
+    for a in ids:
+        while True:
+            q = c.call("GET", f"/api/attachments/{a}/quality")
+            if q.get("status") not in ("PENDING", "RUNNING") or time.monotonic() > deadline:
+                break
+            time.sleep(1)
+        latest = q.get("latest") or {}
+        if latest.get("verdict") == "WARNING":
+            c.call("POST", f"/api/attachments/{a}/quality/acknowledgment", {"resultId": int(latest["id"])})
+
+
 def answer(c, repair):
     detail = c.call("GET", f"/api/repairs/{repair}")
+    if detail.get("intake_source") == "CONSUMER":  # [출장] 고객 접수는 고객이 조회 화면에서 직접 사진을 추가한다
+        return
     now = datetime.now(timezone.utc)
     for req in [r for r in detail.get("photoRequests", []) if r.get("submitted_at") is None]:
         if (now - datetime.fromisoformat(req["created_at"].replace("Z", "+00:00"))).total_seconds() < GRACE:
@@ -43,6 +59,7 @@ def answer(c, repair):
         t = req["target"]
         targets = ["PCB", "MOTOR"] if t == "GENERAL" else ["PCB"] if t == "PCB" else ["MOTOR"]
         ids = [upload(c, repair, req["id"], t) for t in targets]
+        confirm_quality(c, ids)
         c.call("POST", f"/api/repairs/{repair}/diagnosis/resume",
                {"requestId": req["id"], "submissionKey": str(uuid.uuid4()), "attachmentIds": ids})
         print(f"[대역] 접수 {repair} · {req['round_no']}차 요청({req['target']}) → 지정 사진 {targets} 제출, 재개", flush=True)
@@ -52,9 +69,21 @@ def watch(interval=2):
     c = Client("tech1")
     print(f"[대역] 추가 사진 요청 감시 시작 ({BASE})", flush=True)
     while True:
-        page = c.call("GET", "/api/repairs?status=WAITING_INPUT&size=50")
+        try:
+            page = c.call("GET", "/api/repairs?status=WAITING_INPUT&size=50")
+        except Exception as e:  # [통합] Spring 재시작 중이면 기다렸다가 다시 로그인 (예전엔 여기서 대역이 죽었다)
+            print(f"[대역] Spring 연결 대기: {e}", flush=True)
+            time.sleep(5)
+            try:
+                c = Client("tech1")
+            except Exception:
+                pass
+            continue
         for row in page.get("items") or page.get("content") or []:
-            answer(c, row["id"])
+            try:
+                answer(c, row["id"])
+            except Exception as e:  # 한 건 실패로 감시 전체가 죽지 않게
+                print(f"[대역] 접수 {row['id']} 처리 실패: {e}", flush=True)
         time.sleep(interval)
 
 

@@ -1,0 +1,22 @@
+{
+  "product_type": "vacuum",
+  "report_id": 900001,
+  "case_id": 900001,
+  "confirmed_revision": 1,
+  "confirmed_at": "2026-10-22T00:00:00Z",
+  "content": {
+    "actualCause": "왼쪽 구동 바퀴 축에 실이 감겨 회전이 막힘",
+    "actualAction": "바퀴 축에 감긴 실 제거 후 주행 시험에서 정상 회전 확인",
+    "technicianOpinion": "청소기 왼쪽 바퀴가 걸리고 회전하지 않아 제자리에서 멈춥니다",
+    "repairSuccessful": true,
+    "aiAcceptance": "PARTIAL",
+    "outcome": "FIXED",
+    "faults": [
+      {
+        "area": "OTHER",
+        "componentId": null,
+        "partId": null
+      }
+    ]
+  }
+}

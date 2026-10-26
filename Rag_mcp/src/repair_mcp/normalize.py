@@ -1,31 +1,14 @@
 """OpenAI-backed observation extraction; no regex classification or silent fallback."""
 import json
 import os
-from enum import Enum
-from typing import Literal
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAIError, OpenAI
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import ValidationError
 
-from .config import read_json
 from .search_terms import ENGLISH_HINTS
+from .products import ProductType, PRODUCT_NAMES, validate_product_type
 
-VOCAB = {t["code"]: t for t in read_json("observation_vocabulary.json")["terms"]}
-ObservationCode = Enum("ObservationCode", {code: code for code in VOCAB}, type=str)
-
-
-class Observation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    code: ObservationCode
-    polarity: Literal["present", "absent"]
-    certainty: Literal["reported", "suspected"]
-    evidence_text: str = Field(min_length=1, max_length=2000)
-
-
-class Extraction(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    observations: list[Observation] = Field(max_length=43)
-    unmapped_fragments: list[str] = Field(max_length=100)
+from .observation_schema import VOCAB, ObservationCode, Observation, Extraction
 
 
 SYSTEM_PROMPT = """당신은 가전 수리 기사의 한국어 소견을 검색용 표준 용어로 정규화한다.
@@ -79,7 +62,9 @@ def api_error_message(error: OpenAIError) -> str:
 
 
 def normalize_observations(raw_text: str, origin: str = "technician",
-                           technician_confirmed: bool = False) -> dict:
+                           technician_confirmed: bool = False,
+                           product_type: ProductType = "unknown") -> dict:
+    product_type = validate_product_type(product_type)
     if not raw_text.strip() or len(raw_text) > 2000:
         raise ValueError("raw_text must contain 1–2000 characters")
     if origin not in {"technician", "ai_image"}:
@@ -92,7 +77,8 @@ def normalize_observations(raw_text: str, origin: str = "technician",
         with OpenAI(api_key=api_key, timeout=30.0, max_retries=1) as client:
             response = client.responses.parse(
                 model=model, store=False, max_output_tokens=4000,
-                input=[{"role": "system", "content": SYSTEM_PROMPT},
+                input=[{"role": "system", "content": SYSTEM_PROMPT + f"\n접수 제품: {PRODUCT_NAMES[product_type]} ({product_type}). "
+                        "제품에 맞지 않는 표준 용어로 강제 분류하지 말고 미등록 소견은 원문으로 남긴다."},
                        {"role": "user", "content": raw_text}],
                 text_format=Extraction,
             )
@@ -120,7 +106,7 @@ def normalize_observations(raw_text: str, origin: str = "technician",
     unmapped = list(dict.fromkeys(parsed.unmapped_fragments))
     if not observations and not unmapped:
         unmapped = [raw_text]
-    return {"raw_text": raw_text, "origin": origin, "technician_confirmed": technician_confirmed,
+    return {"product_type": product_type, "raw_text": raw_text, "origin": origin, "technician_confirmed": technician_confirmed,
             "engine": "openai-structured-output-v1", "model": model,
             "observations": observations, "unmapped_fragments": unmapped,
             "diagnosis_confirmed": False}

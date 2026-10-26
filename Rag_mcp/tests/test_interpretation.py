@@ -41,7 +41,6 @@ def test_search_request_accepts_surface_strings_and_legacy_parts_as_unknown():
 
 
 def test_combination_uses_surface_defect_without_inventing_part(monkeypatch):
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations", lambda *args: {"observations": []})
     request = SearchRequest(raw_text="표면에 잔금이 보여요", pcb_labels=["open circuit"],
                             damage_labels=["crazing"])
     query, obs, pcb, damage, warnings = prepare_query(request)
@@ -51,9 +50,15 @@ def test_combination_uses_surface_defect_without_inventing_part(monkeypatch):
     assert any("좌표" in warning for warning in warnings)
 
 
-def test_negative_observation_not_expanded_positive(monkeypatch):
-    monkeypatch.setattr("repair_mcp.retrieval.normalize_observations", lambda *args: {"observations": [{
-        "polarity": "absent", "certainty": "reported", "label_ko": "필터 오염", "search_hint_en": "dirty filter"}]})
-    query, *_ = prepare_query(SearchRequest(raw_text="필터에 먼지는 없어요"))
+def test_negative_observation_not_expanded_positive():
+    from repair_mcp.observation_schema import VOCAB
+    from repair_mcp.search_terms import ENGLISH_HINTS
+    text = "필터에 먼지는 없어요"
+    normalized = {"raw_text": text, "product_type": "unknown", "origin": "technician",
+                  "technician_confirmed": False, "engine": "openai-structured-output-v1", "model": "test",
+                  "observations": [{"code": "FILTER_DIRTY", "polarity": "absent", "certainty": "reported",
+                    "label_ko": VOCAB["FILTER_DIRTY"]["label_ko"], "search_hint_en": ENGLISH_HINTS["FILTER_DIRTY"],
+                    "evidence_text": text}], "unmapped_fragments": [], "diagnosis_confirmed": False}
+    query, *_ = prepare_query(SearchRequest(raw_text=text, normalized_observation=normalized))
     assert "not observed: dirty filter" in query
     assert "reported: dirty filter" not in query

@@ -18,9 +18,13 @@ class LocalOutput:
     """브로커에 발행하지 않고 같은 이벤트를 파일 검증용으로 수집."""
     def __init__(self):
         self.events = []
+        self.processing_statuses = []
 
     async def send_and_wait(self, topic, body, **kwargs):
         event = json.loads(body)
+        if topic == C.PROCESSING_STATUS_TOPIC:
+            self.processing_statuses.append(event)
+            return
         VALIDATOR.validate(event)
         self.events.append(event)
         print(event["eventType"], event["payload"].get("stage") or event["payload"].get("tool") or "", flush=True)
@@ -33,7 +37,7 @@ async def run(scenario, fault=None):
         raise ValueError("장애 검증은 mixed 시나리오에서만 실행합니다")
     cases = {
         "multi-pcb": [("PCB", C.HERE/"samples/pcb_sample.jpg"),
-                      ("PCB", C.ROOT.parent/"MCP_Error_check/pcb_agent/test_samples/l_light_01_missing_hole_07_2_600.jpg")],
+                      ("PCB", C.ROOT/"eval/images/pcb_missing_hole.jpg")],
         "mixed": [("PCB", C.HERE/"samples/pcb_sample.jpg"), ("MOTOR", C.HERE/"samples/mech_sample.jpg")],
         "mechanical": [("MOTOR", C.HERE/"samples/mech_sample.jpg")],
     }
@@ -78,7 +82,7 @@ async def run(scenario, fault=None):
                          for hit in e["payload"]["output"].get("hits", []) if hit["kind"] == "REFERENCE"}
         saved_reference_ids = {e.get("citation") for e in result["payload"].get("evidence", [])
                                if e["type"] == "MANUAL"}
-        if not reference_ids <= saved_reference_ids:
+        if result["eventType"] == "DIAGNOSIS_COMPLETED" and not reference_ids <= saved_reference_ids:
             raise RuntimeError("Technical references missing from final report")
         path = report.OUT/f"task-{task}_revision-1_고장리포트.md"
         event_path = path.with_name(path.stem+"_events.json")
@@ -101,9 +105,10 @@ async def run(scenario, fault=None):
                      and any(e["eventType"] == "PHOTO_REQUESTED" for e in output.events)
                      and "ERROR" in path.read_text())
         elif fault == "rag-unavailable":
-            valid = (result["eventType"] == "DIAGNOSIS_COMPLETED" and len(errors) == 1
-                     and errors[0].get("tool") == "retrieve_repair_context"
-                     and errors[0]["output"].get("failurePolicy") == "optional"
+            valid = (result["eventType"] == "DIAGNOSIS_COMPLETED"
+                     and any(e.get("tool") == "retrieve_repair_context" for e in errors)
+                     and all(e.get("tool") in ("retrieve_repair_context", "save_repair_case")
+                             and e["output"].get("failurePolicy") == "optional" for e in errors)
                      and metrics["retries"] >= 2
                      and "근거 제한:" in result["payload"]["summary"]
                      and "근거 제한:" in path.read_text()

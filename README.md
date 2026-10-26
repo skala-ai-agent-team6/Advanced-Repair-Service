@@ -1,13 +1,48 @@
 # 로봇청소기 고장 진단·수리 지원 AI Agent (SKALA 6팀 통합본)
 
-기사 접수(사진) → Spring → Kafka → LangGraph 에이전트(PCB·기계·RAG MCP + GPT) → Spring → 프론트 진단 화면 → 진단 확인 → 부품 재고·발주 → 수리 리포트 → 종결까지 돈다.
+고객 접수(사진 품질 검사) → 출장기사 자동 배정 → Spring → Kafka → LangGraph 에이전트(PCB·기계·RAG MCP + GPT) → Spring → 프론트 진단 화면 → 진단 확인 → 부품 재고·발주 → 수리 리포트 → 종결까지 돈다.
 팀원 코드를 합치면서 고친 것: **[docs/개조내역.md](docs/개조내역.md)** · 진행 상황: **[docs/진행사항.md](docs/진행사항.md)** · 에이전트 상세(하네스·LangSmith·오류 처리): **[worker/AGENT.md](worker/AGENT.md)**
+
+## 참고: API 호출 최적화 실험 (V2)
+GPT 호출을 줄인 실험 기록: [실행 방법](V2_실행방법.md) · [V1/V2 비교](reports/2026-10-25_V2_최적화후/V1_V2_실제진단_비교.md) · [PR 검증 결과](reports/2026-10-25_PR검증/검증결과.md) · [측정 방법](MEASUREMENT.md)
+
+## Phase 2 고도화 (태그 `phase1-end` 이후)
+
+Phase 1(센터 기사 · 로봇청소기)을 **출장기사 · 고객 비로그인 접수 · 세탁기/에어컨**으로 넓히고, 실패에 강하게 고쳤다.
+
+| 영역 | Phase 1 (`phase1-end`) | Phase 2 | 근거 |
+|---|---|---|---|
+| 사용자 | 센터 기사 | + 고객(비로그인 접수·진행 조회), 출장기사(일정·준비 부품·공구) | PR #5, `docs/FIELD_SERVICE.md` |
+| 가전 | 로봇청소기 | + 세탁기 · 에어컨 (`product_type`을 접수→에이전트→RAG까지 전달) | PR #6, #11 |
+| 에이전트 | 추가 사진 뒤 처음부터 다시 진단 | 체크포인터로 멈춘 지점부터 재개, 새 사진만 분석 | PR #7 |
+| RAG | 공개 사례만 | + 기사가 확정한 수리 결과 자동 반영, 소견 재사용(GPT 중복 호출 제거) | PR #9, `Rag_mcp/docs/confirmed_case_sync.md` |
+| 사진 | 검사 없음 | 사진 품질 검사(흐림·어두움·크기) 후 진단 | PR #1 |
+| 실패 처리 | AI 실패 시 끝 | Kafka 처리 결과 기록 + 실패 진단 자동 재시도 | main PR #4 |
+| 업무 도구 | 재고 조회 | + 출장 방문 준비 리포트(공구·부품·고장 위치), 재고 예약·출고 | PR #3, `docs/FIELD_SERVICE.md` |
+| 고객 사진 | — | 접수 화면에서 바로 품질 검사 → 흐린 사진 다시 올리기·부품 사진 추가 안내 후 접수 | PR #16 · #17 |
+| 리포트 | GPT 리포트 1회 | + 검토 단계(`polish_report`)로 요약·근거 문장 다듬기, 약한 검출(확신도 0.5 미만) 제외 | PR #17 · #23 |
+| 실행 | 로컬 DB만 | + 팀 공용 클라우드 DB (`.env`에 Host 등) | PR #24 ~ #27 |
+
+**평가셋 개선 전 → 후** (같은 20문항, [`eval/README.md`](eval/README.md)): 충족 **12/20 (60%) → 14/20 (70%) → 17/20 (85%)** (확신도 하한 → PCB 모델 v2) · 외부 오류 대응 2/3 → 3/3 · 응답 p95 58.6초 → 13.3초 · 정상 사진 오탐 2/4 그대로(한계)
+
+## 팀 역할 · 기여
+
+| 이름 | GitHub | 역할 (교재 p.11) | 주요 PR |
+|---|---|---|---|
+| 유길선 | raphael807-t1 | R1 PM·PO · R6 QA·Eval(검증 책임자) | #1 사진 품질 이관 · #8 기계 사진 진단 수정 · #10 테스트 경로 · #12 계약 대응 · 통합 브랜치 `integration/field-service` |
+| 홍은비 | beeyaaa | R2 AI Engineer (흐름) | #7 체크포인터·interrupt 재개 |
+| 전인수 | insusu21 | R3 AI Engineer (RAG·Data) | #6 제품별 RAG · #9 소견 재사용 |
+| 박시현 | lilloo04 | R4 Backend·Tool | #5 고객 접수·V2 서비스 · #11 product_type 전달 |
+| 박진영 | kamillcream | R4 Backend·Tool (Kafka·업무 MCP) | #3 방문 준비 리포트 MCP · main #4 Kafka 재시도 |
+| 최세민 | cchloe1006-eng | R5 Frontend·Demo | `frontend` 브랜치 (출장기사·고객 화면) |
+
+협업 규칙(브랜치 보호 · 승인 1명 · PR 템플릿): `docs/COLLABORATION.md`
 
 ## 빠른 실행 (처음 받는 사람)
 필요: macOS/Linux, Docker Desktop(켜 둔 상태), JDK 21, [uv](https://docs.astral.sh/uv/), Node 20+, git
 ```bash
-git clone https://github.com/skala-ai-agent-team6/Final_Robot-Vacuum-Repair-Agent.git
-cd Final_Robot-Vacuum-Repair-Agent
+git clone https://github.com/skala-ai-agent-team6/Advanced-Repair-Service.git
+cd Advanced-Repair-Service
 ./setup.sh          # 1. 처음 한 번: 파이썬·프론트 패키지 설치, .env 템플릿 생성
 # 2. 레포 맨 위 .env 파일을 열어 OPENAI_API_KEY= 뒤에 키를 넣는다 (다른 값은 비워 둔다)
 ./run.sh            # 3. 전부 띄움 (처음엔 RAG 인덱스 생성으로 1~2분 더 걸림)
@@ -20,12 +55,29 @@ cd Final_Robot-Vacuum-Repair-Agent
 | `tech1` | `1234` | 수리 기사 (1번 센터) | 접수·진단·리포트 |
 | `tech2` | `1234` | 수리 기사 (2번 센터) | 접수·진단·리포트 |
 | `quality` | `1234` | 본사 품질관리자 | 발주 승인(`/order-approvals`)·본사 검토 |
+| `field-tech` | `1234` | 출장기사 | 오늘·다가오는 방문, 방문 준비 리포트 |
+| `ops` | `1234` | 운영 담당 | 재고·운영 |
 
 - 비밀번호 `1234`는 로컬 시연용(dev 프로필)이다.
 - 키가 없으면 워커 로그(`logs/worker.log`)에 `GPT 꺼짐: 규칙으로 대신`이 나오고 규칙으로만 돈다.
 - 다시 켤 때는 `./run.sh`만 하면 된다. `포트 사용 중`이 나오면 `./stop.sh` 후 다시.
 
-## 시연 순서 (사진 3장, `source/`)
+### 팀 공용 클라우드 DB로 실행
+레포 맨 위 `.env`에 아래를 넣고 `./run.sh` (비밀번호는 팀에 문의). 로컬 Postgres 대신 클라우드 `repair` DB를 쓰고, Kafka만 로컬로 띄운다.
+```
+Host=<클라우드 DB 주소, 팀에 문의>
+Port=5432
+Database=repair
+username=postgres
+password=<비밀번호, 팀에 문의>
+```
+- 첫 실행 때 테이블·계정이 자동으로 생긴다 (위 계정 그대로 로그인)
+- 사진은 각자 PC의 `~/Downloads/시연용 사진`에 저장된다 → 접수와 진단은 같은 PC에서. 동시에 여러 명이 켜면 접수 건을 다른 PC가 가져갈 수 있다
+
+## 시연 순서 1 (기본): 고객 접수 → 출장기사 리포트
+[시연사진/README.md](시연사진/README.md) — 고객 접수 화면(값 미리 채워짐)에 사진 4장 → 접수 내역 조회에서 진단 완료 → `field-tech`로 방문 준비 리포트 확인
+
+## 시연 순서 2: 센터 기사 (사진 3장, `source/`)
 | 사진 | 파일 | 언제 올리나 |
 |---|---|---|
 | <img src="source/01_pcb.jpg" width="200"> | `source/01_pcb.jpg` | 접수할 때 **PCB** 사진 (결함 검출됨) |
@@ -53,7 +105,8 @@ cd Final_Robot-Vacuum-Repair-Agent
 | `worker/business_gateway.py` | Spring의 재고 요청을 업무 MCP 호출로 바꾸는 중계 | 8089 |
 | `Rag_mcp/` | 관찰 정규화·PCB 해석·손상 해석·RAG 검색 MCP 4개 | 8011~8014 |
 | `integration/` | API 시연 스크립트(`demo.py`), 추가 사진 대역(`auto_photo.py`) | — |
-| `source/` | 시연 사진 3장 | — |
+| `source/` | 센터 기사 시연 사진 3장 | — |
+| `시연사진/` | 고객·출장 시연 사진 (가전별·합성 포함) | — |
 | `docs/` | 진행사항·개조내역 | — |
 | `run.sh` / `stop.sh` / `setup.sh` | 실행 / 종료 / 처음 설치 | — |
 
@@ -80,6 +133,24 @@ cd Final_Robot-Vacuum-Repair-Agent
 ## 업무 MCP (재고·발주) 보기
 흐름: 진단 완료 → Spring `ProcurementWorker`(2초마다) → 게이트웨이 8089 `inventory.lookup` → 업무 MCP 8015 `get_part_availability` → Spring이 재고 스냅샷 저장·발주 초안 생성 → 프론트
 
+### 기사 방문 준비 리포트
+업무 MCP의 `get_repair_preparation_report(repair_id)` 도구는 DB의 접수·제품·최신 진단·사진 근거·추천 부품·창고 재고를 조회해 증상 및 원인 요약, 준비 공구·부품, 사진 내 고장 좌표 표시를 포함한 Markdown 리포트를 만든다. 리포트와 표시 사진은 `REPAIR_REPORT_DIR` (기본 `mcp_servers/business/reports/`)에 저장되며, 파일 저장소 경로는 `FILE_ROOT` (기본 `backend/data/files/`)로 지정할 수 있다. 사진 표시에는 DB에 진단 좌표가 기록되어 있어야 한다. 과거 진단 결과에 공구 추천이 없으면 저장된 원인 후보·수리 방법에서 추론하며, 추론 근거가 없으면 확인 필요 경고를 남긴다.
+
+```python
+from fastmcp import Client
+import asyncio
+
+async def main():
+    async with Client("http://127.0.0.1:8015/mcp") as client:
+        report = await client.call_tool(
+            "get_repair_preparation_report",
+            {"repair_id": 123},
+        )
+        print(report)
+
+asyncio.run(main())
+```
+
 | 단계 | 코드 |
 |---|---|
 | Spring이 부름 | `backend/src/main/java/com/skala/backend/repair/ProcurementWorker.java` (`mcp.lookup`) |
@@ -102,11 +173,27 @@ cd Final_Robot-Vacuum-Repair-Agent
 - 가짜 재고로 돌리려면 `REAL_BUSINESS_MCP=0 ./run.sh`
 - `.env`에 `BUSINESS_MCP_URL`이 있으면 로컬 대신 그 주소(ngrok)를 쓴다
 
+## 협업 규칙
+
+브랜치 · PR · 리뷰 규칙과 팀원별 주요 PR: [docs/COLLABORATION.md](docs/COLLABORATION.md)
+
 ## 시험
 ```bash
-uv run pytest          # 에이전트 (127개, 약 50초)
-cd backend && ./gradlew test
+uv run pytest          # 에이전트 (183개) · RAG는 cd Rag_mcp && uv run pytest (94개)
+cd backend && ./gradlew test   # 백엔드 (90개)
 ```
+
+## 데이터 출처
+
+| 데이터 | 쓰는 곳 | 출처 · 라이선스 | 상세 |
+|---|---|---|---|
+| 수리 사례 3,165건 | RAG 사례 검색 | Open Repair Alliance DustUp (오픈 데이터) | `Rag_mcp/README.md`, `Rag_mcp/data/source_manifest.json` |
+| 수리 문서 | RAG 문서 검색 | Repair Wiki (CC BY-SA 3.0) 등 | `Rag_mcp/README.md` |
+| PCB 결함 사진·라벨 | PCB 모델, 평가셋 A·C | PCB 결함 데이터셋 (test 폴더) | `eval/README.md` |
+| 표면 결함 | 기계 모델, 평가셋 B | NEU 강판 표면 결함 데이터셋 | `eval/README.md` |
+| PCB·외형 손상 수리 문서 | RAG 지침 | Circuit Technology Center 등 공개 문서 | `Rag_mcp/docs/pcb_damage_data_sources.md` |
+| 세탁기·에어컨·기타 가전 사례 60건 | RAG 데모 | **팀이 만든 가상 데모** (검색 결과에 데모 표시) | `Rag_mcp/docs/product_types.md` |
+| 평가셋 사진 16장 | `eval/` | 위 데이터셋 + Wikimedia Commons | `eval/README.md` |
 
 ## 시연 사진 출처
 | 파일 | 원본 | 작성자 | 라이선스 |

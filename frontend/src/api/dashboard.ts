@@ -1,8 +1,8 @@
 import { http, mockDelay, USE_MOCK } from './http'
 import * as mock from '@/mocks/handlers'
-import { dashboardRange, toDefectDashboard } from './adapters/dashboard'
+import { dashboardRange, dayRange, toDefectDashboard, toItems } from './adapters/dashboard'
 import type { BeDashboardGroupBy, BeDashboardRow, BeRepairPage } from './adapters/types'
-import type { DefectDashboard, Notification } from '@/types'
+import type { CountItem, DefectDashboard, Notification } from '@/types'
 import type { DefectRecord } from '@/mocks/data'
 
 export type DrillDim = 'part' | 'model' | 'branch' | 'factory' | 'month' | 'cause'
@@ -25,6 +25,17 @@ export const dashboardApi = {
     ])
     const rows = Object.fromEntries(GROUPS.map((g, i) => [g, lists[i]]))
     return toDefectDashboard(rows, { from, to, totalReceived: total })
+  },
+
+  /**
+   * 부품별 고장 TOP n (최근 days 일) — 홈 미리보기 그래프
+   *  실서버: 기존 GET /api/dashboard?from&to&groupBy=PART 를 기간만 바꿔 호출 (확정 리포트만 집계하는 같은 API)
+   */
+  async partTop(days = 30, limit = 5): Promise<CountItem[]> {
+    if (USE_MOCK) return mockDelay(() => mock.dashboardPartTop(days, limit), 500)
+    const { from, to } = dayRange(days)
+    const rows = (await http.get<BeDashboardRow[]>('/dashboard', { params: { from, to, groupBy: 'PART' } })).data
+    return toItems(rows).filter((x) => x.count > 0).slice(0, limit)
   },
 
   /** [Mock 전용] 그래프 클릭 시 관련 수리 목록 — 실서버에는 드릴다운 API 가 없다 */

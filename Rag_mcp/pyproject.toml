@@ -10,6 +10,7 @@ dependencies = [
   "pydantic>=2.11,<3",
   "openai>=2,<3",
   "python-dotenv>=1,<2",
+  "httpx>=0.28,<1",
 ]
 
 [dependency-groups]
@@ -27,4 +28,5 @@ packages = ["src/repair_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]  # tests가 examples/ 모듈을 불러온다
 asyncio_mode = "auto"

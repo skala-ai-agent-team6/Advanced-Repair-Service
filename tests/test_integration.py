@@ -22,10 +22,14 @@ def command():
 class Producer:
     def __init__(self):
         self.events = []
+        self.processing_statuses = []
         self.fail_final = False
 
     async def send_and_wait(self, topic, body, **kwargs):
         event = json.loads(body)
+        if topic == C.PROCESSING_STATUS_TOPIC:
+            self.processing_statuses.append(event)
+            return
         if self.fail_final and event.get("eventType") == "DIAGNOSIS_COMPLETED":
             raise ConnectionError("temporary broker failure")
         self.events.append(event)
@@ -34,11 +38,17 @@ class Producer:
 @pytest.fixture
 def fixture_tools(monkeypatch, tmp_path):
     image = str(tmp_path / "boxed.jpg")
+    monkeypatch.setattr(tools, "translate_cases", AsyncMock(side_effect=lambda texts: texts))
     monkeypatch.setattr(tools, "load_photos", AsyncMock(side_effect=lambda cmd: [
         {"attachmentId": a["id"], "path": image, "target": a.get("target", "PCB")}
         for a in cmd["payload"]["attachments"]]))
-    monkeypatch.setattr(tools, "split_text", AsyncMock(return_value=tools.Clues(pcb=[], mech=[], sw=[])))
-    monkeypatch.setattr(enrichment, "normalize_observation", AsyncMock(return_value={"observations": []}))
+    async def observation(text, *, product_type="unknown"):
+        from worker.context_policy import prepare_text
+        text = prepare_text(text)
+        return {"raw_text": text, "product_type": product_type, "origin": "technician",
+                "technician_confirmed": True, "engine": "openai-structured-output-v1", "model": "test",
+                "observations": [], "unmapped_fragments": [text], "diagnosis_confirmed": False}
+    monkeypatch.setattr(enrichment, "normalize_observation", AsyncMock(side_effect=observation))
     monkeypatch.setattr(enrichment, "interpret_pcb", AsyncMock(return_value={"detections": []}))
     monkeypatch.setattr(enrichment, "interpret_damage", AsyncMock(return_value={"detections": []}))
     out = {"is_defective": True, "defects": [{"type": "short", "confidence": .3}],
@@ -101,7 +111,7 @@ def test_typed_dent_reaches_interpreter(fixture_tools):
     cmd["payload"]["attachments"][0]["target"] = "MOTOR"
     result = asyncio.run(graph.build_graph().ainvoke({"command": cmd},
                          {"configurable": {"emit": AsyncMock()}}))
-    enrichment.interpret_damage.assert_awaited_once_with(["scratches"])
+    enrichment.interpret_damage.assert_awaited_once_with(["scratches"], product_type="vacuum")
     assert result["result"]["eventType"] == "DIAGNOSIS_COMPLETED"
 
 
@@ -348,6 +358,14 @@ def test_fault_runner_checks_actual_nested_error_output(fixture_tools, monkeypat
     model.__name__ = 'offline_tool'
     monkeypatch.setattr(tools, 'call_mech_mcp' if fault == 'mechanical-unavailable' else 'call_rag_mcp',
                         harness.guarded()(model))
+    if fault == 'rag-unavailable':
+        # 검색 서버가 내려가면 같은 서버의 사례 저장도 실패할 수 있다.
+        monkeypatch.setattr(C, 'SAVE_REPAIR_CASES', True)
+        monkeypatch.setattr(tools, 'save_repair_case', AsyncMock(side_effect=ConnectionError()))
+    else:
+        # 추가 사진 대기 이벤트에는 아직 최종 리포트 근거가 없다.
+        tools.call_rag_mcp.return_value = {'hits': [
+            {'kind': 'REFERENCE', 'citation': 'doc-1', 'text': '점검 자료'}]}
     rows = asyncio.run(verify_live.run('mixed', fault))
     assert rows[0]['fault'] == fault
     assert Path(rows[0]['report']).is_file()

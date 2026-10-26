@@ -1,10 +1,12 @@
 # 수리 진단 RAG · MCP
 
-청소기 전용 서비스로, 기사 소견과 팀 모델의 라벨을 받아 과거 수리 사례·기술 문서를 검색한다. 요청에 `product_domain`을 넣지 않는다. 모델 추론은 팀원이 담당하고, 이 저장소는 결과 해석과 검색을 담당한다.
+청소기·세탁기·에어컨·기타 가전의 기사 소견과 모델 라벨을 받아 같은 제품 종류의 수리 사례와 공통 점검 지침을 검색한다. 입력과 확정 보고서에 `product_type`을 전달한다. [제품 종류·연동 규격](docs/product_types.md). 기본 공개 사례 데이터는 청소기만 포함한다. 모델 추론은 팀원이 담당하고, 이 저장소는 결과 해석과 검색을 담당한다.
 
 **소견 변환에는 프로젝트 `.env`의 `OPENAI_API_KEY`가 필요하다. 기본 모델: `gpt-4.1-mini`.**
 
 **실행 방법과 팀 연동:** [MCP 사용 안내](docs/mcp_usage.md) · [실제 검색 실험](experiments/results/summary.md)
+
+**확정 보고서 자동 반영:** [설정·시연 방법](docs/confirmed_case_sync.md). Spring의 기존 내부 API를 30초마다 읽어 신규/수정 보고서를 Qdrant에 반영하고 공개 사례와 함께 검색한다. `REPAIR_SYNC_ENABLED=true`로 활성화한다.
 
 ## 구성
 
@@ -28,6 +30,10 @@ repair_rag_data/
   build_dataset.py               원본으로부터 사례 문서 재생성
   build_observation_vocabulary.py 사례 근거와 소견 용어 목록 재생성
 ```
+
+## 가상 데모 사례
+
+세탁기 20건·에어컨 20건·기타 가전 20건을 `data/demo_confirmed_cases.json`에 준비했다. 실제 수리 이력이 아닌 가상 자료로 표시하며 `repair-mcp seed-demo-cases` 실행 후 검색에 포함된다. [사례 목록·색인·연동 범위](docs/demo_cases.md).
 
 ## 준비된 자료와 범위
 
@@ -54,7 +60,7 @@ PCB 기술 문서는 분류 용어 참고 1개와 Repair Wiki 기술 가이드 �
 
 현재 회사 SQL의 repair_case / repair_report / confirmed_fault는 회사가 실제로 관리하는 건에 사용한다. 외부 공개 기록에는 필수 product_id, center_id, technician_id가 없으므로 가짜 외래키를 만들어 집어넣지 않는다.
 
-이 준비본은 출처를 가진 외부 문서로 색인한다. 회사의 신규 수리 확정 건은 이후 별도 export를 통해 같은 repair_cases 컬렉션에 넣을 수 있다. external_community_repair_record와 internal_confirmed_repair를 구분한다.
+공개 자료는 출처를 가진 외부 문서로 색인한다. 회사의 확정 건은 Spring `/internal/confirmed-cases`를 통해 사내 전용 컬렉션에 동기화하고, 같은 RAG 검색에서 공개 사례와 통합 반환한다. `external_community_repair_record`와 `internal_confirmed_repair`를 구분한다. 보고서 확정/수정은 Spring이 담당한다.
 
 ## 구현과 검증
 

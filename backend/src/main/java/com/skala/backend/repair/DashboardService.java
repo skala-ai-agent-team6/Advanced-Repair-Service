@@ -20,7 +20,7 @@ public class DashboardService {
             default->throw ApiError.bad("DASHBOARD_GROUP");
         };
         var u=access.user();List<Object> args=new ArrayList<>();args.add(from.atStartOfDay(ZoneId.of("Asia/Seoul")).toOffsetDateTime());args.add(to.atStartOfDay(ZoneId.of("Asia/Seoul")).toOffsetDateTime());
-        String scope="";if(u.role.equals("TECHNICIAN")){scope=" AND r.center_id=?";args.add(u.centerId);}
+        String scope="";if(u.role.equals("TECHNICIAN")){scope=" AND (r.center_id=? OR (r.service_type='FIELD' AND r.assigned_technician_id=?))";args.add(u.centerId);args.add(u.id);}
         return db.list("SELECT "+expression+" AS dimension,count(DISTINCT r.id) AS count FROM repair_report p JOIN repair_case r ON r.id=p.case_id JOIN repair_report_revision rr ON rr.report_id=p.id AND rr.revision=p.confirmed_revision JOIN confirmed_fault f ON f.report_id=rr.report_id AND f.revision=rr.revision WHERE rr.confirmed_at>=? AND rr.confirmed_at<?"+scope+" GROUP BY 1 ORDER BY 1",args.toArray());
     }
 }

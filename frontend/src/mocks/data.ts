@@ -27,8 +27,8 @@ import { isoAgo } from '@/utils/format'
 
 /* ---------------- 사용자 ---------------- */
 export const USERS: (User & { password: string })[] = [
-  { employeeId: 'T1001', password: '1234', name: '김정훈', role: 'TECHNICIAN', branch: '강남 서비스센터' },
-  { employeeId: 'T1002', password: '1234', name: '박민수', role: 'TECHNICIAN', branch: '부산 서비스센터' },
+  { employeeId: 'T1001', password: '1234', name: '김정훈', role: 'TECHNICIAN', branch: '강남 서비스센터', technicianType: 'CENTER' },
+  { employeeId: 'T1002', password: '1234', name: '박민수', role: 'TECHNICIAN', branch: '부산 서비스센터', technicianType: 'FIELD' },
   { employeeId: 'Q2001', password: '1234', name: '이서연', role: 'QUALITY_MANAGER', branch: '본사 품질혁신팀' },
 ]
 
@@ -74,6 +74,15 @@ const KNOWN_SERIALS: Record<string, string> = {
 }
 
 /* ---------------- 부품 ---------------- */
+/** 서비스센터 (고객 센터 방문 · 수리 방법 변경에서 고름) — 기존 시드 지역 */
+export const SERVICE_CENTERS: import('@/constants/serviceType').ServiceCenter[] = [
+  { id: 'SC-GANGNAM', name: '강남 서비스센터', address: '서울특별시 강남구 테헤란로 152' },
+  { id: 'SC-BUSAN', name: '부산 서비스센터', address: '부산광역시 해운대구 센텀중앙로 79' },
+  { id: 'SC-DAEJEON', name: '대전 서비스센터', address: '대전광역시 서구 둔산로 100' },
+  { id: 'SC-GWANGJU', name: '광주 서비스센터', address: '광주광역시 서구 상무중앙로 61' },
+  { id: 'SC-DAEGU', name: '대구 서비스센터', address: '대구광역시 수성구 달구벌대로 2450' },
+]
+
 export const PARTS: Part[] = [
   {
     id: 'P-103',
@@ -81,8 +90,9 @@ export const PARTS: Part[] = [
     partNo: 'RM-MT-103',
     compatibleModels: ['RC-A100', 'RC-X700'],
     stocks: [
-      { warehouse: '수원 창고', location: 'B동 3열 2단', quantity: 7 },
-      { warehouse: '대전 창고', location: 'A동 1열 4단', quantity: 2 },
+      // 데모: 1개만 남아 있어 예약 시 409 STOCK_CONFLICT(다른 기사가 먼저 예약)를 시연
+      { warehouse: '수원 창고', location: 'B동 3열 2단', quantity: 1 },
+      { warehouse: '대전 창고', location: 'A동 1열 4단', quantity: 0 },
     ],
     factory: '구미 제2공장',
     factoryContact: { manager: '정우성 과장', phone: '054-470-2103', email: 'motor.gumi2@robotcare.co.kr' },
@@ -258,9 +268,9 @@ function motorHousingDiagnosis(imgPrefix: string): DiagTemplate {
       },
     ],
     similarCases: [
-      { receiptNo: 'SR-2026-04812', model: 'RC-A100', cause: '하단 연결부 들뜸으로 E103 · 주행 소음', resolution: '모터 어셈블리 교체 후 RPM 정상', similarity: 94, closedAt: isoAgo(60 * 24 * 21) },
-      { receiptNo: 'SR-2026-03377', model: 'RC-A100', cause: '구미 제2공장 3월 생산분 하우징 변형', resolution: '모터 어셈블리 교체 · 동일 로트 점검', similarity: 91, closedAt: isoAgo(60 * 24 * 40) },
-      { receiptNo: 'SR-2026-02150', model: 'RC-X700', cause: '하우징 균열로 회전축 편심', resolution: '모터 어셈블리 교체', similarity: 86, closedAt: isoAgo(60 * 24 * 66) },
+      { receiptNo: 'SR-2026-04812', model: 'RC-A100', cause: '하단 연결부 들뜸으로 E103 · 주행 소음', resolution: '모터 어셈블리 교체 후 RPM 정상', similarity: 94, closedAt: isoAgo(60 * 24 * 21), origin: 'INTERNAL' },
+      { receiptNo: 'SR-2026-03377', model: 'RC-A100', cause: '구미 제2공장 3월 생산분 하우징 변형', resolution: '모터 어셈블리 교체 · 동일 로트 점검', similarity: 91, closedAt: isoAgo(60 * 24 * 40), origin: 'INTERNAL' },
+      { receiptNo: 'SR-2026-02150', model: 'RC-X700', cause: '하우징 균열로 회전축 편심', resolution: '모터 어셈블리 교체', similarity: 86, closedAt: isoAgo(60 * 24 * 66), origin: 'EXTERNAL' },
     ],
     similarCaseCount: 12,
     inspectionSteps: [
@@ -289,12 +299,12 @@ function wheelSensorDiagnosis(imgPrefix: string): DiagTemplate {
     ],
     agents: t.agents.map((a) =>
       a.agent === 'MOTOR'
-        ? { ...a, verdict: 'SUSPICIOUS', summary: '외관 변형 없음 · 휠 센서 접점 의심', findings: ['하우징 변형 없음', '연결부 체결 정상', '휠 회전 센서 커넥터 접점 마모 흔적'], confidence: 77, annotations: [] }
+        ? { ...a, verdict: 'SUSPICIOUS', summary: '외관 변형 없음 · 휠 센서 접점 의심', findings: ['하우징 변형 없음', '연결부 체결 정상', '휠 회전 센서 커넥터 접점 마모 흔적'], confidence: 77, annotations: [{ imageId: `${imgPrefix}-img-m`, label: '휠 회전 센서 커넥터 접점 마모', x: 18, y: 58, w: 18, h: 16, severity: 'HIGH' as const }] }
         : a,
     ),
     similarCases: [
-      { receiptNo: 'SR-2025-11902', model: 'RC-A100', cause: '회전 센서 커넥터 접점 마모로 펄스 누락', resolution: '휠 회전 센서 교체', similarity: 88, closedAt: isoAgo(60 * 24 * 130) },
-      { receiptNo: 'SR-2026-01544', model: 'RC-A100', cause: '센서 커넥터 반삽입 · 간헐적 한쪽 회전', resolution: '커넥터 재체결로 해결', similarity: 81, closedAt: isoAgo(60 * 24 * 95) },
+      { receiptNo: 'SR-2025-11902', model: 'RC-A100', cause: '회전 센서 커넥터 접점 마모로 펄스 누락', resolution: '휠 회전 센서 교체', similarity: 88, closedAt: isoAgo(60 * 24 * 130), origin: 'EXTERNAL' },
+      { receiptNo: 'SR-2026-01544', model: 'RC-A100', cause: '센서 커넥터 반삽입 · 간헐적 한쪽 회전', resolution: '커넥터 재체결로 해결', similarity: 81, closedAt: isoAgo(60 * 24 * 95), origin: 'INTERNAL' },
     ],
     similarCaseCount: 5,
     parts: [{ partId: 'P-221', partName: '휠 회전 센서', partNo: 'RM-SN-221', quantity: 1, reason: '센서 접촉부 마모 시 단품 교체 권장' }],
@@ -328,9 +338,9 @@ function pcbDiagnosis(imgPrefix: string): DiagTemplate {
           : a,
     ),
     similarCases: [
-      { receiptNo: 'SR-2026-05120', model: 'RC-A100', cause: '전원 IC 주변 소손 · 충전 중 재부팅', resolution: '메인 PCB 교체 · 펌웨어 재설치', similarity: 90, closedAt: isoAgo(60 * 24 * 14) },
-      { receiptNo: 'SR-2026-02981', model: 'RC-X700', cause: '콘덴서 팽창으로 전원 불안정', resolution: '메인 PCB 교체', similarity: 83, closedAt: isoAgo(60 * 24 * 52) },
-      { receiptNo: 'SR-2025-12077', model: 'RC-A100', cause: '배터리 보호회로 동작 (PCB 정상)', resolution: '배터리 팩 교체', similarity: 72, closedAt: isoAgo(60 * 24 * 120) },
+      { receiptNo: 'SR-2026-05120', model: 'RC-A100', cause: '전원 IC 주변 소손 · 충전 중 재부팅', resolution: '메인 PCB 교체 · 펌웨어 재설치', similarity: 90, closedAt: isoAgo(60 * 24 * 14), origin: 'INTERNAL' },
+      { receiptNo: 'SR-2026-02981', model: 'RC-X700', cause: '콘덴서 팽창으로 전원 불안정', resolution: '메인 PCB 교체', similarity: 83, closedAt: isoAgo(60 * 24 * 52), origin: 'INTERNAL' },
+      { receiptNo: 'SR-2025-12077', model: 'RC-A100', cause: '배터리 보호회로 동작 (PCB 정상)', resolution: '배터리 팩 교체', similarity: 72, closedAt: isoAgo(60 * 24 * 120), origin: 'EXTERNAL' },
     ],
     similarCaseCount: 7,
     parts: [{ partId: 'P-310', partName: '메인 PCB', partNo: 'RM-PC-310', quantity: 1, reason: '전원부 소손은 보드 단위 교체' }],
@@ -394,6 +404,9 @@ const SEEDS: Seed[] = [
   { id: 107, serial: 'RC2025006601', symptom: '소음 후 주행 불가', errorCodes: ['E103'], status: 'CLOSED', tech: KIM, minutesAgo: 60 * 24 * 4, urgency: 'HIGH', diag: 'MOTOR_HOUSING' },
   { id: 112, serial: 'RC2025002205', symptom: '좌측 바퀴 헛돎', errorCodes: ['E210'], status: 'CLOSED', tech: PARK, minutesAgo: 60 * 24 * 6, urgency: 'LOW', diag: 'WHEEL_SENSOR' },
   { id: 108, serial: 'RC2025005502', symptom: '청소 중 정지 후 경고음', errorCodes: ['E103'], status: 'TECHNICIAN_REVIEW', tech: KIM, minutesAgo: 60 * 24 * 3, urgency: 'MEDIUM', diag: 'MOTOR_HOUSING' },
+  // 출장기사(T1002·부산) 오늘의 출장 데모용
+  { id: 115, serial: 'RC2026000815', symptom: '주행 중 덜컹 소리가 나고 멈춤', errorCodes: ['E103'], status: 'TECHNICIAN_REVIEW', tech: PARK, minutesAgo: 60 * 5, urgency: 'MEDIUM', diag: 'MOTOR_HOUSING' },
+  { id: 116, serial: 'RC2026000816', symptom: '충전 후 전원이 바로 꺼짐', errorCodes: ['E501'], status: 'TECHNICIAN_REVIEW', tech: PARK, minutesAgo: 60 * 7, urgency: 'MEDIUM', diag: 'PCB' },
   { id: 109, serial: 'RC2025004403', symptom: '간헐적 전원 꺼짐, 재현 어려움', errorCodes: [], status: 'MANUAL_REVIEW', tech: PARK, minutesAgo: 60 * 24 * 2, urgency: 'MEDIUM', photoRequestCount: 3 },
   // 같은 제품(RC2026000187)의 이전 수리 건: 시리얼은 겹치므로 수리 ID 로 구분
   { id: 98, serial: 'RC2026000187', symptom: '흡입력 약해짐, 브러시 회전 느림', errorCodes: ['E302'], status: 'CLOSED', tech: KIM, minutesAgo: 60 * 24 * 45, urgency: 'LOW', diag: 'WHEEL_SENSOR' },
@@ -471,12 +484,13 @@ function seedReport(seed: Seed): RepairReport | undefined {
           aiAcceptance: 'ACCEPTED',
         }
   if (draft) {
-    return { repairId: seed.id, version: 1, revision: 1, status: 'DRAFT', content, createdBy: seed.tech.name, updatedBy: seed.tech.name, updatedAt: isoAgo(seed.minutesAgo - 240), confirmations: [] }
+    return { id: `RPT-${seed.id}`, repairId: seed.id, version: 1, revision: 1, status: 'DRAFT', content, createdBy: seed.tech.name, updatedBy: seed.tech.name, updatedAt: isoAgo(seed.minutesAgo - 240), confirmations: [] }
   }
   const confirmations = [{ revision: 1, confirmedBy: seed.tech.name, confirmedAt }]
   if (revised) confirmations.push({ revision: 2, confirmedBy: seed.tech.name, confirmedAt: lastAt })
   const revision = confirmations.length
   return {
+    id: `RPT-${seed.id}`,
     repairId: seed.id,
     // 확정본 1개 = 저장 1 + 확정 1, 재확정이면 그만큼 더
     version: revision * 2,
@@ -499,6 +513,19 @@ export interface MockDbState {
   orders: PurchaseOrder[]
   parts: Part[]
   notifications: Notification[]
+  /** 보증 판정: 고장 원인 유형(시드에서 지정할 때만) · 기사 확정 결과 */
+  warranty: Record<number, { fault?: { type: import('@/types').WarrantyFaultType; label: string }; decision?: import('@/types').WarrantyDecision }>
+  /** 출장 일정 (출장기사 배정) */
+  fieldVisits?: import('@/types').FieldVisit[]
+  /** 회원가입으로 만든 Mock 계정 (기본 데모 계정은 USERS) */
+  users?: (User & { password: string })[]
+  /** 재고 예약 (출장 준비) · 재고 변경 이력 */
+  reservations: import('@/types').StockReservation[]
+  stockHistory: import('@/types').StockHistoryEntry[]
+  /** 사내 사례 동기화 (확정 때 생성). 없는 확정 리포트는 시드로 보고 COMPLETED */
+  caseSyncs?: Record<number, { revision: number; queuedAt: string; fail?: boolean }>
+  /** 출장 전 리포트: 기사 수정안 · 기사 확인 (AI 진단 원본과 따로 저장) */
+  preVisit?: Record<number, { technicianEdit: import('@/types').TechnicianReportEdit | null; review: import('@/types').PreVisitReview | null }>
   seq: number
 }
 
@@ -561,6 +588,13 @@ export function createSeed(): MockDbState {
     }
     diagnoses[s.id] = [d]
   }
+  // US-04 부분 실패 시연: #114 는 매뉴얼·유사 사례 검색 도구만 실패 → 나머지(PCB·기계) 결과로 만든 진단, 유사 사례는 '미확인'
+  const r114 = repairs.find((r) => r.id === 114)
+  if (r114 && diagnoses[114]) {
+    r114.tools = [tool(114, 'PCB', 'DONE'), tool(114, 'MOTOR', 'DONE'), tool(114, 'RAG', 'FAILED', '유사 사례 검색 응답 시간 초과')]
+    diagnoses[114][0].similarCases = []
+    diagnoses[114][0].similarCaseCount = 0
+  }
 
   const photoRequests: MockDbState['photoRequests'] = {
     102: [
@@ -606,7 +640,64 @@ export function createSeed(): MockDbState {
     { id: 'N5', title: '발주 요청 1건', body: '휠 회전 센서(RM-SN-221) 발주 승인이 필요합니다.', at: isoAgo(60 * 20), read: false, link: '/order-approvals', roles: ['QUALITY_MANAGER'] },
   ]
 
-  return { repairs, diagnoses, photoRequests, orders, parts: structuredClone(PARTS), notifications, seq: 200 }
+  /* 보증 판정 데모: #101 무상(FREE) · #113 유상(PAID, 침수 흔적) · #114 판단 어려움(UNKNOWN, 구매일 모름) */
+  /* 진행 조회 데모: 휴대폰 뒷자리는 수리 ID 와 같게 (예: #101 → 0101) */
+  const visit = (name: string, purchaseDate: string | null, last4: string, confirmedDate?: string) => ({ customerName: name, phone: `010-0000-${last4}`, address: '데모시 예시구 샘플로 1', preferredDate: '2026-10-28', purchaseDate, confirmedDate })
+  const setVisit = (id: number, v: ReturnType<typeof visit>) => {
+    const r = repairs.find((x) => x.id === id)
+    if (r) r.visitInfo = v
+  }
+  setVisit(101, visit('데모 고객A', '2025-12-01', '0101'))
+  // 수리 방법: 출장 건(113·115·116)은 방문 수리, 그 밖의 시드는 센터 방문 (아래 setVisit 뒤에 지정)
+  // 출장기사(T1002·부산) 대시보드의 "오늘의 출장" 데모: 오늘 방문 확정
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+  setVisit(113, visit('데모 고객B', '2026-03-15', '0113', todayStr))
+  setVisit(114, visit('데모 고객C', null, '0114'))
+  setVisit(104, visit('데모 고객D', '2026-02-10', '0104', '2026-10-24'))
+  setVisit(105, visit('데모 고객E', '2026-01-20', '0105', '2026-10-20'))
+  const warranty: MockDbState['warranty'] = {
+    113: { fault: { type: 'USER_FAULT', label: '사용자 과실 의심 (물걸레 모듈 주변 침수 흔적)' } },
+    104: { decision: { result: 'FREE', reason: '영수증으로 구매일 확인', decidedBy: '김정훈', decidedAt: isoAgo(60 * 20) } },
+    105: { decision: { result: 'FREE', decidedBy: '김정훈', decidedAt: isoAgo(60 * 48) } },
+  }
+
+  /* 재고 예약 데모: #104 의 휠 센서 예약은 이미 24시간이 지나 처음 조회할 때 만료 처리된다 */
+  const reservations: MockDbState['reservations'] = [
+    { id: 'RSV-SEED-1', partId: 'P-221', repairId: 104, warehouse: '수원 창고', quantity: 1, status: 'RESERVED', reservedBy: '김정훈', reservedAt: isoAgo(60 * 26), expiresAt: isoAgo(60 * 2) },
+    { id: 'RSV-SEED-2', partId: 'P-103', repairId: 106, warehouse: '수원 창고', quantity: 1, status: 'RELEASED', reservedBy: '박민수', reservedAt: isoAgo(60 * 32), expiresAt: isoAgo(60 * 8), closedAt: isoAgo(60 * 30) },
+  ]
+  const stockHistory: MockDbState['stockHistory'] = [
+    { id: 'SH-SEED-1', partId: 'P-103', at: isoAgo(60 * 32), change: 'RESERVE', delta: -1, quantity: 1, warehouse: '수원 창고', actor: '박민수', repairId: 106 },
+    { id: 'SH-SEED-2', partId: 'P-103', at: isoAgo(60 * 30), change: 'RELEASE', delta: 0, quantity: 1, warehouse: '수원 창고', actor: '박민수', repairId: 106 },
+    { id: 'SH-SEED-3', partId: 'P-221', at: isoAgo(60 * 26), change: 'RESERVE', delta: -1, quantity: 1, warehouse: '수원 창고', actor: '김정훈', repairId: 104 },
+  ]
+
+  /* 오늘의 출장: T1002(출장기사)에게 오늘(한국 시간) 3건 · T1001(센터 수리자)은 0건.
+   * 모델·증상·상태는 조회할 때 수리 건의 최신 값으로 채운다 */
+  const fieldVisit = (repairId: number, visitTime: string, customerName: string, district: string, neighborhood: string, visitStatus: 'SCHEDULED' | 'DONE') => {
+    const r = repairs.find((x) => x.id === repairId)!
+    // visitDate 'TODAY': 데모 일정은 조회하는 날의 오늘로 (저장된 데모 데이터가 날짜가 지나도 3건 유지)
+    return { visitId: `V-${repairId}`, repairId, technicianId: 'T1002', visitDate: 'TODAY', visitTime, customerName, district, neighborhood, model: r.product.model, symptom: r.symptom, status: r.status, visitStatus }
+  }
+  const fieldVisits: MockDbState['fieldVisits'] = [
+    fieldVisit(113, '13:30', '이○○', '해운대구', '우동', 'SCHEDULED'),
+    fieldVisit(116, '09:00', '김○○', '수영구', '광안동', 'DONE'),
+    fieldVisit(115, '16:00', '최○○', '남구', '대연동', 'SCHEDULED'),
+  ]
+  // 고객 진행 조회와 맞추기: 출장 건의 방문 확정일 = 오늘
+  setVisit(115, visit('데모 고객F', '2026-02-02', '0115', todayStr))
+  setVisit(116, visit('데모 고객G', '2025-12-20', '0116', todayStr))
+  for (const r of repairs) {
+    if (!r.visitInfo) continue
+    const field = [113, 115, 116].includes(r.id)
+    const center = SERVICE_CENTERS.find((c) => c.name === r.branch)
+    Object.assign(r.visitInfo, field ? { serviceType: 'VISIT', visitSlot: 'PM' } : { serviceType: 'CENTER', centerId: center?.id, centerName: center?.name ?? r.branch })
+  }
+
+  // 부품 사진 (데모 그림)
+  const PART_IMAGES: Record<string, string> = { 'P-103': '/mock/motor.svg', 'P-221': '/mock/motor-joint.svg', 'P-310': '/mock/pcb.svg', 'P-115': '/mock/motor.svg', 'P-208': '/mock/product.svg' }
+  const parts = structuredClone(PARTS).map((p) => ({ ...p, imageUrl: PART_IMAGES[p.id] }))
+  return { repairs, diagnoses, photoRequests, orders, parts, notifications, warranty, reservations, stockHistory, fieldVisits, seq: 200 }
 }
 
 /* ---------------- 대시보드용: 승인된 고장 레코드 (사내 고장 DB) ---------------- */

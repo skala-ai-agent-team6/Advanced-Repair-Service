@@ -1,0 +1,74 @@
+{
+  "taskId": "20",
+  "eventId": "9cc29498-07ed-41ea-a39a-fe8b3e207067",
+  "replayed": true,
+  "model_rerun": false,
+  "events": [
+    {
+      "timestamp": "2026-10-25T13:52:22.500370+00:00",
+      "level": "INFO",
+      "event": "command.received",
+      "event_id": "9cc29498-07ed-41ea-a39a-fe8b3e207067",
+      "task_id": "20",
+      "case_id": "21",
+      "input_round": 0,
+      "correlationId": "9f153ae0-5281-4c3f-9574-ff320b039f7c",
+      "executionId": "2c82dd6d-866c-431e-8b20-388f0aa843b8",
+      "inputRevision": 1,
+      "partition": 1,
+      "offset": 9
+    },
+    {
+      "timestamp": "2026-10-25T13:52:22.501191+00:00",
+      "level": "INFO",
+      "event": "execution.replayed",
+      "event_id": "9cc29498-07ed-41ea-a39a-fe8b3e207067",
+      "task_id": "20",
+      "case_id": "21",
+      "input_round": 0,
+      "correlationId": "9f153ae0-5281-4c3f-9574-ff320b039f7c",
+      "executionId": "2c82dd6d-866c-431e-8b20-388f0aa843b8",
+      "inputRevision": 1
+    },
+    {
+      "timestamp": "2026-10-25T13:52:22.504051+00:00",
+      "level": "INFO",
+      "event": "processing_status.published",
+      "event_id": "9cc29498-07ed-41ea-a39a-fe8b3e207067",
+      "task_id": "20",
+      "case_id": "21",
+      "input_round": 0,
+      "correlationId": "9f153ae0-5281-4c3f-9574-ff320b039f7c",
+      "executionId": "2c82dd6d-866c-431e-8b20-388f0aa843b8",
+      "inputRevision": 1,
+      "status": "SUCCEEDED"
+    },
+    {
+      "timestamp": "2026-10-25T13:52:22.504123+00:00",
+      "level": "INFO",
+      "event": "execution.result_published",
+      "event_id": "9cc29498-07ed-41ea-a39a-fe8b3e207067",
+      "task_id": "20",
+      "case_id": "21",
+      "input_round": 0,
+      "correlationId": "9f153ae0-5281-4c3f-9574-ff320b039f7c",
+      "executionId": "2c82dd6d-866c-431e-8b20-388f0aa843b8",
+      "inputRevision": 1,
+      "result_type": "DIAGNOSIS_COMPLETED"
+    },
+    {
+      "timestamp": "2026-10-25T13:52:22.511009+00:00",
+      "level": "INFO",
+      "event": "command.committed",
+      "event_id": "9cc29498-07ed-41ea-a39a-fe8b3e207067",
+      "task_id": "20",
+      "case_id": "21",
+      "input_round": 0,
+      "correlationId": "9f153ae0-5281-4c3f-9574-ff320b039f7c",
+      "executionId": "2c82dd6d-866c-431e-8b20-388f0aa843b8",
+      "inputRevision": 1,
+      "partition": 1,
+      "offset": 9
+    }
+  ]
+}

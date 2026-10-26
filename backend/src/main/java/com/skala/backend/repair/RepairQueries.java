@@ -5,18 +5,18 @@ import java.util.*;
 
 @Service
 public class RepairQueries {
-    final Store db;final Access access;
-    public RepairQueries(Store db,Access access) {this.db=db;this.access=access;}
+    final Store db;final Access access;final RagCaseService rag;
+    public RepairQueries(Store db,Access access,RagCaseService rag) {this.db=db;this.access=access;this.rag=rag;}
     public Map<String,Object> list(int page,int size,String status,String serial) {
         if(page<0 || page>100000 || size<1 || size>100) throw ApiError.bad("PAGE");
         var u=access.user();String where=" WHERE 1=1";List<Object> args=new ArrayList<>();
-        if(u.role.equals("TECHNICIAN")){where+=" AND r.center_id=?";args.add(u.centerId);}
+        if(u.role.equals("TECHNICIAN")){where+=" AND (r.center_id=? OR (r.service_type='FIELD' AND r.assigned_technician_id=?))";args.add(u.centerId);args.add(u.id);}
         if(status!=null){where+=" AND r.status=?";args.add(status);}if(serial!=null){where+=" AND p.serial_number=?";args.add(serial);}
         var count=db.one("SELECT count(*) AS total FROM repair_case r JOIN product p ON p.id=r.product_id"+where,args.toArray());args.add(size);args.add(page*size);
         return Map.of("page",page,"size",size,"total",count.get("total"),"items",db.list("SELECT r.*,p.serial_number FROM repair_case r JOIN product p ON p.id=r.product_id"+where+" ORDER BY r.created_at DESC,r.id LIMIT ? OFFSET ?",args.toArray()));
     }
     public Map<String,Object> detail(Long id) {
-        var r=access.repair(id);r.put("attachments",db.list("SELECT id,request_id,original_name,kind,target,mime_type,byte_size,sha256,created_at FROM attachment WHERE case_id=? ORDER BY created_at,id",id));
+        var r=access.repair(id);r.put("attachments",db.list("SELECT id,request_id,original_name,kind,target,mime_type,byte_size,sha256,quality_required,latest_quality_result_id,use_status,replaced_by_id,created_at FROM attachment WHERE case_id=? ORDER BY created_at,id",id));
         r.put("tasks",db.list("SELECT * FROM diagnosis_job WHERE case_id=? ORDER BY created_at DESC",id));r.put("photoRequests",db.list("SELECT p.* FROM photo_request p JOIN diagnosis_job t ON t.id=p.job_id WHERE t.case_id=? ORDER BY round_no",id));
         r.put("reports",db.list("SELECT * FROM repair_report WHERE case_id=?",id));r.put("orders",db.list("SELECT * FROM purchase_order WHERE case_id=? ORDER BY created_at,id",id));return r;
     }
@@ -38,6 +38,9 @@ public class RepairQueries {
     public Long taskRepairId(Long task) {return (Long)db.one("SELECT case_id FROM diagnosis_job WHERE id=?",task).get("case_id");}
     public List<Map<String,Object>> confirmedCases(int page,int size) {
         if(page<0 || page>100000 || size<1 || size>500) throw ApiError.bad("PAGE");
-        return db.list("SELECT p.id AS report_id,p.case_id,p.confirmed_revision,rr.content,rr.confirmed_at FROM repair_report p JOIN repair_report_revision rr ON rr.report_id=p.id AND rr.revision=p.confirmed_revision ORDER BY p.id LIMIT ? OFFSET ?",size,page*size);
+        var rows=db.list("SELECT p.id AS report_id,p.case_id,c.product_type,p.confirmed_revision,rr.content,rr.confirmed_at FROM repair_report p JOIN repair_case c ON c.id=p.case_id JOIN repair_report_revision rr ON rr.report_id=p.id AND rr.revision=p.confirmed_revision ORDER BY p.id LIMIT ? OFFSET ?",size,page*size);
+        for(var row:rows){var raw=(Map<?,?>)row.get("content");var contacts=db.list("SELECT contact_name,contact_phone,visit_address FROM consumer_access WHERE case_id=?",row.get("case_id"));var privateData=contacts.isEmpty()?Map.<String,Object>of():contacts.getFirst();
+            var content=new LinkedHashMap<String,Object>();content.put("actualCause",rag.clean(raw.get("actualCause"),privateData));content.put("actualAction",rag.clean(raw.get("actualAction"),privateData));content.put("repairSuccessful",raw.get("repairSuccessful"));content.put("outcome",raw.get("outcome"));content.put("replacedParts",raw.getOrDefault("replacedParts",null));row.put("content",content);}
+        return rows;
     }
 }

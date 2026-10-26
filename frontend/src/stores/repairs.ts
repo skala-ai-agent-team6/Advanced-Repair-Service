@@ -1,7 +1,8 @@
 /* 수리 목록 스토어 — 목록·필터·요약 카운트 + 전역 SSE 로 실시간 반영 */
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import { repairApi, toErrorMessage } from '@/api'
+import { partApi, repairApi, toErrorMessage } from '@/api'
+import { matchPreset, partsWaitingIds, presetNeedsOrders, type RepairPreset } from '@/utils/repairPresets'
 import { connectAllEvents, type SseConnection } from '@/services/sse'
 import type { Repair, RepairEvent, RepairQuery, RepairStatusCounts, RepairSummaryCounts } from '@/types'
 
@@ -12,6 +13,8 @@ export const useRepairListStore = defineStore('repairList', () => {
   const counts = ref<RepairSummaryCounts>({ ...EMPTY_COUNTS })
   const statusCounts = ref<RepairStatusCounts>({})
   const query = reactive<RepairQuery>({ status: 'ALL', keyword: '', sort: 'receivedAt_desc' })
+  /** 기사 홈 카드에서 넘어온 필터 (프론트에서 거름, 서버로 보내지 않음) */
+  const preset = ref<RepairPreset | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   const loadedAt = ref<string | null>(null)
@@ -23,7 +26,7 @@ export const useRepairListStore = defineStore('repairList', () => {
     error.value = null
     try {
       const res = await repairApi.list({ ...query })
-      items.value = res.items
+      items.value = await applyPreset(res.items)
       counts.value = res.counts
       statusCounts.value = res.statusCounts ?? {}
       loadedAt.value = new Date().toISOString()
@@ -51,12 +54,19 @@ export const useRepairListStore = defineStore('repairList', () => {
   async function silentRefresh() {
     try {
       const res = await repairApi.list({ ...query })
-      items.value = res.items
+      items.value = await applyPreset(res.items)
       counts.value = res.counts
       statusCounts.value = res.statusCounts ?? {}
     } catch {
       /* 백그라운드 갱신 실패는 무시 */
     }
+  }
+
+  async function applyPreset(list: Repair[]): Promise<Repair[]> {
+    const p = preset.value
+    if (!p) return list
+    const waiting = presetNeedsOrders(p) ? partsWaitingIds(await partApi.orders()) : new Set<number>()
+    return list.filter((r) => matchPreset(r, p, waiting))
   }
 
   function startLive() {
@@ -70,7 +80,8 @@ export const useRepairListStore = defineStore('repairList', () => {
 
   function resetQuery() {
     Object.assign(query, { status: 'ALL', keyword: '', sort: 'receivedAt_desc', model: undefined, group: undefined })
+    preset.value = null
   }
 
-  return { items, counts, statusCounts, query, loading, error, loadedAt, fetch, startLive, stopLive, resetQuery }
+  return { items, counts, statusCounts, query, preset, loading, error, loadedAt, fetch, startLive, stopLive, resetQuery }
 })

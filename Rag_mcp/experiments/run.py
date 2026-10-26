@@ -23,12 +23,17 @@ async def main():
     store = DenseStore()
     output = {"run_at": datetime.now(timezone.utc).isoformat(),
               "model": store.model_name, "revision": store.revision, "fingerprint": store.fingerprint,
-              "scope": "OpenAI extraction + real embeddings and Qdrant. Independent LLM calls can vary. No human relevance labels; scores are not accuracy.",
+              "scope": "OpenAI extraction + real embeddings and Qdrant. Extraction is reused across comparisons; final opinions can vary. No human relevance labels; scores are not accuracy.",
               "experiments": []}
     try:
-        async with Client(create_server("rag", store), timeout=180) as client:
+        async with Client(create_server("rag", store), timeout=180) as client, \
+                   Client(create_server("observation"), timeout=180) as observation_client:
             for scenario in INPUTS:
-                request = {k: v for k, v in scenario.items() if k != "name"}
+                request = {"product_type": "vacuum", **{k: v for k, v in scenario.items() if k != "name"}}
+                if request.get("raw_text", "").strip():
+                    request["normalized_observation"] = (await observation_client.call_tool("normalize_observation", {
+                        "raw_text": request["raw_text"], "product_type": request["product_type"],
+                    })).data
                 baseline = {**request, "pcb_labels": [], "damage_labels": []}
                 korean = (await client.call_tool("retrieve_repair_context", {
                     "request": {**baseline, "use_bilingual_hints": False}})).data
@@ -71,7 +76,7 @@ async def main():
              "- `negative_filter`: 필터 막힘 부정과 모순되는 사례가 상위에 있는지 확인한다.",
              "- `no_power_open_circuit`: 전선/접촉 이상과 PCB 패턴 개방을 혼동하지 않는지 확인한다.",
              "- `all_inputs`: missing_hole 정의 문서를 확인된 수리 사례로 오해하지 않는지 확인한다.",
-             "- 각 비교는 독립적인 OpenAI 호출이다. 정규화 출력의 차이도 함께 검토한다.",
+             "- 각 입력의 소견은 한 번만 변환하여 비교 간 공유한다. 최종 소견 생성은 별도 호출이다.",
              "- 모순 판별 재정렬과 기사 검토 정답셋 평가는 별도 작업이다."]
     (folder / "summary.md").write_text("\n".join(rows) + "\n")
 

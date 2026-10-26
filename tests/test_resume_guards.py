@@ -11,7 +11,7 @@ def prepared(tmp_path):
     initial = copy.deepcopy(COMMAND)
     journal.begin(initial)
     request = {'round': 1, 'requestKey': str(uuid.uuid4()), 'checkpoint': 'saved',
-               'bodyPart': 'wheel', 'description': '추가 사진'}
+               'bodyPart': 'MOTOR', 'description': '추가 사진'}
     journal.finish(initial, {'eventType': 'PHOTO_REQUESTED', 'payload': request})
     resumed = copy.deepcopy(initial)
     resumed.update(eventId=str(uuid.uuid4()), eventType='DIAGNOSIS_RESUMED',

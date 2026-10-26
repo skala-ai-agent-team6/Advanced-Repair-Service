@@ -19,7 +19,7 @@ public class ApiController {
         this.queries=queries;this.access=access;this.repairs=repairs;this.reports=reports;this.orders=orders;this.files=files;this.sse=sse;this.catalog=catalog;this.dashboard=dashboard;
     }
     @GetMapping("/auth/csrf") public Map<String,Object> csrf(CsrfToken token) {return Map.of("headerName",token.getHeaderName(),"token",token.getToken());}
-    @GetMapping("/auth/me") public Map<String,Object> me() {var u=access.user();var m=new LinkedHashMap<String,Object>();m.put("id",u.id);m.put("username",u.email);m.put("email",u.email);m.put("name",u.name);m.put("active",u.active);m.put("role",u.role);m.put("centerId",u.centerId);return m;}
+    @GetMapping("/auth/me") public Map<String,Object> me() {var u=access.user();var m=new LinkedHashMap<String,Object>();m.put("id",u.id);m.put("username",u.email);m.put("email",u.email);m.put("name",u.name);m.put("active",u.active);m.put("role",u.role);m.put("centerId",u.centerId);m.put("operationsEnabled",u.operationsEnabled);m.put("technicianType",u.technicianType);return m;}
     @GetMapping("/products") public Map<String,Object> product(@RequestParam(required=false) String serial,@RequestParam(required=false) String serialNumber) {access.user();return catalog.product(serialNumber!=null?serialNumber:serial);}
     @PostMapping(value="/repairs",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> create(@Valid @RequestPart("data") Inputs.Intake input,@RequestPart("files") List<MultipartFile> uploads,@RequestParam(value="targets",required=false) List<String> targets) {return ResponseEntity.accepted().body(repairs.create(input,uploads,targets));}
@@ -27,16 +27,16 @@ public class ApiController {
         return queries.list(page,size,status,serial);
     }
     @GetMapping("/repairs/{id}") public Map<String,Object> detail(@PathVariable Long id) {return queries.detail(id);}
-    @PostMapping({"/repairs/{id}/diagnosis","/repairs/{id}/diagnoses"}) public ResponseEntity<?> diagnose(@PathVariable Long id,@RequestHeader(value="Idempotency-Key",required=false) UUID key) {return ResponseEntity.accepted().body(repairs.start(id,key));}
+    @PostMapping({"/repairs/{id}/diagnosis","/repairs/{id}/diagnoses"}) public ResponseEntity<?> diagnose(@PathVariable Long id,@RequestHeader(value="Idempotency-Key",required=false) UUID key,@Valid @RequestBody(required=false) Inputs.DiagnosisSelection input) {return ResponseEntity.accepted().body(repairs.start(id,key,input==null?null:input.attachmentIds()));}
     @GetMapping("/tasks/{id}") public Map<String,Object> task(@PathVariable Long id) {return queries.task(id);}
-    @PostMapping("/photo-requests/{id}/submit") public ResponseEntity<?> submit(@PathVariable Long id,@Valid @RequestBody Inputs.PhotoSubmission input) {return ResponseEntity.accepted().body(repairs.resume(queries.requestRepairId(id),new Inputs.Resume(id,input.submissionKey(),input.attachmentIds())));}
+    @PostMapping("/photo-requests/{id}/submit") public ResponseEntity<?> submit(@PathVariable Long id,@Valid @RequestBody Inputs.PhotoSubmission input) {return ResponseEntity.accepted().body(repairs.resume(queries.requestRepairId(id),new Inputs.Resume(id,input.submissionKey(),input.attachmentIds(),input.excludedAttachmentIds())));}
     @PostMapping("/repairs/{id}/report") public Map<String,Object> saveAndConfirm(@PathVariable Long id,@Valid @RequestBody Inputs.Draft input) {return reports.saveAndConfirm(id,input);}
     // [통합 추가] 진단 확인·반려·본사 검토 (RepairService.approval 참고)
     @PostMapping("/repairs/{id}/approval") public Map<String,Object> approval(@PathVariable Long id,@Valid @RequestBody Inputs.Approval input) {repairs.approval(id,input);return queries.detail(id);}
     @GetMapping("/repairs/{id}/diagnosis") public Map<String,Object> diagnosis(@PathVariable Long id) {return queries.diagnosis(id);}
     @GetMapping("/repairs/{id}/diagnosis/tools") public List<Map<String,Object>> tools(@PathVariable Long id) {return queries.tools(id);}
     @PostMapping(value="/repairs/{id}/attachments",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Map<String,Object> upload(@PathVariable Long id,@RequestParam Long requestId,@RequestPart MultipartFile file,@RequestParam(required=false) String target) {return repairs.upload(id,requestId,file,target);}
+    public Map<String,Object> upload(@PathVariable Long id,@RequestParam(required=false) Long requestId,@RequestPart MultipartFile file,@RequestParam(required=false) String target) {return repairs.upload(id,requestId,file,target);}
     @GetMapping("/attachments/{id}") public ResponseEntity<Resource> download(@PathVariable Long id) {
         return attachment(queries.attachment(id,false),files);
     }

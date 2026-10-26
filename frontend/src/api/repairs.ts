@@ -1,5 +1,7 @@
 /* 접수 · 진단 · 추가 사진 · 리포트 API
  * Mock: src/mocks/handlers.ts / 실서버: 백엔드 API v2 (응답은 src/api/adapters 에서 프론트 타입으로 변환) */
+import { FEATURES } from './features'
+import { canViewRepair, getWorkScope, inListScope } from '@/utils/workScope'
 import { ApiError, http, mockDelay, USE_MOCK } from './http'
 import * as mock from '@/mocks/handlers'
 import { partApi } from './parts'
@@ -18,6 +20,7 @@ import type {
   ReanalysisRequest,
   SaveReportDraftRequest,
   UploadImageRequest,
+  ChangeServiceTypeRequest,
 } from '@/types/api'
 
 export type RepairListResponse = Page<Repair> & { counts: RepairSummaryCounts; statusCounts: RepairStatusCounts }
@@ -57,7 +60,10 @@ const fetchTools = (id: number) =>
 async function realGet(id: number, fresh = false): Promise<Repair> {
   const [d, execs] = await Promise.all([fetchDetail(id, fresh), fetchTools(id)])
   const report = d.reports?.length ? await fetchReport(id) : null
-  return toRepairDetail(d, report ? toRepairReport(report) : undefined, toTools(execs))
+  const repair = toRepairDetail(d, report ? toRepairReport(report) : undefined, toTools(execs))
+  // 기사는 자기 담당 건만 (백엔드에 담당 필터가 없어 프론트 데이터 레이어에서 막음)
+  if (!canViewRepair(repair, getWorkScope())) throw new ApiError(404, '수리 건을 찾을 수 없습니다.', 'NOT_FOUND')
+  return repair
 }
 
 /** 목록 요약 카운트 (화면 상단 카드) */
@@ -83,7 +89,10 @@ async function realList(q: RepairQuery): Promise<RepairListResponse> {
   const status = q.status && q.status !== 'ALL' ? toBeRepairStatus(q.status) : undefined
   const get = (st?: string) => http.get<BeRepairPage>('/repairs', { params: { page: 0, size: PAGE_SIZE, status: st, serial } }).then((r) => r.data.items.map((x) => toRepair(x)))
   // 상단 카운트는 상태 필터 없이, 목록은 상태 필터(백엔드)로 조회
-  const [all, byStatus] = await Promise.all([get(), status ? get(status) : Promise.resolve(null)])
+  // 기사 업무 범위 (CENTER: 자기 담당 건 · FIELD: 0건) — 카운트와 목록 모두 같은 기준
+  const scope = getWorkScope()
+  const inScope = (list: Repair[]) => list.filter((r) => inListScope(r, scope, q.scope))
+  const [all, byStatus] = await Promise.all([get().then(inScope), status ? get(status).then(inScope) : Promise.resolve(null)])
   let items = q.status && q.status !== 'ALL' ? (status ? byStatus! : []) : all
   if (q.group && (!q.status || q.status === 'ALL')) {
     const g = STATUS_GROUPS.find((x) => x.key === q.group)
@@ -104,11 +113,41 @@ async function realList(q: RepairQuery): Promise<RepairListResponse> {
   return { items, total: items.length, counts: summarize(all), statusCounts: {} }
 }
 
+/** 사진 품질 검사 완료 대기(최대 30초) → 경고 사진 사용 확인 → POST /repairs/{id}/diagnosis */
+async function startAfterQuality(repairId: number, attachmentIds: string[]) {
+  type Q = { status: string; latest?: { id: string; verdict?: string } | null }
+  const deadline = Date.now() + 30_000
+  let results: Q[] = []
+  for (;;) {
+    results = await Promise.all(attachmentIds.map(async (id) => (await http.get<Q>(`/attachments/${id}/quality`)).data))
+    if (results.every((q) => q.status !== 'PENDING' && q.status !== 'RUNNING') || Date.now() > deadline) break
+    await new Promise((r) => setTimeout(r, 1000))
+  }
+  for (const [i, q] of results.entries())
+    if (q.latest?.verdict === 'WARNING') await http.post(`/attachments/${attachmentIds[i]}/quality/acknowledgment`, { resultId: Number(q.latest.id) })
+  await http.post(`/repairs/${repairId}/diagnosis`, { attachmentIds: attachmentIds.map(Number) }, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
+}
+
 export const repairApi = {
   /** GET /api/products?serialNumber= — 시리얼로 제품 정보 자동 조회 */
   async lookupProduct(serial: string): Promise<ProductInfo> {
     if (USE_MOCK) return mockDelay(() => mock.getProduct(serial), 600)
     return toProductInfo((await http.get<BeProduct>('/products', { params: { serialNumber: serial } })).data)
+  },
+
+  /** [Mock 전용] 라벨 사진 → 시리얼 번호 인식 (FEATURES.labelOcr). 결과는 기사가 확인·수정한다
+   *  Mock: 파일 이름에 RC + 숫자 10자리가 있으면 그 값, 없으면 데모 시리얼 */
+  async recognizeLabel(file: File): Promise<{ serial: string }> {
+    if (USE_MOCK && FEATURES.labelOcr) return mockDelay(() => ({ serial: (/RC\d{10}/i.exec(file.name)?.[0] ?? 'RC2026000187').toUpperCase() }), 900)
+    throw notSupported('라벨 인식')
+  },
+
+  /** 수리 방법 변경 (사유 필수 · 이력 기록) — 실서버는 FEATURES.visitInfo 가 켜질 때까지 지원하지 않음 */
+  async changeServiceType(id: number, req: ChangeServiceTypeRequest): Promise<Repair> {
+    if (USE_MOCK) return mockDelay(() => mock.changeServiceType(id, req), 400)
+    if (!FEATURES.visitInfo) throw notSupported('수리 방법 변경')
+    await http.post(`/repairs/${id}/service-type`, req)
+    return realGet(id, true)
   },
 
   /** GET /api/repairs?page&size&status&serial */
@@ -141,8 +180,11 @@ export const repairApi = {
       symptoms: req.symptom,
       errorCodes: req.errorCodes,
       firmware: req.product.firmware,
-      // 백엔드 user_input 에 그대로 저장 → 상세 조회 시 사진 종류·기사 소견 복원에 사용
+      // 백엔드 user_input 에 그대로 저장 → 상세 조회 시 사진 종류·기사 소견 복원에 사용 (AI 에이전트 입력)
+      // ※ 방문 정보·동의(개인정보)는 여기에 넣지 않는다
       userInput: { technicianNote: req.technicianNote ?? '', photoKinds: photos.map((p) => p.kind) },
+      // 출장 방문 정보 · 개인정보 동의: userInput 과 분리된 별도 필드. 백엔드 지원 전까지 FEATURES.visitInfo 로 꺼 둔다
+      ...(FEATURES.visitInfo && req.visitInfo && req.consent ? { visitInfo: req.visitInfo, consent: req.consent } : {}),
     }
     const f = new FormData()
     f.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }))
@@ -150,6 +192,9 @@ export const repairApi = {
     // 사진별 종류(PCB/MOTOR)를 같은 순서로 보낸다 → 백엔드 attachment.target 에 저장, 에이전트가 사진을 나눠 분석
     const targets = photos.map((p) => p.kind)
     const res = (await http.post<BeAccepted>('/repairs', f, { params: { targets }, paramsSerializer: { indexes: null } })).data
+    // [사진 품질] 백엔드가 품질 검사를 켜면 접수만 되고 진단은 시작되지 않는다(taskId=null, requiresDiagnosisRequest=true).
+    // 품질 검사가 끝나길 기다렸다가, 경고 사진은 기사가 올린 그대로 쓰겠다고 확인 기록을 남기고 진단을 시작한다.
+    if (res.requiresDiagnosisRequest && res.attachments?.length) await startAfterQuality(Number(res.repairId), res.attachments.map((a) => a.attachmentId))
     return { repairId: Number(res.repairId) }
   },
 

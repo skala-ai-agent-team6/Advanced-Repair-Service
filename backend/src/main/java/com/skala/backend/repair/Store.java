@@ -31,7 +31,7 @@ public class Store {
     }
     public void audit(String actor,String action,Long id,Object details) {
         var users=list("SELECT id FROM app_user WHERE email=?",actor);Object actorId=users.isEmpty()?null:users.getFirst().get("id");
-        String entity=action.startsWith("ORDER_")?"purchase_order":action.startsWith("REPORT_")?"repair_report":action.startsWith("COMMENT_")?"report_comment":action.startsWith("ATTACHMENT_")?"attachment":action.equals("RESULT_EVENT_DLT")?"diagnosis_job":"repair_case";
+        String entity=action.startsWith("WARRANTY_POLICY_")?"warranty_policy":action.equals("OPERATION_REPROCESS")?"diagnosis_job":action.startsWith("ORDER_")?"purchase_order":action.startsWith("REPORT_")?"repair_report":action.startsWith("COMMENT_")?"report_comment":(action.startsWith("ATTACHMENT_") || action.startsWith("PHOTO_"))?"attachment":action.equals("RESULT_EVENT_DLT")?"diagnosis_job":"repair_case";
         update("INSERT INTO audit_log(actor_user_id,actor_service,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?::jsonb)",actorId,actorId==null?actor:null,action,entity,id,Json.write(details));
     }
 }

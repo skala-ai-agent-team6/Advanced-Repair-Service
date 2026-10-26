@@ -32,6 +32,10 @@ def save(command: dict, result: dict, execution=None) -> Path:
         lines += ["## 결론", "", p["summary"], "", "## 수리 방법", "", p["repairMethod"], "",
                   "## 원인 후보", "", "| 순위 | 원인 | 확신도 | 설명 |", "|---|---|---|---|"]
         lines += [f"| {c['rank']} | {c['cause']} | {c['confidence']:.2f} | {c['explanation']} |" for c in p["candidates"]]
+        lines += ["", "## 준비 공구", ""]
+        lines += [f"- **{t['name']}**: {t['purpose']} (근거: {t['evidence']})" for t in p.get("recommendedTools", [])]
+        if not p.get("recommendedTools"):
+            lines.append("- 진단 근거에서 특정 공구를 확인하지 못했습니다. 방문 전 기사 확인이 필요합니다.")
         lines += ["", "## 근거", ""]
         for e in p["evidence"]:
             if e["type"] == "PHOTO":

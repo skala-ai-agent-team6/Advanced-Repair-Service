@@ -1,0 +1,583 @@
+{
+  "worst": {
+    "mode": "SIMULATION_NO_EXTERNAL_API",
+    "model_turns": 5,
+    "business_calls": 4,
+    "actual_openai_requests": 0,
+    "discarded": 1,
+    "summaries": 0,
+    "local_elapsed_ms": 12.495,
+    "logs": [
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "27fa44d8-f009-4d43-8e50-281216a54416",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 1,
+        "response": "tool_request",
+        "local_ms": 0.0152
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "27fa44d8-f009-4d43-8e50-281216a54416",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "c845f6e5d4eb428081668eaf5f74f510",
+        "parts_turn": 1,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "1"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "996dd035-158e-4449-ae11-951a3a4f41a1",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 2,
+        "response": "tool_request",
+        "local_ms": 0.007
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "996dd035-158e-4449-ae11-951a3a4f41a1",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "69e895925b0c43f4a3725d389d437571",
+        "parts_turn": 2,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "2"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "2da09c73-96d4-4093-8119-1a0d942eb1f4",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 3,
+        "response": "tool_request",
+        "local_ms": 0.0068
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "2da09c73-96d4-4093-8119-1a0d942eb1f4",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "97ba1cd46b3b43efa625a7873eb3e253",
+        "parts_turn": 3,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "3"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "cc81dd04-a5df-4174-8f1f-382e33c6b09c",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 4,
+        "response": "tool_request",
+        "local_ms": 0.0095
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "cc81dd04-a5df-4174-8f1f-382e33c6b09c",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "ebad58869b0246a998353d599062b9ea",
+        "parts_turn": 4,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "4"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "36cde419-2332-4a04-9094-26885b941c3c",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 5,
+        "response": "tool_request",
+        "local_ms": 0.0047
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "36cde419-2332-4a04-9094-26885b941c3c",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "a1b592627a8540d892c2385a8bc0ef24",
+        "parts_turn": 5,
+        "usage": "discarded_tool_request"
+      }
+    ],
+    "final": {
+      "result": {
+        "eventType": "DIAGNOSIS_COMPLETED",
+        "payload": {
+          "summary": "[모의 테스트] 부품 조회 한도 후 리포트 생성 확인\n\n사진 근거 없이 소견·매뉴얼 검색만으로 작성한 리포트입니다. 검색 유사도는 고장 확률이 아니므로 수리 전 해당 부위를 직접 확인해 주세요.",
+          "modelVersion": "skeleton-0.2",
+          "repairMethod": "실제 수리 판정이 아닌 제어 흐름 테스트",
+          "candidates": [
+            {
+              "rank": 1,
+              "cause": "모의 원인",
+              "confidence": 0.1,
+              "explanation": "스키마 검증용 고정 응답이며 실제 판정이 아님"
+            }
+          ],
+          "recommendedParts": [],
+          "recommendedTools": [],
+          "evidence": [],
+          "analysisResults": [
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            },
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            },
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            },
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            }
+          ],
+          "topCause": "모의 원인",
+          "agents": [],
+          "similarCases": []
+        }
+      }
+    },
+    "command": {
+      "eventId": "27576f59-c8b3-4397-bf8a-f29d89c00db5",
+      "eventType": "DIAGNOSIS_REQUESTED",
+      "schemaVersion": 2,
+      "occurredAt": "2026-10-20T01:00:00Z",
+      "repairId": "82510288",
+      "taskId": "parts-limit-simulation",
+      "correlationId": "1b20e0b4-9d4b-46ec-866d-975a4c9e939a",
+      "inputRevision": 1,
+      "executionId": "e28aabd7-4b95-4f7a-9303-a9c22a0ea3da",
+      "sequence": 0,
+      "payload": {
+        "repair": {
+          "id": "82510288",
+          "product_snapshot": {
+            "id": "1",
+            "model_code": "R1",
+            "components": [],
+            "compatibleParts": [
+              {
+                "id": "1",
+                "name": "모터"
+              },
+              {
+                "id": "2",
+                "name": "PCB"
+              },
+              {
+                "id": "3",
+                "name": "배터리"
+              },
+              {
+                "id": "4",
+                "name": "센서"
+              },
+              {
+                "id": "5",
+                "name": "필터"
+              }
+            ]
+          },
+          "symptom": "충전이 안 되고 바퀴 모터에서 소음",
+          "error_codes": [
+            "E05"
+          ],
+          "firmware_version": "1.2",
+          "user_input": {
+            "customerDescription": "펌웨어 업데이트 후부터 그렇다고 함"
+          }
+        },
+        "task": {
+          "id": "82510288"
+        },
+        "attachments": [
+          {
+            "id": "1",
+            "request_id": null,
+            "mime_type": "image/jpeg",
+            "byte_size": 103818,
+            "sha256": "75176bf7f04c5c4560d0de905206170036187c02ee7f853adc965553a9d91aab",
+            "downloadPath": "/internal/attachments/1"
+          }
+        ],
+        "attachmentIds": [
+          "1"
+        ],
+        "addedAttachmentIds": [],
+        "requestId": null,
+        "requestKey": null,
+        "round": 0,
+        "checkpoint": null
+      }
+    }
+  },
+  "control": {
+    "mode": "SIMULATION_NO_EXTERNAL_API",
+    "model_turns": 5,
+    "business_calls": 4,
+    "actual_openai_requests": 0,
+    "discarded": 0,
+    "summaries": 1,
+    "local_elapsed_ms": 1.289,
+    "logs": [
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "594f4652-b6f5-4b18-bec3-11d4e0d8b7ce",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 1,
+        "response": "tool_request",
+        "local_ms": 0.0068
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "594f4652-b6f5-4b18-bec3-11d4e0d8b7ce",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "d4e98daac2574679a41c1f1c02f3e7b1",
+        "parts_turn": 1,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "1"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "f820872c-4835-41fc-bb46-42b7dfa51e39",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 2,
+        "response": "tool_request",
+        "local_ms": 0.0092
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "f820872c-4835-41fc-bb46-42b7dfa51e39",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "4a446ba753d0459cb4d73089658ec206",
+        "parts_turn": 2,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "2"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "876a61cf-b62e-45d7-a53d-878e8dac50b5",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 3,
+        "response": "tool_request",
+        "local_ms": 0.0053
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "876a61cf-b62e-45d7-a53d-878e8dac50b5",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "d9c60878f7cd47ea9f0c02db4e199de8",
+        "parts_turn": 3,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "3"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "27f72b42-4d89-4b77-8a60-6b6cef1207ca",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 4,
+        "response": "tool_request",
+        "local_ms": 0.0047
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "27f72b42-4d89-4b77-8a60-6b6cef1207ca",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "78fda01541c64ff4940203958aca4113",
+        "parts_turn": 4,
+        "usage": "tool_request"
+      },
+      {
+        "event": "simulation.business_tool",
+        "tool": "get_part_availability",
+        "part_id": "4"
+      },
+      {
+        "event": "tool.started",
+        "tool": "parts_agent_turn",
+        "call_id": "21352d05-be32-4e28-8d80-1230a0caf119",
+        "attempt": 1
+      },
+      {
+        "event": "simulation.model_response",
+        "turn": 5,
+        "response": "summary",
+        "local_ms": 0.0037
+      },
+      {
+        "event": "tool.succeeded",
+        "tool": "parts_agent_turn",
+        "call_id": "21352d05-be32-4e28-8d80-1230a0caf119",
+        "duration_ms": 0
+      },
+      {
+        "event": "parts.response_usage",
+        "parts_call_group": "4d2d96f92b0e4c4db188137ecd6eee9d",
+        "parts_turn": 5,
+        "usage": "summary"
+      }
+    ],
+    "final": {
+      "result": {
+        "eventType": "DIAGNOSIS_COMPLETED",
+        "payload": {
+          "summary": "[모의 테스트] 부품 조회 한도 후 리포트 생성 확인\n\n사진 근거 없이 소견·매뉴얼 검색만으로 작성한 리포트입니다. 검색 유사도는 고장 확률이 아니므로 수리 전 해당 부위를 직접 확인해 주세요.",
+          "modelVersion": "skeleton-0.2",
+          "repairMethod": "실제 수리 판정이 아닌 제어 흐름 테스트",
+          "candidates": [
+            {
+              "rank": 1,
+              "cause": "모의 원인",
+              "confidence": 0.1,
+              "explanation": "스키마 검증용 고정 응답이며 실제 판정이 아님"
+            }
+          ],
+          "recommendedParts": [],
+          "recommendedTools": [],
+          "evidence": [],
+          "analysisResults": [
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            },
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            },
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            },
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "get_part_availability",
+              "referenceCount": 0
+            },
+            {
+              "source": "BUSINESS",
+              "attachmentId": null,
+              "status": "REFERENCE",
+              "labels": [],
+              "errorCode": null,
+              "tool": "parts_agent",
+              "referenceCount": 0
+            }
+          ],
+          "topCause": "모의 원인",
+          "agents": [],
+          "similarCases": []
+        }
+      }
+    },
+    "command": {
+      "eventId": "27576f59-c8b3-4397-bf8a-f29d89c00db5",
+      "eventType": "DIAGNOSIS_REQUESTED",
+      "schemaVersion": 2,
+      "occurredAt": "2026-10-20T01:00:00Z",
+      "repairId": "82510288",
+      "taskId": "parts-limit-simulation",
+      "correlationId": "1b20e0b4-9d4b-46ec-866d-975a4c9e939a",
+      "inputRevision": 1,
+      "executionId": "e28aabd7-4b95-4f7a-9303-a9c22a0ea3da",
+      "sequence": 0,
+      "payload": {
+        "repair": {
+          "id": "82510288",
+          "product_snapshot": {
+            "id": "1",
+            "model_code": "R1",
+            "components": [],
+            "compatibleParts": [
+              {
+                "id": "1",
+                "name": "모터"
+              },
+              {
+                "id": "2",
+                "name": "PCB"
+              },
+              {
+                "id": "3",
+                "name": "배터리"
+              },
+              {
+                "id": "4",
+                "name": "센서"
+              },
+              {
+                "id": "5",
+                "name": "필터"
+              }
+            ]
+          },
+          "symptom": "충전이 안 되고 바퀴 모터에서 소음",
+          "error_codes": [
+            "E05"
+          ],
+          "firmware_version": "1.2",
+          "user_input": {
+            "customerDescription": "펌웨어 업데이트 후부터 그렇다고 함"
+          }
+        },
+        "task": {
+          "id": "82510288"
+        },
+        "attachments": [
+          {
+            "id": "1",
+            "request_id": null,
+            "mime_type": "image/jpeg",
+            "byte_size": 103818,
+            "sha256": "75176bf7f04c5c4560d0de905206170036187c02ee7f853adc965553a9d91aab",
+            "downloadPath": "/internal/attachments/1"
+          }
+        ],
+        "attachmentIds": [
+          "1"
+        ],
+        "addedAttachmentIds": [],
+        "requestId": null,
+        "requestKey": null,
+        "round": 0,
+        "checkpoint": null
+      }
+    }
+  }
+}

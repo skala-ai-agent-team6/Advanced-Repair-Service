@@ -28,7 +28,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(properties={"app.scheduling.enabled=false","app.mock-ai.enabled=false","app.internal-token=test-service-secret-at-least-32-characters","app.seed-password=TestPassword-Only123!","app.files=${java.io.tmpdir}/repair-test-files"})
+@SpringBootTest(properties={"app.scheduling.enabled=false","app.photo-quality.enabled=false","app.mock-ai.enabled=false","app.internal-token=test-service-secret-at-least-32-characters","app.seed-password=TestPassword-Only123!","app.files=${java.io.tmpdir}/repair-test-files"})
 @ActiveProfiles("dev")
 @AutoConfigureMockMvc
 @Testcontainers
@@ -52,7 +52,7 @@ class BackendApplicationTests {
     }
     @AfterEach void logout() {SecurityContextHolder.clearContext();}
     void login(String user) {SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user,"unused",List.of()));}
-    MockMultipartFile photo() {return new MockMultipartFile("file","wheel.png","image/png",new byte[]{(byte)137,80,78,71,13,10,26,10,1,2});}
+    MockMultipartFile photo() {return new MockMultipartFile("file","wheel.png","image/png",com.skala.backend.repair.quality.QualityImages.png(1,1));}
     Map<String,Object> create() {return repairs.create(new Inputs.Intake(PRODUCT,"원문 증상",List.of("E01","E02"),"1.2",Map.of("custom","원문","id",123,"nested",Map.of("partId",7))),List.of(photo()));}
     Long repair(Map<String,Object> c) {return (Long)c.get("repairId");}
     Long task(Map<String,Object> c) {return (Long)c.get("taskId");}
@@ -61,7 +61,7 @@ class BackendApplicationTests {
         var m=new LinkedHashMap<String,Object>();m.put("eventId",UUID.randomUUID());m.put("eventType",type);m.put("schemaVersion",2);m.put("occurredAt",Instant.now().toString());m.put("repairId",repair(c));m.put("taskId",task(c));m.put("correlationId",db.one("SELECT correlation_id FROM repair_case WHERE id=?",repair(c)).get("correlation_id"));m.put("executionId",t.get("execution_id"));m.put("inputRevision",t.get("input_revision"));m.put("sequence",seq);m.put("payload",payload);return Json.write(m);
     }
     Long photoId(UUID key) {return (Long)db.one("SELECT id FROM photo_request WHERE request_key=?",key).get("id");}
-    Map<String,Object> result() {return Map.of("summary","motor","modelVersion","test-1","repairMethod","replace","candidates",List.of(Map.of("rank",1,"confidence",0.8,"cause","motor","explanation","inspection")),"recommendedParts",List.of(Map.of("partId",PART,"quantity",1)),"evidence",List.of());}
+    Map<String,Object> result() {return Map.of("summary","motor","modelVersion","test-1","repairMethod","replace","candidates",List.of(Map.of("rank",1,"confidence",0.8,"cause","motor","explanation","inspection")),"recommendedParts",List.of(Map.of("partId",PART,"quantity",1)),"evidence",List.of(Map.of("type","MANUAL","citation","TEST-MANUAL §1")));}
     Inputs.ReportContent content(String area) {return new Inputs.ReportContent("실제 원인",List.of(new Inputs.Fault(area,area.equals("SW")?null:COMPONENT,area.equals("SW")?null:PART)),"교체","기사 의견",true,Inputs.Acceptance.PARTIAL);}
     long count(String area) {return dashboard.counts(LocalDate.now().minusDays(1),LocalDate.now().plusDays(2),"AREA").stream().filter(r->area.equals(r.get("dimension"))).mapToLong(r->((Number)r.get("count")).longValue()).sum();}
     Long proposal(Long repair,int quantity) {return (Long)orders.propose(repair,new Inputs.Proposal(List.of(new Inputs.Item(PART,quantity,Inputs.Source.WAREHOUSE,WAREHOUSE,null)))).get("id");}
@@ -95,14 +95,14 @@ class BackendApplicationTests {
         assertThat(db.one("SELECT * FROM diagnosis_job WHERE id=?",task(c)).get("stage")).isEqualTo("RUNNING");
         assertThat(db.list("SELECT * FROM received_event")).hasSize(2);
         String old=event(c,99,"DIAGNOSIS_COMPLETED",result());UUID requestKey=UUID.randomUUID();
-        events.receive(event(c,3,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",1,"bodyPart","wheel","description","photo","checkpoint","cp")));
+        events.receive(event(c,3,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",1,"bodyPart","MOTOR","description","photo","checkpoint","cp")));
         var a=repairs.upload(repair(c),photoId(requestKey),photo());repairs.resume(repair(c),new Inputs.Resume(photoId(requestKey),UUID.randomUUID(),List.of((Long)a.get("attachmentId"))));
         events.receive(old);assertThat(db.one("SELECT status FROM diagnosis_job WHERE id=?",task(c)).get("status")).isEqualTo("QUEUED");
     }
     @Test void photosResumeSameTaskAndOnlyThreeRounds() {
         var c=create();
         for(int round=1;round<=3;round++) {
-            UUID requestKey=UUID.randomUUID();events.receive(event(c,1,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",round,"bodyPart","wheel","description","photo","checkpoint","cp")));
+            UUID requestKey=UUID.randomUUID();events.receive(event(c,1,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",round,"bodyPart","MOTOR","description","photo","checkpoint","cp")));
             var before=db.one("SELECT * FROM diagnosis_job WHERE id=?",task(c));assertThat(before.get("status")).isEqualTo("WAITING_INPUT");assertThat(before.get("retry_count")).isEqualTo(0);
             var a=repairs.upload(repair(c),photoId(requestKey),photo());var input=new Inputs.Resume(photoId(requestKey),UUID.randomUUID(),List.of((Long)a.get("attachmentId")));
             repairs.resume(repair(c),input);repairs.resume(repair(c),input);
@@ -113,7 +113,7 @@ class BackendApplicationTests {
         assertThat(db.list("SELECT * FROM outbox_event WHERE topic IS NOT NULL")).hasSize(4);assertThat(db.list("SELECT * FROM diagnosis_job")).hasSize(1);
     }
     @Test void foreignPhotosAndSubmissionKeyReuseRejected() {
-        var c=create();UUID requestKey=UUID.randomUUID();events.receive(event(c,1,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",1,"bodyPart","wheel","description","photo","checkpoint","cp")));
+        var c=create();UUID requestKey=UUID.randomUUID();events.receive(event(c,1,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",1,"bodyPart","MOTOR","description","photo","checkpoint","cp")));
         var another=create();Long foreign=(Long)db.one("SELECT id FROM attachment WHERE case_id=?",repair(another)).get("id");
         assertThatThrownBy(()->repairs.resume(repair(c),new Inputs.Resume(photoId(requestKey),UUID.randomUUID(),List.of(foreign)))).isInstanceOf(ApiError.class);
         var a=repairs.upload(repair(c),photoId(requestKey),photo());UUID key=UUID.randomUUID();repairs.resume(repair(c),new Inputs.Resume(photoId(requestKey),key,List.of((Long)a.get("attachmentId"))));
@@ -231,7 +231,7 @@ class BackendApplicationTests {
         String created=mvc.perform(multipart("/api/repairs").file(data).file(image).with(user("tech1")).with(csrf())).andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
         var c=Json.object(created);c.put("repairId",Json.id(c.get("repairId")));c.put("taskId",Json.id(c.get("taskId")));Long repair=repair(c);
         for(String path:List.of("diagnosis","diagnoses")) mvc.perform(post("/api/repairs/"+repair+"/"+path).header("Idempotency-Key",UUID.randomUUID()).with(user("tech1")).with(csrf())).andExpect(status().isAccepted());
-        UUID requestKey=UUID.randomUUID();events.receive(event(c,1,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",1,"bodyPart","wheel","description","photo","checkpoint","cp")));Long request=photoId(requestKey);
+        UUID requestKey=UUID.randomUUID();events.receive(event(c,1,"PHOTO_REQUESTED",Map.of("requestKey",requestKey,"round",1,"bodyPart","MOTOR","description","photo","checkpoint","cp")));Long request=photoId(requestKey);
         String uploaded=mvc.perform(multipart("/api/repairs/"+repair+"/attachments").file(photo()).param("requestId",request.toString()).with(user("tech1")).with(csrf())).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();Long photo=Json.id(Json.object(uploaded).get("attachmentId"));UUID submission=UUID.randomUUID();
         mvc.perform(post("/api/photo-requests/"+request+"/submit").with(user("tech1")).with(csrf()).contentType("application/json").content(Json.write(new Inputs.PhotoSubmission(submission,List.of(photo))))).andExpect(status().isAccepted());
         mvc.perform(post("/api/repairs/"+repair+"/diagnosis/resume").with(user("tech1")).with(csrf()).contentType("application/json").content(Json.write(new Inputs.Resume(request,submission,List.of(photo))))).andExpect(status().isAccepted());
@@ -261,11 +261,25 @@ class BackendApplicationTests {
         try {mvc.perform(get("/api/auth/me").with(user("tech2"))).andExpect(status().isUnauthorized());}
         finally {db.update("UPDATE app_user SET active=true WHERE email='tech2'");}
     }
+    @Test void swaggerUiAndPackagedContractArePublicWhileBusinessApisRemainProtected() throws Exception {
+        SecurityContextHolder.clearContext();
+        mvc.perform(get("/swagger-ui.html")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/swagger-ui/index.html"));
+        mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(org.hamcrest.Matchers.containsString("swagger-ui-bundle.js")));
+        mvc.perform(get("/swagger-ui/swagger-initializer.js")).andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(org.hamcrest.Matchers.containsString("requestInterceptor")));
+        mvc.perform(get("/webjars/swagger-ui/5.32.1/swagger-ui.css")).andExpect(status().isOk());
+        mvc.perform(get("/webjars/swagger-ui/5.32.1/swagger-ui-bundle.js")).andExpect(status().isOk());
+        var served=mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentTypeCompatibleWith("application/json")).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(Json.object(served)).isEqualTo(Json.object(java.nio.file.Files.readString(java.nio.file.Path.of("docs/openapi.json"))));
+        mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/internal/parts")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/login").param("username","tech1").param("password","TestPassword-Only123!")).andExpect(status().isForbidden());
+        mvc.perform(post("/api/auth/login").with(csrf()).param("username","tech1").param("password","TestPassword-Only123!")).andExpect(status().isOk());
+    }
     @Autowired @org.springframework.beans.factory.annotation.Qualifier("requestMappingHandlerMapping") org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping routes;
     @Test void openApiListsEveryApplicationRoute() throws Exception {
         Set<String> expected=new TreeSet<>(List.of("post /api/auth/login","post /api/auth/logout"));
         routes.getHandlerMethods().forEach((mapping,method)->{
-            for(String path:mapping.getPatternValues()) if(path.startsWith("/api/") || path.startsWith("/internal/")) {
+            for(String path:mapping.getPatternValues()) if(path.startsWith("/api/") || path.startsWith("/internal/") || path.startsWith("/public/")) {
                 var expanded=new ArrayList<String>();
                 if(path.contains("{action:")) for(String action:List.of("approve","reject","cancel","ship","receive")) expanded.add(path.replaceAll("\\{action:[^}]+}",action));else expanded.add(path);
                 for(var verb:mapping.getMethodsCondition().getMethods()) for(String item:expanded) expected.add(verb.name().toLowerCase()+" "+item);
@@ -279,6 +293,16 @@ class BackendApplicationTests {
         var c=create();Long historical=db.insert("INSERT INTO diagnosis_job(case_id,request_key,workflow_version,status,created_at) VALUES (?,?,'history','FAILED',now()-interval '1 day')",repair(c),UUID.randomUUID());
         mvc.perform(get("/api/tasks/"+historical).with(user("tech1"))).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(historical.toString())).andExpect(jsonPath("$.status").value("FAILED"));
         mvc.perform(get("/api/tasks/"+historical).with(user("tech2"))).andExpect(status().isForbidden());
+    }
+
+    @Autowired PhotoQualityRepository photoRepository;@Autowired PhotoQualityService photoQuality;
+    @Test void disablingQualityPreservesAutomaticStartAndExplicitlyLogsBypassForPendingPhotos() {
+        var c=create();Long id=(Long)db.one("SELECT id FROM attachment WHERE case_id=?",repair(c)).get("id");assertThat(c.get("taskId")).isNotNull();
+        var tx=new org.springframework.transaction.support.TransactionTemplate(manager);
+        tx.executeWithoutResult(status->{photoRepository.enqueue(id,null,1);photoQuality.freeze(repair(c),task(c),2,List.of(id),List.of());});
+        assertThat(db.one("SELECT quality_gate FROM diagnosis_input_attachment WHERE job_id=? AND input_revision=2",task(c)).get("quality_gate")).isEqualTo("DISABLED");
+        assertThat(db.one("SELECT status,verdict FROM photo_quality_result WHERE attachment_id=?",id).get("status")).isEqualTo("PENDING");
+        assertThat(db.one("SELECT verdict FROM photo_quality_result WHERE attachment_id=?",id).get("verdict")).isNull();
     }
 
 }
