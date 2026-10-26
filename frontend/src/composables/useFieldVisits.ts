@@ -3,7 +3,7 @@
  *  - 실서버에서 FEATURES.fieldSchedule 이 꺼져 있으면 API 함수가 네트워크 호출 없이 빈 목록을 돌려준다
  *  - 날짜·시간은 한국 시간 기준
  *  - 홈 여러 곳(오늘의 출장 영역 · 진행률)에서 쓰므로 데이터는 공유하고, 사용자별로 한 번만 불러온다 */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { getMyFieldVisits, toErrorMessage } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { kstToday } from '@/utils/kst'
@@ -21,6 +21,11 @@ export function useFieldVisits() {
   const today = kstToday()
   const isField = computed(() => auth.technicianType === 'FIELD')
 
+  watch(() => auth.user?.employeeId, () => {
+    visits.value = []
+    error.value = null
+  }, { flush: 'sync' })
+
   /** 같은 사용자가 동시에 여러 번 부르면 한 번만 요청 */
   function load(): Promise<void> {
     error.value = null
@@ -34,12 +39,15 @@ export function useFieldVisits() {
     loading.value = true
     inflight = getMyFieldVisits()
       .then((v) => {
+        if (auth.user?.employeeId !== who || !isField.value) return
         visits.value = v
       })
       .catch((e) => {
+        if (auth.user?.employeeId !== who || !isField.value) return
         error.value = toErrorMessage(e)
       })
       .finally(() => {
+        if (inflightFor !== who) return
         loading.value = false
         inflight = null
       })

@@ -101,4 +101,8 @@ window.addEventListener('auth:expired', () => {
   void router.push({ name: 'login', query: { redirect: cur.fullPath } })
 })
 
+// 다른 탭 로그인·로그아웃 후 돌아왔거나 권한 오류를 받으면 서버 세션과 대조한다.
+window.addEventListener('focus', () => { void useAuthStore().verifySession() })
+window.addEventListener('auth:forbidden', () => { void useAuthStore().verifySession() })
+
 export default router

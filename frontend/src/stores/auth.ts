@@ -4,7 +4,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { authApi } from '@/api'
-import { USE_MOCK } from '@/api/http'
+import { clearCsrf, USE_MOCK } from '@/api/http'
 import { ROLE_LABEL } from '@/constants/status'
 import type { Role, TechnicianType, User } from '@/types'
 import { setWorkScope } from '@/utils/workScope'
@@ -69,6 +69,24 @@ export const useAuthStore = defineStore('auth', () => {
     return u
   }
 
+  // 같은 브라우저의 다른 탭도 세션 쿠키를 공유한다. 화면의 계정과 달라지면
+  // 다른 사용자의 화면으로 조용히 전환하지 않고 재로그인을 요구한다.
+  let sessionCheck: Promise<void> | null = null
+  function verifySession(): Promise<void> {
+    if (USE_MOCK || !user.value) return Promise.resolve()
+    const expected = user.value.employeeId
+    sessionCheck ??= authApi.me().then((current) => {
+      if (user.value?.employeeId !== expected) return
+      if (!current || current.employeeId !== expected || current.role !== user.value.role || current.technicianType !== user.value.technicianType) {
+        clearCsrf()
+        window.dispatchEvent(new CustomEvent('auth:expired'))
+      }
+    }).catch(() => {
+      // 일시적인 통신 장애만으로 로그인 상태를 삭제하지 않는다.
+    }).finally(() => { sessionCheck = null })
+    return sessionCheck
+  }
+
   async function logout() {
     await authApi.logout()
     clear()
@@ -90,5 +108,5 @@ export const useAuthStore = defineStore('auth', () => {
     { immediate: true },
   )
 
-  return { user, isLoggedIn, role, technicianType, init, login, logout, clear, hasRole }
+  return { user, isLoggedIn, role, technicianType, init, login, logout, clear, hasRole, verifySession }
 })
