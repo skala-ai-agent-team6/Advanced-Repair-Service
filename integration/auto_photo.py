@@ -69,7 +69,16 @@ def watch(interval=2):
     c = Client("tech1")
     print(f"[대역] 추가 사진 요청 감시 시작 ({BASE})", flush=True)
     while True:
-        page = c.call("GET", "/api/repairs?status=WAITING_INPUT&size=50")
+        try:
+            page = c.call("GET", "/api/repairs?status=WAITING_INPUT&size=50")
+        except Exception as e:  # [통합] Spring 재시작 중이면 기다렸다가 다시 로그인 (예전엔 여기서 대역이 죽었다)
+            print(f"[대역] Spring 연결 대기: {e}", flush=True)
+            time.sleep(5)
+            try:
+                c = Client("tech1")
+            except Exception:
+                pass
+            continue
         for row in page.get("items") or page.get("content") or []:
             try:
                 answer(c, row["id"])
