@@ -44,8 +44,9 @@ const makerOptions = computed(() => [...new Set(modelOptions.value.map((m) => m.
 
 /* ---------- 시리얼 조회 → 제품 종류 · 제조사 · 모델명 채우기 ---------- */
 const lookup = reactive({ loading: false, error: null as string | null })
-async function findProduct() {
-  const s = serial.value.trim().toUpperCase()
+/** value: 방금 입력된 값 (부모 반영 전에도 정확한 시리얼로 조회) */
+async function findProduct(value?: string) {
+  const s = (value ?? serial.value).trim().toUpperCase()
   serial.value = s
   lookup.error = null
   if (!s) {
@@ -71,11 +72,11 @@ async function findProduct() {
 watch(serial, (v) => {
   if (product.value && v.trim().toUpperCase() !== product.value.serialNumber) product.value = null
   // 등록 제품 형식(RC + 숫자 10자리)을 다 입력하면 자동 조회
-  if (/^RC\d{10}$/i.test(v.trim()) && !lookup.loading && !product.value) void findProduct()
+  if (/^RC\d{10}$/i.test(v.trim()) && !lookup.loading && (!product.value || product.value.serialNumber !== v.trim().toUpperCase())) void findProduct(v)
 })
-/** 시리얼: 앞뒤 공백 제거 · 대문자로 저장 */
-function onSerialBlur() {
-  serial.value = serial.value.trim().toUpperCase()
+/** 시리얼: 앞뒤 공백 제거 · 대문자로 저장 (입력칸의 현재 값 기준 — 부모 반영 전에 blur 되어도 지워지지 않게) */
+function onSerialBlur(e: FocusEvent) {
+  serial.value = (e.target as HTMLInputElement).value.trim().toUpperCase()
   void refreshWarranty()
 }
 
@@ -166,11 +167,11 @@ if (serial.value) void refreshWarranty()
             maxlength="30"
             :aria-invalid="!!lookup.error || !!err('serial')"
             :aria-describedby="id('serial-help')"
-            @keydown.enter.prevent="findProduct"
+            @keydown.enter.prevent="findProduct(($event.target as HTMLInputElement).value)"
             @blur="onSerialBlur"
           />
         </div>
-        <button class="btn btn-lg" type="button" :disabled="lookup.loading" @click="findProduct">
+        <button class="btn btn-lg" type="button" :disabled="lookup.loading" @click="findProduct()">
           <Loader2 v-if="lookup.loading" :size="20" class="spin" /><Search v-else :size="20" /> 조회
         </button>
       </div>
@@ -222,7 +223,7 @@ if (serial.value) void refreshWarranty()
             placeholder="예) 전자레인지"
             :class="{ invalid: err('typeDetail') }"
             :aria-invalid="!!err('typeDetail')"
-            @blur="productTypeDetail = productTypeDetail.trim()"
+            @blur="productTypeDetail = ($event.target as HTMLInputElement).value.trim()"
           />
           <p v-if="err('typeDetail')" class="error-text">{{ err('typeDetail') }}</p>
         </div>

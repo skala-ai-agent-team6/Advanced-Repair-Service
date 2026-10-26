@@ -32,8 +32,8 @@ export interface CustomerIntakeRequest {
   productType: ProductType
   /** productType 이 'unknown'(기타)일 때 고객이 직접 입력한 제품명 (앞뒤 공백 제거). 그 외에는 null */
   productTypeDetail: string | null
-  /** 제조사 (선택 · 모르면 보내지 않음) */
-  manufacturer?: string
+  /** 제조사 (필수 · 기사 접수와 같은 기준) */
+  manufacturer: string
   /** 제품 모델명 (목록에서 고르거나 직접 입력) */
   model: string
   /** 시리얼 번호 (필수 · 앞뒤 공백 제거 · 대문자) */

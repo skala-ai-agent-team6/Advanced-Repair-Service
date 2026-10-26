@@ -20,7 +20,7 @@ const isForm = computed(() => onRequest.value)
   <div class="customer">
     <header class="c-top">
       <div class="c-top-in" :class="{ wide: isHome, form: isForm }">
-        <RouterLink to="/login" class="c-logo" aria-label="로그인 화면으로 이동"><AppLogo :height="28" /></RouterLink>
+        <RouterLink to="/login" class="c-logo" aria-label="로그인 화면으로 이동"><AppLogo :height="36" /></RouterLink>
         <a :href="`tel:${CS_PHONE}`" class="c-cs" :aria-label="`고객센터 ${CS_PHONE} 전화 걸기`">
           <Phone :size="16" aria-hidden="true" />
           <span class="c-cs-label">고객센터</span>

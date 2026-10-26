@@ -3,6 +3,7 @@
  * 고객 서비스 홈 (/service) — 로그인 없이 들어오는 첫 화면, 모바일 우선 · 데스크톱 2열
  *  히어로(제목·한 줄 설명·[AS 접수하기] + 움직이는 로봇) → 간편한 AS 접수(3단계) → 이미 접수하셨나요?(바로 조회)
  * ========================================================================= */
+import BrandLogo from '@/components/common/BrandLogo.vue'
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, Camera, ChevronRight, CircleAlert, FileText, Search, Wrench } from 'lucide-vue-next'
@@ -32,6 +33,8 @@ function track() {
 
 <template>
   <div class="home">
+    <!-- 브랜드: 위쪽 가운데 전체 로고 + 서비스 소개 -->
+    <BrandLogo tagline class="home-brand" />
     <!-- 히어로 -->
     <section class="hero" aria-labelledby="h-hero">
       <span class="glow" aria-hidden="true" />
