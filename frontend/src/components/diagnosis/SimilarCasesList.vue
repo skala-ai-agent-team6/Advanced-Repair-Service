@@ -1,8 +1,8 @@
 <script setup lang="ts">
-/* RAG 유사 사례 목록 (최대 3건 + 외 N건) — 센터 진단 결과 · 출장 전 진단 리포트가 같이 쓴다 */
+/* RAG 유사 사례 목록 (최대 3건 + 외 N건) — 센터 진단 결과 · 출장 전 진단 리포트가 같이 쓴다
+ *  한 줄 요약(증상 → 조치)과 유사도만. 원문은 마우스를 올리면 보인다 */
 import { computed } from 'vue'
 import { Check } from 'lucide-vue-next'
-import { formatDate } from '@/utils/format'
 import type { Diagnosis } from '@/types'
 
 const props = defineProps<{ diagnosis: Diagnosis | null; missing?: string | null }>()
@@ -14,7 +14,7 @@ const CIRCLED = ['①', '②', '③']
 
 <template>
   <ul v-if="cases.length" class="cases">
-    <li v-for="(c, i) in cases" :key="c.receiptNo">
+    <li v-for="(c, i) in cases" :key="c.receiptNo" :title="c.resolution || undefined">
       <Check :size="18" class="ck" aria-hidden="true" />
       <span class="circ" aria-hidden="true">{{ CIRCLED[i] }}</span>
       <div class="grow">
@@ -25,8 +25,6 @@ const CIRCLED = ['①', '②', '③']
             <span class="badge tone-ai">유사도 {{ c.similarity }}%</span>
           </span>
         </div>
-        <p v-if="c.resolution" class="muted">→ {{ c.resolution }}</p>
-        <p class="faint">{{ c.receiptNo }} · {{ c.model }}<template v-if="c.closedAt"> · {{ formatDate(c.closedAt) }}</template></p>
       </div>
     </li>
   </ul>
@@ -44,7 +42,7 @@ const CIRCLED = ['①', '②', '③']
 .cases li {
   display: flex;
   gap: 8px;
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--border);
 }
 .cases li:last-child {
