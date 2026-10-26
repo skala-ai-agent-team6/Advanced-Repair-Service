@@ -139,12 +139,6 @@ class PhotoKind(BaseModel):
     kind: Literal["PCB", "MECH", "OTHER"] = Field(description="PCB: 회로기판·구리 배선·납땜·전자부품. MECH: 금속 표면 클로즈업·모터·기어·축·바퀴. OTHER: 그 외")
 
 
-class Clues(BaseModel):
-    pcb: list[str] = Field(description="전원·충전·회로 관련 증상")
-    mech: list[str] = Field(description="바퀴·모터·브러시·소음 등 기계 증상")
-    sw: list[str] = Field(description="펌웨어·앱·연결 등 소프트웨어 증상")
-
-
 class Candidate(BaseModel):
     cause: str = Field(description="고장 원인 한 줄")
     confidence: float = Field(ge=0, le=1)
@@ -220,20 +214,6 @@ async def classify_photo(path: str) -> str:
         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
     ]}]
     return (await gpt(PhotoKind).ainvoke(msg)).kind
-
-
-@guarded()
-async def split_text(text: str, *, product_type="unknown") -> Clues:
-    """증상 문장을 PCB / 기계 / SW 단서로 나눈다."""
-    if not C.USE_GPT:
-        return Clues(pcb=[w for w in ("전원", "충전", "회로") if w in text],
-                     mech=[w for w in ("바퀴", "모터", "브러시", "소음") if w in text],
-                     sw=[w for w in ("펌웨어", "앱", "업데이트") if w in text])
-    product_type = normalize_product_type(product_type)
-    prompt = render("split_text", Clues, text=f"제품: {PRODUCT_NAMES[product_type]}\n{text}")
-    reserve_llm(Clues, prompt)
-    result = await gpt(Clues).ainvoke(prompt)
-    return Clues.model_validate(masked(result.model_dump()))
 
 
 @guarded()
@@ -331,11 +311,11 @@ async def ask_parts_agent(llm, messages, turn: int):
     return await guarded()(parts_agent_turn)(turn)
 
 
-def parts_agent_llm(specs):
+def parts_agent_llm(specs, *, tool_choice=None):
     from langchain_openai import ChatOpenAI
 
     return ChatOpenAI(model=C.GPT_MODEL, temperature=0, timeout=C.TOOL_TIMEOUT, max_retries=0,
-                      max_completion_tokens=C.MAX_OUTPUT_TOKENS, callbacks=[UsageTracker()]).bind_tools(specs)
+                      max_completion_tokens=C.MAX_OUTPUT_TOKENS, callbacks=[UsageTracker()]).bind_tools(specs, **({"tool_choice": tool_choice} if tool_choice else {}))
 
 
 @guarded()

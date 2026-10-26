@@ -7,16 +7,10 @@
       "sha256": "afbd11cd7a087b3d43d26cb4dde58a1a7c587031ef6631d43ea0322a2a5c889b",
       "output_schema": "PhotoKind"
     },
-    "split_text": {
-      "file": "split_text.md",
-      "version": "1.2.0",
-      "sha256": "6942bf59f1684361853602c4a3d35ec8ccbdbab50d0467f11529a59ddc91e864",
-      "output_schema": "Clues"
-    },
     "write_report": {
       "file": "write_report.md",
-      "version": "1.2.0",
-      "sha256": "801d02e58330ace2c733ca3bec7982b8e59f85f947c2081b75ea2e04f1a9f2cc",
+      "version": "1.3.0",
+      "sha256": "8fb7eaff97ac282d24e187f450ff168c765f4facfa47375f7eb87d292d017732",
       "output_schema": "Report"
     },
     "polish_report": {

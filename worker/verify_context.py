@@ -51,7 +51,6 @@ async def run(live_llm=False):
                          'excerpt': private + 'PCB 전원 회로 점검 사례. ' * 300} for i in range(8)]}
                     replacements = [
                         (tools, 'load_photos', [{'attachmentId': attachment, 'path': image, 'target': 'PCB'}]),
-                        (tools, 'split_text', tools.Clues(pcb=['전원'], mech=[], sw=[])),
                         (tools, 'call_pcb_mcp', image_result), (tools, 'call_rag_mcp', rag_result),
                         (enrichment, 'normalize_observation', {'observations': []}),
                         (enrichment, 'interpret_pcb', {'detections': []})]
