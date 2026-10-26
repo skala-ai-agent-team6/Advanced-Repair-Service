@@ -412,9 +412,12 @@ async def screen_fields(state, candidates) -> dict:
               "similarity": h.get("score", 0), "sourceLabel": h.get("sourceLabel"),
               "isDemo": h.get("isDemo", False)} for f in state["findings"] if f["source"] == "RAG"
              for h in f["output"].get("hits", []) if h["kind"] == "CASE"]
+    # 화면에서는 '[가상 데모 사례]' 머리말을 뺀다 (데모 여부는 isDemo로 남음, 리포트 GPT용 근거는 그대로)
+    for c in cases:
+        c["summaryKo"] = c["summaryKo"].removeprefix("[가상 데모 사례]").strip()
     for c, ko in zip(cases, await tools.translate_cases([c["summaryKo"] for c in cases])):
         c["originalText"] = c["summaryKo"]
-        c["summaryKo"] = ("[가상 데모 사례] " + ko if c["isDemo"] and not ko.startswith("[가상 데모 사례]") else ko)
+        c["summaryKo"] = ko
     return {"topCause": candidates[0]["cause"] if candidates else None, "agents": agents, "similarCases": cases}
 
 
