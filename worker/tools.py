@@ -54,10 +54,10 @@ async def call_mech_mcp(path: str) -> dict:
     """mechanical-mcp: 표면 결함(scratches, patches 등) + 찌그러짐(dent, breakage)을 둘 다 보고 합친다."""
     async with Client(C.MECH_MCP_URL) as c:
         surface = check_image_result(check_response(
-            await c.call_tool("detect_surface_defects", {"photo_id": path}), "detect_surface_defects").data,
+            await c.call_tool("detect_surface_defects", {"photo_id": path, "conf": C.MECH_MIN_CONF}), "detect_surface_defects").data,
             "detect_surface_defects")
         dent = check_image_result(check_response(
-            await c.call_tool("detect_dents", {"photo_id": path}), "detect_dents").data, "detect_dents")
+            await c.call_tool("detect_dents", {"photo_id": path, "conf": C.MECH_MIN_CONF}), "detect_dents").data, "detect_dents")
     return {
         "is_defective": surface["is_defective"] or dent["is_defective"],
         "defects": surface["defects"] + dent["defects"],

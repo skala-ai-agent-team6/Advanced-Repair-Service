@@ -89,7 +89,8 @@ function fromResultAgents(agents: BeAgent[], tools: BeToolExecution[]): AgentRes
       summary: a.summary,
       findings: a.findings ?? [],
       confidence: pct(a.confidence ?? 0),
-      annotations: (a.annotations ?? []).map((b) => ({
+      // [통합] 확신도 0.5 미만 약한 검출은 그리지 않음 ('정상'으로 표시돼 오해를 줌)
+      annotations: (a.annotations ?? []).filter((b) => b.score >= 0.5).map((b) => ({
         imageId: String(b.attachmentId),
         label: b.label,
         x: b.x * 100,
