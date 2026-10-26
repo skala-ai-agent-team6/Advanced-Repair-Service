@@ -21,8 +21,8 @@
     },
     "polish_report": {
       "file": "polish_report.md",
-      "version": "1.0.1",
-      "sha256": "46eca32b52df65fde6b75716e28e51fb35138f6f39aa1ab22d8a7b5ed5aa4766",
+      "version": "1.1.0",
+      "sha256": "c147dceb3f7f5005cf6cacd267abe7e4989750e9fab6256dbb09c535e99fbf7c",
       "output_schema": "Polished"
     }
   }

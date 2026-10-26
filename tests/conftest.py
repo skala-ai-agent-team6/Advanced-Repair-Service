@@ -11,12 +11,12 @@ def no_case_saving(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _no_polish_gpt(request, monkeypatch):
-    """[통합] 리포트 근거 다듬기(polish_candidates)는 GPT를 한 번 더 부른다.
+    """[통합] 리포트 근거 다듬기(polish_report)는 GPT를 한 번 더 부른다.
     테스트가 write_report만 흉내 낸 경우 실제 GPT로 나가지 않게 기본은 그대로 통과시킨다 (test_prompts는 직접 검증)."""
     if request.module.__name__.endswith("test_prompts"):
         return
     from worker import tools as _tools
 
-    async def passthrough(candidates):
-        return candidates
-    monkeypatch.setattr(_tools, "polish_candidates", passthrough)
+    async def passthrough(summary, candidates):
+        return summary, candidates
+    monkeypatch.setattr(_tools, "polish_report", passthrough)
