@@ -8,8 +8,10 @@ import RepairStatusBadge from '@/components/common/RepairStatusBadge.vue'
 import { usePreVisitReportModal } from '@/composables/usePreVisitReportModal'
 import { useAuthStore } from '@/stores/auth'
 import type { FieldVisit } from '@/types'
+import { kstDateLabel } from '@/utils/kst'
 
-defineProps<{ items: FieldVisit[] }>()
+/** showDate: [출장] 다가오는 방문 목록처럼 여러 날짜가 섞일 때 시간 위에 날짜 표시 */
+defineProps<{ items: FieldVisit[]; showDate?: boolean }>()
 const auth = useAuthStore()
 const isField = computed(() => auth.role === 'TECHNICIAN' && auth.technicianType === 'FIELD')
 const report = usePreVisitReportModal()
@@ -20,6 +22,7 @@ const report = usePreVisitReportModal()
     <li v-for="v in items" :key="v.visitId ?? `${v.repairId}-${v.visitTime}`" class="visit" :class="{ done: v.visitStatus === 'DONE' }">
       <RouterLink :to="`/repairs/${v.repairId}/diagnosis`" class="visit-link" :aria-label="`${v.visitTime} ${v.customerName} ${v.model} 수리 작업 상세로 이동`">
         <span class="time">
+          <small v-if="showDate && v.visitDate">{{ kstDateLabel(v.visitDate) }}</small>
           <b>{{ v.visitTime }}</b>
           <small v-if="v.visitStatus === 'DONE'"><Check :size="12" aria-hidden="true" /> 방문 완료</small>
         </span>

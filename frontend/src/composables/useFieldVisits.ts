@@ -54,6 +54,8 @@ export function useFieldVisits() {
    *  [출장] 방문일이 없는 건(일정 미정)·지난 날짜는 빼야 'undefined월'로 안 나온다 */
   const nextVisit = computed(() => [...visits.value].sort(byTime).find((v) => v.visitStatus !== 'DONE' && !!v.visitDate && v.visitDate >= today) ?? null)
 
+  /** [출장] 다가오는 방문: 내일 이후 예정 (날짜·시간 순) */
+  const upcomingVisits = computed(() => visits.value.filter((v) => !!v.visitDate && v.visitDate > today && v.visitStatus !== 'DONE').sort(byTime))
   /** 홈 숫자 — 오늘 출장 기준
    *  부품 확인 필요: 진단을 확인해 부품을 챙겨야 하는 예정 방문(TECHNICIAN_REVIEW)
    *  AI 진단 확인: AI 진단 초안을 아직 확인하지 않은 예정 방문(DIAGNOSIS_COMPLETED) */
@@ -64,5 +66,5 @@ export function useFieldVisits() {
     done: todayVisits.value.filter((v) => v.visitStatus === 'DONE').length,
   }))
 
-  return { visits, loading, error, today, isField, todayVisits, nextVisit, counts, load }
+  return { visits, loading, error, today, isField, todayVisits, upcomingVisits, nextVisit, counts, load }
 }
