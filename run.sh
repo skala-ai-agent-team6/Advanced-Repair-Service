@@ -21,7 +21,9 @@ for f in .env backend/.env; do
   done < "$f"
 done
 if [ -n "${CLOUD_Host:-}" ]; then
-  DB_URL="jdbc:postgresql://$CLOUD_Host:${CLOUD_Port:-5432}/${CLOUD_Database:-postgres}"
+  # postgres DB에는 옛 구조 테이블이 있어 Flyway가 멈춘다 → 우리 서비스는 항상 repair DB를 쓴다
+  case "${CLOUD_Database:-repair}" in postgres) CLOUD_Database=repair ;; esac
+  DB_URL="jdbc:postgresql://$CLOUD_Host:${CLOUD_Port:-5432}/${CLOUD_Database:-repair}"
   DB_USER=${CLOUD_username:-postgres}; DB_PASSWORD=${CLOUD_password:-$DB_PASSWORD}
   export DB_URL DB_USER DB_PASSWORD
 fi
