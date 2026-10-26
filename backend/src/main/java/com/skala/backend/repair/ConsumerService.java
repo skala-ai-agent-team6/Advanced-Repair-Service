@@ -40,8 +40,8 @@ public class ConsumerService {
             // [출장] 고객 희망일(오전 10시 / 오후 2시)을 방문 일정 초안으로. 기사·본사가 PUT /api/repairs/{id}/visit로 바꾼다
             if(input.serviceType().equals("FIELD") && input.preferredDate()!=null && !input.preferredDate().isBefore(WarrantyService.today()))
                 db.update("UPDATE repair_case SET visit_at=? WHERE id=?",input.preferredDate().atTime("PM".equals(input.visitSlot())?14:10,0).atZone(java.time.ZoneId.of("Asia/Seoul")).toOffsetDateTime(),id);
-            // [출장·시연 고정] 고객 사진 순서: 1번은 AI가 종류 판단(GENERAL), 2번·추가 사진은 기계 부품(MOTOR)으로 분석
-            var ids=new ArrayList<Long>();for(var f:uploads) ids.add(ids.isEmpty()?save(id,f):save(id,f,null,"MOTOR"));warranty.record(id,WarrantyService.today());
+            // [출장] 고객 사진은 모두 AI가 종류 판단(GENERAL): 기판은 PCB 모델, 그 외는 기계(표면) 모델. 순서로 정하면 2번째에 올린 기판이 기계 모델로 갔다
+            var ids=new ArrayList<Long>();for(var f:uploads) ids.add(save(id,f));warranty.record(id,WarrantyService.today());
             db.audit("consumer","CONSUMER_INTAKE_CREATED",id,Map.of("photoCount",ids.size()));
             return Map.of("caseNumber",number,"lookupKey",key,"expiresAt",expires.toString(),"status","RECEIVED","attachmentIds",ids,"requiresTechnicianReview",true);
         });
