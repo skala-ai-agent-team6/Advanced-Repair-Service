@@ -11,7 +11,6 @@ import { computed, reactive, ref, watch } from 'vue'
 import { CircleAlert, CircleCheck, ImagePlus, Loader2, Plus, TriangleAlert, X } from 'lucide-vue-next'
 import { checkPhotoQuality } from '@/api'
 import { FEATURES } from '@/api/features'
-import { PHOTO_ISSUE_MESSAGE } from '@/constants/status'
 import { compressImage, uid } from '@/utils/format'
 import type { PhotoQualityResult } from '@/types'
 import type { UploadItem } from '@/types/upload'
@@ -115,6 +114,9 @@ watch(
   { immediate: true },
 )
 const qOf = (id: string) => quality[id]
+/* [출장·시연 고정] 알림 조건 */
+const wholeNeedsRetake = computed(() => !!slots.whole && !!problemOf(slots.whole.id))
+const needsPartPhoto = computed(() => !!slots.part && !slots.extras.length)
 const problemOf = (id: string) => {
   const q = quality[id]
   return typeof q === 'object' && !q.ok ? q : null
@@ -122,27 +124,12 @@ const problemOf = (id: string) => {
 watch(
   () => ({
     checking: all.value.filter((it) => checkingOn && (!quality[it.id] || quality[it.id] === 'checking')).length,
-    problems: all.value.filter((it) => problemOf(it.id)).length,
+    // [출장·시연 고정] 알림 2개: ① 1번 사진(제품 전체)에 문제 → 다시 올리기 ② 2번 사진(고장 난 부분) 뒤에 부품 사진 1장 추가
+    problems: (wholeNeedsRetake.value ? 1 : 0) + (needsPartPhoto.value ? 1 : 0),
   }),
   (v) => emit('quality', v),
   { immediate: true, deep: true },
 )
-/** 문제 있는 사진 안내 (칸이 작아 칸 아래에 모아 보여 줌) */
-const problems = computed(() =>
-  [
-    ...SLOTS.map((s) => ({ key: s.key as string, label: s.label, item: slots[s.key] })),
-    ...slots.extras.map((it, i) => ({ key: it.id, label: `추가 사진 ${i + 1}`, item: it })),
-  ]
-    .filter((x) => x.item && problemOf(x.item.id))
-    .map((x) => ({ ...x, issues: problemOf(x.item!.id)!.issues })),
-)
-function retake(key: string) {
-  if (key === 'whole' || key === 'part') pick(key)
-  else {
-    remove(key)
-    pick('extra')
-  }
-}
 const canAddMore = computed(() => !!slots.whole && !!slots.part && all.value.length < props.max)
 </script>
 
@@ -204,14 +191,17 @@ const canAddMore = computed(() => !!slots.whole && !!slots.part && all.value.len
       <Loader2 v-if="busy === 'extra'" :size="16" class="spin" /><Plus v-else :size="16" /> 사진 추가
     </button>
 
-    <!-- 사진 품질 검사: 문제 있는 사진 안내 -->
-    <ul v-if="problems.length" class="problems" role="alert">
-      <li v-for="p in problems" :key="p.key">
-        <TriangleAlert :size="16" aria-hidden="true" />
-        <span><b>{{ p.label }}</b> · {{ p.issues.map((q) => PHOTO_ISSUE_MESSAGE[q]).join(' ') }}</span>
-        <button type="button" class="btn btn-sm retake" @click="retake(p.key)">다시 찍기</button>
-      </li>
-    </ul>
+    <!-- [출장·시연 고정] 알림 2개 (각각 처리하면 사라짐) -->
+    <div v-if="wholeNeedsRetake" class="notice warn" role="alert">
+      <TriangleAlert :size="16" aria-hidden="true" />
+      <span><b>1번 사진이 흐려요.</b> 초점을 맞춰 밝은 곳에서 다시 찍어 올려 주세요.</span>
+      <button type="button" class="btn btn-sm retake" :disabled="!!busy" @click="pick('whole')">다시 올리기</button>
+    </div>
+    <div v-if="needsPartPhoto" class="notice info" role="alert">
+      <Plus :size="16" aria-hidden="true" />
+      <span><b>2번 사진의 부품을 더 자세히 봐야 해요.</b> 고장 난 부품이 잘 보이도록 가까이에서 한 장 더 찍어 추가해 주세요.</span>
+      <button type="button" class="btn btn-sm add-part" :disabled="!!busy" @click="pick('extra')">사진 추가</button>
+    </div>
     <p v-if="error" class="error-text" role="alert"><CircleAlert :size="16" /> {{ error }}</p>
   </div>
 </template>
@@ -408,5 +398,36 @@ const canAddMore = computed(() => !!slots.whole && !!slots.part && all.value.len
 .retake {
   border-color: var(--warning);
   color: var(--warning);
+}
+/* [출장·시연 고정] 알림 2개: 노랑(다시 올리기) · 파랑(사진 추가) */
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+}
+.notice span {
+  flex: 1 1 180px;
+}
+.notice.warn {
+  border: 1px solid var(--warning-border);
+  background: var(--warning-bg);
+}
+.notice.warn svg {
+  color: var(--warning);
+}
+.notice.info {
+  border: 1px solid var(--info-border);
+  background: var(--info-bg);
+}
+.notice.info svg {
+  color: var(--info);
+}
+.add-part {
+  border-color: var(--info);
+  color: var(--info);
 }
 </style>

@@ -40,7 +40,8 @@ public class ConsumerService {
             // [출장] 고객 희망일(오전 10시 / 오후 2시)을 방문 일정 초안으로. 기사·본사가 PUT /api/repairs/{id}/visit로 바꾼다
             if(input.serviceType().equals("FIELD") && input.preferredDate()!=null && !input.preferredDate().isBefore(WarrantyService.today()))
                 db.update("UPDATE repair_case SET visit_at=? WHERE id=?",input.preferredDate().atTime("PM".equals(input.visitSlot())?14:10,0).atZone(java.time.ZoneId.of("Asia/Seoul")).toOffsetDateTime(),id);
-            var ids=new ArrayList<Long>();for(var f:uploads) ids.add(save(id,f));warranty.record(id,WarrantyService.today());
+            // [출장·시연 고정] 고객 사진 순서: 1번은 AI가 종류 판단(GENERAL), 2번·추가 사진은 기계 부품(MOTOR)으로 분석
+            var ids=new ArrayList<Long>();for(var f:uploads) ids.add(ids.isEmpty()?save(id,f):save(id,f,null,"MOTOR"));warranty.record(id,WarrantyService.today());
             db.audit("consumer","CONSUMER_INTAKE_CREATED",id,Map.of("photoCount",ids.size()));
             return Map.of("caseNumber",number,"lookupKey",key,"expiresAt",expires.toString(),"status","RECEIVED","attachmentIds",ids,"requiresTechnicianReview",true);
         });
@@ -98,7 +99,9 @@ public class ConsumerService {
         response.put("photos",db.list("SELECT a.id,coalesce(q.status,CASE WHEN a.quality_required THEN 'PENDING' ELSE 'LEGACY_UNCHECKED' END) AS status,q.verdict,q.issues,a.request_id FROM attachment a LEFT JOIN photo_quality_result q ON q.id=a.latest_quality_result_id WHERE a.case_id=? AND a.use_status='AVAILABLE' ORDER BY a.id",id));
         var open=openRequest(id);
         response.put("photoRequest",open==null?null:Map.of("requestId",open.get("id"),"target",open.get("target"),"instruction",open.get("instruction"),"round",open.get("round_no")));
-        response.put("diagnosisStarted",!db.list("SELECT id FROM diagnosis_job WHERE case_id=?",id).isEmpty());
+        var job=db.list("SELECT status FROM diagnosis_job WHERE case_id=? ORDER BY id DESC LIMIT 1",id);
+        response.put("diagnosisStarted",!job.isEmpty());
+        response.put("diagnosisStatus",job.isEmpty()?null:job.getFirst().get("status"));  // 진행 단계 표시용 (결과 내용은 주지 않음)
         return response;
     }
     public Map<String,Object> attachment(String number,String authorization,Long attachment) {Long id=authorized(number,authorization);var rows=db.list("SELECT * FROM attachment WHERE id=? AND case_id=?",attachment,id);if(rows.isEmpty()) throw ApiError.missing();return rows.getFirst();}

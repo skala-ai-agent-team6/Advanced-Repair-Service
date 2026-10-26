@@ -12,10 +12,11 @@ for p in $MECH $OBS $PCB $DMG $RAG; do
   lsof -nP -iTCP:$p -sTCP:LISTEN >/dev/null 2>&1 && { echo "포트 $p 사용 중"; exit 1; }
 done
 mkdir -p logs
-trap 'pkill -P $$ 2>/dev/null; pkill -f "$PWD/Rag_mcp/.venv" 2>/dev/null; pkill -f "$PWD/mcp_servers/mechanical/.venv" 2>/dev/null; true' EXIT
-(cd mcp_servers/mechanical && PORT=$MECH exec uv run python server.py > ../../logs/mech.log 2>&1) &
+# 평가 전용 포트에서 뜬 서버만 끈다 (같은 폴더에서 run.sh로 띄운 시연 서버까지 죽이지 않게)
+trap 'for p in $MECH $OBS $PCB $DMG $RAG; do lsof -nP -iTCP:$p -sTCP:LISTEN -t 2>/dev/null | xargs kill 2>/dev/null; done; true' EXIT
+(cd mcp_servers/mechanical && PORT=$MECH exec uv run python server.py > ../../logs/eval-mech.log 2>&1) &
 for s in observation:$OBS pcb:$PCB damage:$DMG rag:$RAG; do
-  (cd Rag_mcp && exec env -u OPENAI_API_KEY QDRANT_URL= uv run --env-file ../.env repair-mcp serve ${s%%:*} --transport http --port ${s##*:} > ../logs/rag-${s%%:*}.log 2>&1) &
+  (cd Rag_mcp && exec env -u OPENAI_API_KEY QDRANT_URL= uv run --env-file ../.env repair-mcp serve ${s%%:*} --transport http --port ${s##*:} > ../logs/eval-rag-${s%%:*}.log 2>&1) &
 done
 echo -n "서버 기다리는 중"
 for i in $(seq 1 120); do

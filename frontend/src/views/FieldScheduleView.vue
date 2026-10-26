@@ -9,7 +9,7 @@ import StateView from '@/components/common/StateView.vue'
 import { useFieldVisits } from '@/composables/useFieldVisits'
 import { kstDateLabel } from '@/utils/kst'
 
-const { loading, error, today, todayVisits, counts, load } = useFieldVisits()
+const { loading, error, today, todayVisits, upcomingVisits, counts, load } = useFieldVisits()
 onMounted(load)
 </script>
 
@@ -31,6 +31,15 @@ onMounted(load)
       <StateView v-else-if="error" state="error" :message="error" compact @retry="load" />
       <StateView v-else-if="!todayVisits.length" state="empty" title="오늘 예정된 출장이 없어요" compact />
       <FieldVisitList v-else :items="todayVisits" />
+    </section>
+
+    <!-- [출장] 내일 이후 예정 방문 (고객이 고른 희망일) -->
+    <section v-if="upcomingVisits.length" class="card" aria-labelledby="h-upcoming">
+      <div class="card-head">
+        <h2 id="h-upcoming">다가오는 방문</h2>
+        <span class="faint">{{ upcomingVisits.length }}건</span>
+      </div>
+      <FieldVisitList :items="upcomingVisits" show-date />
     </section>
   </div>
 </template>

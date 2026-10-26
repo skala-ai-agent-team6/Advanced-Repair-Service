@@ -219,6 +219,8 @@ op['requestBody']={'required':True,'content':{'multipart/form-data':{'schema':ob
 add('/public/cases/{number}','get','접수번호와 조회 키로 고객 공개 정보 조회',ref('CustomerView'))
 op=add('/public/cases/{number}/attachments','post','조회 키로 초기 재촬영 저장(replaces=교체할 사진); 진단 중엔 열린 AI 사진 요청에만 제출',obj({'attachmentId':uid,'status':string()}))
 op['requestBody']={'required':True,'content':{'multipart/form-data':{'schema':obj({'file':string(format='binary')})}}}
+op=add('/public/photos/quality-check','post','[출장] 접수 화면 사진 즉시 품질 검사 (저장 안 함)',obj({'ok':{'type':'boolean'},'status':string(enum=['PASSED','WARNING']),'issues':array(string())}))
+op['requestBody']={'required':True,'content':{'multipart/form-data':{'schema':obj({'file':string(format='binary')})}}}
 add('/public/cases/{number}/attachments/{id}','get','본인 접수의 원본 사진; 조회 키 필요',string(format='binary'),media='application/octet-stream')
 add('/api/repairs/{id}/work-report','get','기사 통합 리포트·출장 준비·보증·부품·공개본',ref('WorkReport'))
 add('/api/repairs/{id}/assignment','post','QUALITY_MANAGER: 기사 배정·재배정 및 이력',ref('WorkReport'),ref('Assignment'))
@@ -254,7 +256,7 @@ for route,methods in paths.items():
             if parameter['in']=='path' and parameter['name']=='number': parameter['schema']=string(description='발급된 caseNumber; 비밀값이 아님')
             if parameter['in']=='path' and parameter['name']=='eventId': parameter['schema']=key
         if route.startswith('/public/'):
-            op['security']=[] if route in ['/public/intake-options','/public/cases'] else [{'ConsumerKey':[]}]
+            op['security']=[] if route in ['/public/intake-options','/public/cases','/public/photos/quality-check'] else [{'ConsumerKey':[]}]
             op['parameters']=[p for p in op.get('parameters',[]) if p['name']!='X-CSRF-TOKEN']
             for status in [429,503]:op['responses'][str(status)]={'description':'요청량 제한 또는 이미지 검증 포화·처리 오류','content':{'application/json':{'schema':ref('Error')}}}
         if route.startswith('/internal/') and method=='post':op['parameters']=[p for p in op.get('parameters',[]) if p['name']!='X-CSRF-TOKEN']
