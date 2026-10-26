@@ -13,7 +13,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watchEffect } from
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   CircleCheck, RotateCw, Building2, CircleX, FileCode2, History, ClipboardList, BookOpen,
-  ArrowRight, ChevronLeft, ChevronRight, Lock, Check, FileSearch, CircleAlert, PencilLine, Save, X,
+  ArrowRight, ChevronLeft, ChevronRight, Lock, FileSearch, CircleAlert, PencilLine, Save, X,
 } from 'lucide-vue-next'
 import RepairFlowNav from '@/components/repair/RepairFlowNav.vue'
 import RepairSummaryCard from '@/components/repair/RepairSummaryCard.vue'
@@ -22,6 +22,7 @@ import PhotoAnalysisCard from '@/components/diagnosis/PhotoAnalysisCard.vue'
 import PartsOrderPage from '@/components/parts/PartsOrderPage.vue'
 import WarrantyCard from '@/components/diagnosis/WarrantyCard.vue'
 import TechnicianEditPanel from '@/components/diagnosis/TechnicianEditPanel.vue'
+import SimilarCasesList from '@/components/diagnosis/SimilarCasesList.vue'
 import PreVisitPartsSection from '@/components/diagnosis/PreVisitPartsSection.vue'
 import { usePreVisitEdit } from '@/composables/usePreVisitEdit'
 import ApprovalHistoryTimeline from '@/components/review/ApprovalHistoryTimeline.vue'
@@ -37,7 +38,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { ApiError, toErrorMessage } from '@/api'
 import { FEATURES } from '@/api/features'
-import { formatDate, reportTitle } from '@/utils/format'
+import { reportTitle } from '@/utils/format'
 import { TOOL_KIND_LABEL } from '@/constants/status'
 import { buildPhotoCards, photoCountLabel } from '@/utils/diagnosisPhotos'
 import type { AnalysisToolKind } from '@/types'
@@ -257,8 +258,6 @@ const focusOrder = computed(() => (typeof route.query.order === 'string' ? route
 
 /* ---------- 1쪽 데이터 ---------- */
 const candidates = computed(() => diagnosis.value?.candidates.slice(0, 3) ?? [])
-const cases = computed(() => diagnosis.value?.similarCases.slice(0, 3) ?? [])
-const moreCases = computed(() => Math.max(0, (diagnosis.value?.similarCaseCount || 0) - cases.value.length))
 /* ---------- 결과를 받지 못한 분석 도구 (US-04: 부분 실패여도 받은 결과는 그대로 보여 준다) ---------- */
 const failedTools = computed(() => (repair.value?.tools ?? []).filter((t) => t.state === 'FAILED' || t.state === 'SKIPPED'))
 const toolName = (t: { kind: AnalysisToolKind; label: string }) => (t.kind === 'OTHER' ? t.label : TOOL_KIND_LABEL[t.kind])
@@ -267,8 +266,6 @@ const missingBy = (kind: AnalysisToolKind) => {
   const t = failedTools.value.find((x) => x.kind === kind)
   return t ? toolName(t) : null
 }
-const CASE_ORIGIN = { INTERNAL: { label: '사내 사례', tone: 'success' }, EXTERNAL: { label: '공개 사례', tone: 'neutral' } } as const
-const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨']
 
 /** 사진별 분석 카드 (utils/diagnosisPhotos — 출장 전 리포트 모달과 같은 규칙) */
 const photoCards = computed(() => buildPhotoCards(repair.value?.images ?? [], diagnosis.value?.agents ?? []))
@@ -410,26 +407,7 @@ const detailSummary = computed(() => {
 
                 <section class="col cases-col" aria-labelledby="h-cases">
                   <h2 id="h-cases" class="h">유사 사례 <span class="badge tone-info">MCP</span></h2>
-                  <ul v-if="cases.length" class="cases">
-                    <li v-for="(c, i) in cases" :key="c.receiptNo">
-                      <Check :size="18" class="ck" aria-hidden="true" />
-                      <span class="circ" aria-hidden="true">{{ CIRCLED[i] }}</span>
-                      <div class="grow">
-                        <div class="row between">
-                          <strong>{{ c.cause }}</strong>
-                          <span class="row tight">
-                            <span v-if="c.origin" class="badge" :class="`tone-${CASE_ORIGIN[c.origin].tone}`">{{ CASE_ORIGIN[c.origin].label }}</span>
-                            <span class="badge tone-ai">유사도 {{ c.similarity }}%</span>
-                          </span>
-                        </div>
-                        <p v-if="c.resolution" class="muted">→ {{ c.resolution }}</p>
-                        <p class="faint">{{ c.receiptNo }} · {{ c.model }}<template v-if="c.closedAt"> · {{ formatDate(c.closedAt) }}</template></p>
-                      </div>
-                    </li>
-                  </ul>
-                  <p v-else-if="missingBy('RAG')" class="unknown"><span class="badge tone-warning">미확인</span> {{ missingBy('RAG') }} 결과를 받지 못해 유사 사례를 확인하지 못했습니다.</p>
-                  <p v-else class="faint">찾은 유사 사례가 없습니다.</p>
-                  <p v-if="moreCases" class="faint">외 {{ moreCases }}건</p>
+                  <SimilarCasesList :diagnosis="diagnosis" :missing="missingBy('RAG')" />
                 </section>
               </div>
 
@@ -860,30 +838,6 @@ const detailSummary = computed(() => {
   padding-left: 28px;
   border-left: 1px dashed var(--border-strong);
   gap: 0;
-}
-.cases {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.cases li {
-  display: flex;
-  gap: 8px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-}
-.cases li:last-child {
-  border-bottom: 0;
-}
-.ck {
-  flex: none;
-  margin-top: 3px;
-  color: var(--success);
-}
-.circ {
-  flex: none;
-  font-weight: 800;
-  color: var(--navy-700);
 }
 
 /* 1쪽 아래: 사진별 분석 */
