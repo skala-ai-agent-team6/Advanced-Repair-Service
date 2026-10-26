@@ -25,8 +25,9 @@ const emit = defineEmits<{
 const MAX_MB = 15
 type SlotKey = 'whole' | 'part'
 const SLOTS: { key: SlotKey; label: string }[] = [
-  { key: 'whole', label: '제품 전체' },
+  // 화면 순서: 고장 난 부분 → 제품 전체 (올리는 순서는 그대로 제품 전체가 먼저 = 대표 사진)
   { key: 'part', label: '고장 난 부분' },
+  { key: 'whole', label: '제품 전체' },
 ]
 const slots = reactive<{ whole: UploadItem | null; part: UploadItem | null; extras: UploadItem[] }>({ whole: null, part: null, extras: [] })
 const all = computed(() => [slots.whole, slots.part, ...slots.extras].filter((x): x is UploadItem => !!x))
@@ -194,12 +195,12 @@ const canAddMore = computed(() => !!slots.whole && !!slots.part && all.value.len
     <!-- [출장·시연 고정] 알림 2개 (각각 처리하면 사라짐) -->
     <div v-if="wholeNeedsRetake" class="notice warn" role="alert">
       <TriangleAlert :size="16" aria-hidden="true" />
-      <span><b>1번 사진이 흐려요.</b> 초점을 맞춰 밝은 곳에서 다시 찍어 올려 주세요.</span>
+      <span><b>제품 전체 사진이 흐려요.</b> 초점을 맞춰 밝은 곳에서 다시 찍어 올려 주세요.</span>
       <button type="button" class="btn btn-sm retake" :disabled="!!busy" @click="pick('whole')">다시 올리기</button>
     </div>
     <div v-if="needsPartPhoto" class="notice info" role="alert">
       <Plus :size="16" aria-hidden="true" />
-      <span><b>2번 사진의 부품을 더 자세히 봐야 해요.</b> 고장 난 부품이 잘 보이도록 가까이에서 한 장 더 찍어 추가해 주세요.</span>
+      <span><b>고장 난 부분을 더 자세히 봐야 해요.</b> 고장 난 부품이 잘 보이도록 가까이에서 한 장 더 찍어 추가해 주세요.</span>
       <button type="button" class="btn btn-sm add-part" :disabled="!!busy" @click="pick('extra')">사진 추가</button>
     </div>
     <p v-if="error" class="error-text" role="alert"><CircleAlert :size="16" /> {{ error }}</p>
