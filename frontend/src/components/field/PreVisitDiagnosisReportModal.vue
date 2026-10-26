@@ -18,6 +18,7 @@ import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import AnnotatedImage from '@/components/diagnosis/AnnotatedImage.vue'
 import TechnicianEditPanel from '@/components/diagnosis/TechnicianEditPanel.vue'
 import PreVisitPartsSection from '@/components/diagnosis/PreVisitPartsSection.vue'
+import SimilarCasesList from '@/components/diagnosis/SimilarCasesList.vue'
 import { usePreVisitEdit } from '@/composables/usePreVisitEdit'
 import { useFieldVisits } from '@/composables/useFieldVisits'
 import { repairApi, toErrorMessage, ApiError } from '@/api'
@@ -91,6 +92,11 @@ const mainImage = computed(
 const thumbFailed = ref<Record<string, boolean>>({})
 
 /* ---------- 진단 요약 ---------- */
+/** 유사 사례를 찾는 RAG가 결과를 못 냈으면 그 도구 이름 (센터 진단 결과와 같은 기준) */
+const ragMissing = computed(() => {
+  const t = (repair.value?.tools ?? []).find((x) => x.kind === 'RAG' && (x.state === 'FAILED' || x.state === 'SKIPPED'))
+  return t ? t.label : null
+})
 const evidence = computed(() => (diagnosis.value?.candidates ?? []).flatMap((c) => c.evidence).slice(0, 3))
 const productLabel = computed(() => {
   const p = repair.value?.product
@@ -278,6 +284,12 @@ async function doOrder() {
             <p v-else class="faint">표시할 분석 근거가 없습니다.</p>
           </section>
         </div>
+
+        <!-- 과거 유사 사례 (RAG) — 센터 진단 결과와 같은 목록 -->
+        <section class="card-lite" aria-labelledby="h-cases">
+          <h3 id="h-cases" class="h">과거 유사 사례</h3>
+          <SimilarCasesList :diagnosis="diagnosis" :missing="ragMissing" />
+        </section>
 
         <!-- 기사 수정 (AI 결과와 따로) -->
         <TechnicianEditPanel
