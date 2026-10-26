@@ -99,5 +99,6 @@ echo $! > logs/worker.pid
 (cd integration; nohup python3 auto_photo.py > "$ROOT/logs/auto_photo.log" 2>&1 & echo $! > "$ROOT/logs/auto_photo.pid")
 
 echo
-echo "완료 → http://localhost:5173  (tech1 / 1234, 본사 quality / 1234)"
+echo "완료 → http://localhost:5173  (tech1 / 1234, 출장 field-tech / 1234, 본사 quality / 1234)"
+echo "고객 접수 시연 → http://localhost:5173/service/request  (사진: 시연사진/README.md)"
 echo "로그: logs/  · 끄기: ./stop.sh"
