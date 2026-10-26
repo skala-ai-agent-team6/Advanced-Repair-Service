@@ -65,11 +65,11 @@ cd Advanced-Repair-Service
 ### 팀 공용 클라우드 DB로 실행
 레포 맨 위 `.env`에 아래를 넣고 `./run.sh` (비밀번호는 팀에 문의). 로컬 Postgres 대신 클라우드 `repair` DB를 쓰고, Kafka만 로컬로 띄운다.
 ```
-Host=34.64.242.87
+Host=<클라우드 DB 주소, 팀에 문의>
 Port=5432
 Database=repair
 username=postgres
-password=<팀에 문의>
+password=<비밀번호, 팀에 문의>
 ```
 - 첫 실행 때 테이블·계정이 자동으로 생긴다 (위 계정 그대로 로그인)
 - 사진은 각자 PC의 `~/Downloads/시연용 사진`에 저장된다 → 접수와 진단은 같은 PC에서. 동시에 여러 명이 켜면 접수 건을 다른 PC가 가져갈 수 있다
@@ -179,8 +179,8 @@ asyncio.run(main())
 
 ## 시험
 ```bash
-uv run pytest          # 에이전트 (182개)
-cd backend && ./gradlew test
+uv run pytest          # 에이전트 (183개) · RAG는 cd Rag_mcp && uv run pytest (94개)
+cd backend && ./gradlew test   # 백엔드 (90개)
 ```
 
 ## 데이터 출처
