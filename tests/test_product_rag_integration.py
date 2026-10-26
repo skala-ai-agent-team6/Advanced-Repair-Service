@@ -31,7 +31,7 @@ def test_missing_unknown_invalid_and_conflicting_product():
     with pytest.raises(ValueError, match='Conflicting'): command_product_type(cmd)
 
 
-@pytest.mark.parametrize('kind', ['vacuum','washing_machine','air_conditioner'])
+@pytest.mark.parametrize('kind', ['vacuum','washing_machine','air_conditioner','other'])
 def test_graph_passes_product_to_all_mcp_wrappers_and_report(fixture_tools, monkeypatch, kind):
     cmd = command()
     cmd['payload']['repair']['product_type'] = kind

@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "description": "시연용으로 작성한 가상 최종 보고서 6건. 실제 제조사 수리 이력 또는 검증된 진단 지침이 아님.",
+  "description": "시연용 가상 최종 보고서 60건: 세탁기 20건, 에어컨 20건, 기타 가전 20건. 실제 수리 이력이나 제조사 검증 지침이 아니며, 증상만으로 같은 원인을 확정할 수 없음.",
   "reports": [
     {
       "demo_id": "washer-drain",
@@ -90,6 +90,816 @@
         "actualAction": "담당 기사가 연결부를 보수한 후 시험 운전에서 전원 유지 확인",
         "repairSuccessful": true,
         "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-inlet-screen",
+      "report_id": 901001,
+      "case_id": 901001,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 급수가 느리고 물이 조금씩 들어와 세탁 시작이 지연됩니다.",
+        "actualCause": "급수 연결부 거름망에 이물이 쌓인 것이 분해 점검에서 확인됨",
+        "actualAction": "담당 기사가 거름망을 세척하고 급수 연결을 복구한 뒤 급수 및 누수 시험에서 정상 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-inlet-valve",
+      "report_id": 901002,
+      "case_id": 901002,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 수도와 급수 호스는 정상인데 물이 전혀 들어오지 않습니다.",
+        "actualCause": "급수 밸브의 구동 신호는 있으나 밸브가 열리지 않는 현상이 점검에서 확인됨",
+        "actualAction": "적합한 급수 밸브로 교체한 뒤 급수 및 정지 시험에서 정상 동작 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-drain-hose",
+      "report_id": 901003,
+      "case_id": 901003,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 배수 필터는 깨끗하지만 배수가 느리고 바닥으로 물이 역류합니다.",
+        "actualCause": "기기 뒤쪽 배수 호스가 눌려 유로가 좁아진 상태가 확인됨",
+        "actualAction": "호스 배치를 바로잡고 배수 및 연결부 누수 시험에서 정상 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-drain-pump",
+      "report_id": 901004,
+      "case_id": 901004,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기에서 배수 동작 소리는 나지만 물이 빠지지 않고 펌프 쪽에서 덜컥거립니다.",
+        "actualCause": "배수 펌프 내부 이물로 임펠러 회전이 방해된 것이 점검에서 확인됨",
+        "actualAction": "담당 기사가 펌프 내부 이물을 제거하고 재조립한 뒤 배수 시험에서 정상 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-unbalanced-load",
+      "report_id": 901005,
+      "case_id": 901005,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기에서 이불 한 장을 탈수할 때 통이 한쪽으로 쏠리고 탈수가 중단됩니다.",
+        "actualCause": "수평과 고정부는 정상이며 시험에서 세탁물 편중으로 탈수가 중단되는 현상이 재현됨",
+        "actualAction": "세탁물을 고르게 배치하고 적정 시험 부하로 재시험하여 탈수 완료 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-shipping-bolts",
+      "report_id": 901006,
+      "case_id": 901006,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "새로 설치한 세탁기가 탈수할 때 크게 뛰고 본체 전체가 움직입니다.",
+        "actualCause": "설치 점검에서 운송용 고정 장치가 제거되지 않은 상태가 확인됨",
+        "actualAction": "설치 담당자가 제품 설치 절차에 따라 고정 장치를 제거하고 수평 조정 및 탈수 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-door-lock",
+      "report_id": 901007,
+      "case_id": 901007,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 문은 완전히 닫히지만 잠금 표시가 켜지지 않고 세탁이 시작되지 않습니다.",
+        "actualCause": "도어 걸쇠는 정상이나 잠금 장치가 잠김 상태를 반환하지 않는 것이 점검에서 확인됨",
+        "actualAction": "적합한 도어 잠금 장치로 교체한 뒤 잠금·해제 및 시작 시험에서 정상 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-door-seal",
+      "report_id": 901008,
+      "case_id": 901008,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 문 아래로 세탁 중 물이 새고 고무 패킹에 찢어진 부분이 보입니다.",
+        "actualCause": "도어 밀봉 패킹의 파열부에서 누수되는 것이 시험에서 확인됨",
+        "actualAction": "손상된 패킹을 교체하고 조립 상태 및 급수·회전 시험에서 누수 없음 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-dispenser-residue",
+      "report_id": 901009,
+      "case_id": 901009,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 세제함 앞쪽으로 물이 넘치고 세제가 굳어 있습니다.",
+        "actualCause": "세제함 통로에 세제 찌꺼기가 누적되어 물 흐름을 방해한 것이 확인됨",
+        "actualAction": "세제함과 통로를 청소하고 조립 후 급수 시험에서 넘침 없음 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-leak-joint",
+      "report_id": 901010,
+      "case_id": 901010,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 급수 중 뒤쪽 연결부에서 물방울이 떨어집니다.",
+        "actualCause": "급수 호스 연결부 패킹 손상으로 해당 접합부에서 누수되는 것이 확인됨",
+        "actualAction": "적합한 패킹으로 교체하고 연결 상태를 복구한 뒤 누수 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-level-sensor",
+      "report_id": 901011,
+      "case_id": 901011,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 통 안은 비어 있는데 물이 남았다는 표시가 뜨고 탈수가 시작되지 않습니다.",
+        "actualCause": "수위 감지 호스의 오염으로 실제 수위와 감지 상태가 일치하지 않는 것이 점검에서 확인됨",
+        "actualAction": "수위 감지 경로를 청소하고 관련 연결을 복구한 뒤 빈 통과 급수 상태에서 감지 및 탈수 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-connector-intermittent",
+      "report_id": 901012,
+      "case_id": 901012,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기가 회전 중 간헐적으로 멈추고 진동이 생기면 표시창도 꺼집니다.",
+        "actualCause": "전원 연결 커넥터의 체결 불량이 확인되었으며 점검 중 접촉 변화와 전원 중단이 함께 재현됨",
+        "actualAction": "담당 기사가 전원 연결부를 보수하고 체결 상태를 복구한 뒤 반복 운전에서 전원 유지 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-board-open",
+      "report_id": 901013,
+      "case_id": 901013,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 전원이 켜지지 않고 PCB 사진 분석에서 open_circuit 후보가 나왔습니다.",
+        "actualCause": "도면과 측정 결과를 대조하여 제어 보드 전원 경로의 단선을 확인함. 사진 라벨만으로 원인을 확정하지 않음",
+        "actualAction": "적합한 제어 보드로 교체한 뒤 전원 및 기본 세탁 기능 시험에서 정상 동작 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-panel-scratches",
+      "report_id": 901014,
+      "case_id": 901014,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 외장에 scratches가 검출됐고 표면에 긁힘이 보이지만 작동은 정상입니다.",
+        "actualCause": "외장 도장면 긁힘이 확인되었으며 점검 범위에서 구동부 간섭과 기능 이상은 발견되지 않음",
+        "actualAction": "손상 위치를 기록하고 외장 조치 필요 여부를 안내함. 기능 이상이 없어 기능 부품은 교체하지 않음",
+        "repairSuccessful": false,
+        "outcome": "NO_FAULT_FOUND"
+      }
+    },
+    {
+      "demo_id": "washer-bearing-awaiting",
+      "report_id": 901015,
+      "case_id": 901015,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기가 탈수할 때 금속성 소음이 나고 통을 돌리면 거친 느낌이 있습니다.",
+        "actualCause": "기계 점검에서 드럼 지지부 베어링 손상 소견이 확인됨",
+        "actualAction": "필요 부품과 작업 범위를 기록하고 부품 수급 전까지 수리를 보류함. 수리 완료로 처리하지 않음",
+        "repairSuccessful": false,
+        "outcome": "NOT_FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-excess-foam",
+      "report_id": 901016,
+      "case_id": 901016,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기에서 거품이 많이 남고 헹굼이 반복되지만 급수와 배수는 됩니다.",
+        "actualCause": "시험에서 세제 과다 투입에 따른 과도한 거품이 확인되었고 점검 범위에서 부품 고장은 발견되지 않음",
+        "actualAction": "잔류 거품을 제거하고 권장 투입 조건으로 시험하여 정상 완료 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "washer-housing-interference",
+      "report_id": 901017,
+      "case_id": 901017,
+      "product_type": "washing_machine",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "세탁기 외판이 눌린 뒤 회전할 때마다 긁히는 소리가 나고 외장에 pitted_surface 후보가 검출됐습니다.",
+        "actualCause": "현물 점검에서 외판 변형에 의한 회전부 주변 간섭을 확인함. 표면 라벨만으로 간섭을 판정하지 않음",
+        "actualAction": "간섭을 일으키는 외장 부품을 조치하고 고정부와 유격을 점검한 뒤 회전 시험에서 소음 및 간섭 해소 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-remote-battery",
+      "report_id": 902001,
+      "case_id": 902001,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 본체 수동 버튼으로는 켜지지만 리모컨으로는 반응하지 않습니다.",
+        "actualCause": "리모컨 전지 전압 저하가 확인되었고 본체 수신 시험은 정상으로 확인됨",
+        "actualAction": "리모컨 전지를 교체하고 전원·운전 모드 전환 시험에서 정상 반응 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-fan-obstruction",
+      "report_id": 902002,
+      "case_id": 902002,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨에서 달그락거리는 소리가 나고 실내기 바람이 간헐적으로 약해집니다.",
+        "actualCause": "실내 송풍팬 주변의 이물이 회전을 방해한 것이 점검에서 확인됨",
+        "actualAction": "담당 기사가 이물을 제거하고 고정부를 점검한 뒤 송풍 시험에서 정상 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-fan-motor",
+      "report_id": 902003,
+      "case_id": 902003,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 표시창은 켜지지만 실내기 팬이 돌지 않아 바람이 나오지 않습니다.",
+        "actualCause": "팬 구동 신호와 연결부를 점검한 뒤 실내 팬 모터의 동작 불량을 확인함",
+        "actualAction": "적합한 팬 모터로 교체하고 송풍 단계별 시험에서 정상 회전 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-louver",
+      "report_id": 902004,
+      "case_id": 902004,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 바람은 나오지만 날개가 한쪽에 걸려 방향이 바뀌지 않습니다.",
+        "actualCause": "풍향 날개 연결부 이탈로 날개 동작이 전달되지 않는 상태가 확인됨",
+        "actualAction": "날개 연결부와 고정부를 복구하고 풍향 조절 시험에서 정상 움직임 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-drain-slope",
+      "report_id": 902005,
+      "case_id": 902005,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨을 옮겨 설치한 뒤 실내기 아래로 물이 새지만 배수 호스 안은 깨끗합니다.",
+        "actualCause": "설치 점검에서 배수 경로의 역구배로 응축수가 고이는 상태가 확인됨",
+        "actualAction": "설치 담당자가 배수 경사를 조정한 뒤 배수 시험과 운전에서 누수 없음 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-drain-joint",
+      "report_id": 902006,
+      "case_id": 902006,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 냉방 중 벽 쪽 배수 호스 연결부에서 물이 떨어집니다.",
+        "actualCause": "배수 연결부 이탈로 응축수가 연결부 밖으로 새는 것이 확인됨",
+        "actualAction": "배수 연결부를 복구하고 고정한 뒤 배수 시험에서 연결부 누수 없음 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-room-sensor",
+      "report_id": 902007,
+      "case_id": 902007,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 실제 실내 온도는 높지만 표시 온도가 낮게 나오고 냉방이 금방 멈춥니다.",
+        "actualCause": "기준 측정값과 비교하여 실내 온도 센서의 감지값 편차를 확인함",
+        "actualAction": "적합한 온도 센서로 교체하고 표시값과 기준값 및 냉방 제어 동작을 재확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-coil-sensor",
+      "report_id": 902008,
+      "case_id": 902008,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨에 과열 경고가 반복되지만 점검한 열교환기 온도와 표시 상태가 맞지 않습니다.",
+        "actualCause": "열교환기 온도 감지 센서 연결부의 접촉 불량으로 감지 신호가 불안정한 것이 확인됨",
+        "actualAction": "센서 연결부를 보수하고 체결한 뒤 기준 측정값과 감지값을 대조하며 반복 운전 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-outdoor-airflow",
+      "report_id": 902009,
+      "case_id": 902009,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨은 켜지지만 냉방이 약하고 실외기 주변에 물건이 빽빽하게 놓여 있습니다.",
+        "actualCause": "실외기 주변 장애물로 통풍이 제한되는 상태가 현장 점검에서 확인됨",
+        "actualAction": "설치 조건에 맞게 통풍 공간을 확보하고 냉방 시험에서 상태 개선 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-outdoor-fan",
+      "report_id": 902010,
+      "case_id": 902010,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 실외기 팬이 돌다가 멈추고 냉방도 함께 중단됩니다.",
+        "actualCause": "전원과 구동 신호를 점검한 뒤 실외 팬 모터 동작 불량을 확인함",
+        "actualAction": "담당 기사가 적합한 팬 모터로 교체하고 실외기와 냉방 동작을 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-refrigerant-leak",
+      "report_id": 902011,
+      "case_id": 902011,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 냉방이 약해지고 배관 연결 부위에 누설 흔적이 의심됩니다.",
+        "actualCause": "담당 기사의 누설 점검에서 배관 연결부의 냉매 누설이 확인됨",
+        "actualAction": "전문 담당자 보수와 필요 자재 수급을 요청하고 조치 전까지 수리를 보류함",
+        "repairSuccessful": false,
+        "outcome": "NOT_FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-board-open",
+      "report_id": 902012,
+      "case_id": 902012,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 본체가 켜지지 않고 PCB 모델에서 open_circuit 후보가 검출됐습니다.",
+        "actualCause": "설계와 전기적 점검 결과를 대조하여 제어 보드 전원 경로 단선을 확인함. 영상 라벨만으로 확정하지 않음",
+        "actualAction": "적합한 제어 보드로 교체한 뒤 전원·송풍·냉방 시험에서 정상 동작 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-board-short",
+      "report_id": 902013,
+      "case_id": 902013,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 전원을 넣으면 동작이 중단되고 PCB 모델에서 short 후보가 나왔습니다.",
+        "actualCause": "담당 기사가 부하와 전원 경로를 분리 점검하여 제어 보드의 전기적 단락을 확인함",
+        "actualAction": "손상된 보드를 적합한 부품으로 교체하고 관련 부하 점검 및 운전 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-filter-alert",
+      "report_id": 902014,
+      "case_id": 902014,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 필터를 청소했는데도 필터 관리 알림이 계속 표시됩니다.",
+        "actualCause": "점검에서 공기 흐름과 필터는 정상이며 관리 알림이 초기화되지 않은 상태로 확인됨",
+        "actualAction": "해당 제품의 사용 절차에 따라 관리 알림을 초기화하고 재표시 여부 확인. 기능 부품은 교체하지 않음",
+        "repairSuccessful": false,
+        "outcome": "NO_FAULT_FOUND"
+      }
+    },
+    {
+      "demo_id": "ac-fan-dirt-smell",
+      "report_id": 902015,
+      "case_id": 902015,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨을 켜면 냄새가 나고 내부 송풍부에 오염이 보입니다.",
+        "actualCause": "실내 송풍부와 배수 주변에 오염이 누적된 상태가 점검에서 확인됨",
+        "actualAction": "제품 관리 절차에 따른 청소와 재조립 후 배수 및 송풍 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-corroded-mount",
+      "report_id": 902016,
+      "case_id": 902016,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 외장 금속부에서 patches 후보가 검출되고 고정부 주변에 녹이 보입니다.",
+        "actualCause": "현물 점검에서 금속 고정부의 부식 손상이 확인됨. 검출 라벨만으로 부식 깊이를 판단하지 않음",
+        "actualAction": "손상된 고정부를 조치하고 설치 안정성과 주변 배선 간섭을 점검한 뒤 운전 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "ac-vibration-cover",
+      "report_id": 902017,
+      "case_id": 902017,
+      "product_type": "air_conditioner",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "에어컨 운전 중 외장 커버가 떨리며 소음이 나고 표면에 crazing 후보가 보입니다.",
+        "actualCause": "점검에서 커버 고정부 손상에 따른 떨림이 확인됨. 잔금 라벨과 소음의 인과관계는 현물 점검으로 대조함",
+        "actualAction": "손상된 커버와 고정부를 조치한 뒤 송풍 시험에서 떨림 및 간섭 해소 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-fridge-gasket",
+      "report_id": 903001,
+      "case_id": 903001,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "냉장고 문은 닫히지만 냉기가 새는 느낌이 들고 문 가장자리에 물방울이 맺힙니다.",
+        "actualCause": "도어 밀봉 패킹의 일부 변형으로 문틈이 생긴 상태가 점검에서 확인됨",
+        "actualAction": "적합한 도어 패킹으로 교체하고 닫힘 및 밀폐 상태를 확인한 뒤 운전 경과 점검",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-fridge-drain",
+      "report_id": 903002,
+      "case_id": 903002,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "냉장고 채소칸 아래에 물이 고이고 배수구 주변이 얼어 있습니다.",
+        "actualCause": "배수 통로의 이물과 결빙으로 물이 배출되지 않는 상태가 확인됨",
+        "actualAction": "담당 기사가 배수 경로를 복구하고 배수 시험에서 정상 배출 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-fridge-fan",
+      "report_id": 903003,
+      "case_id": 903003,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "냉장고에서 긁히는 소리가 나고 팬이 돌 때만 소음이 커집니다.",
+        "actualCause": "현물 점검에서 팬 주변 결빙과 간섭이 확인됨",
+        "actualAction": "제품 절차에 따라 결빙 원인과 팬 간섭을 조치하고 냉각 운전 중 소음 해소 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-fridge-sensor",
+      "report_id": 903004,
+      "case_id": 903004,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "냉장고 내부 온도는 높은데 표시창에는 충분히 낮은 온도가 표시됩니다.",
+        "actualCause": "기준 온도와 센서 감지값을 비교하여 온도 감지 센서의 편차를 확인함",
+        "actualAction": "적합한 센서로 교체하고 기준값 대조 및 운전 경과 점검 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-dishwasher-drain",
+      "report_id": 903005,
+      "case_id": 903005,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "식기세척기 세척이 끝난 뒤 바닥에 물이 남아 있고 배수가 느립니다.",
+        "actualCause": "배수 필터와 유로에 음식물 찌꺼기가 누적된 것이 점검에서 확인됨",
+        "actualAction": "필터와 배수 유로를 청소한 뒤 배수 및 누수 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-dishwasher-spray",
+      "report_id": 903006,
+      "case_id": 903006,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "식기세척기에서 물은 나오지만 식기가 일부만 씻기고 분사 날개가 잘 돌지 않습니다.",
+        "actualCause": "분사 날개 구멍의 이물과 회전 간섭이 확인됨",
+        "actualAction": "분사 날개를 청소하고 적재 간섭을 해소한 뒤 회전 및 세척 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-dishwasher-leak",
+      "report_id": 903007,
+      "case_id": 903007,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "식기세척기를 돌리면 문 하단으로 물이 새고 패킹이 들떠 있습니다.",
+        "actualCause": "도어 밀봉 패킹의 이탈로 문 하단 누수가 발생한 것이 확인됨",
+        "actualAction": "패킹 장착 상태를 복구하고 손상 여부를 점검한 뒤 운전 중 누수 없음 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-dishwasher-lock",
+      "report_id": 903008,
+      "case_id": 903008,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "식기세척기 문을 닫아도 열림 표시가 남아 시작되지 않습니다.",
+        "actualCause": "도어 감지부와 연결부를 점검하여 도어 스위치 접촉 불량을 확인함",
+        "actualAction": "적합한 도어 스위치로 교체하고 열림·닫힘 감지와 시작 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-purifier-filter",
+      "report_id": 903009,
+      "case_id": 903009,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "공기청정기 바람이 약하고 필터 표면에 먼지가 많이 쌓여 있습니다.",
+        "actualCause": "필터 오염에 따른 공기 흐름 제한이 점검에서 확인됨",
+        "actualAction": "제품 관리 기준에 맞게 필터를 조치한 뒤 단계별 풍량과 동작 상태 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-purifier-sensor",
+      "report_id": 903010,
+      "case_id": 903010,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "공기청정기 먼지 표시가 계속 높지만 비교 측정한 실내 상태와 맞지 않습니다.",
+        "actualCause": "감지부 오염으로 공기질 센서 반응이 불안정한 것이 점검에서 확인됨",
+        "actualAction": "제품 절차에 따라 감지부를 청소하고 비교 측정 및 반응 시험에서 정상 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-purifier-fan",
+      "report_id": 903011,
+      "case_id": 903011,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "공기청정기 팬 쪽에서 떨리는 소리가 나고 본체가 진동합니다.",
+        "actualCause": "팬 고정부의 체결 불량과 떨림이 현물 점검에서 확인됨",
+        "actualAction": "팬과 고정부를 조치한 뒤 송풍 단계별 운전에서 비정상 진동 해소 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-fan-grille",
+      "report_id": 903012,
+      "case_id": 903012,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "선풍기를 켜면 앞쪽에서 긁히는 소리가 나고 보호망이 눌려 있습니다.",
+        "actualCause": "보호망 변형으로 날개 회전 경로에 간섭이 생긴 상태가 확인됨",
+        "actualAction": "손상된 보호망을 조치하고 날개·고정부를 점검한 뒤 간섭 없는 운전 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-fan-switch",
+      "report_id": 903013,
+      "case_id": 903013,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "선풍기 스위치를 누르는 위치에 따라 전원이 켜졌다 꺼졌다 합니다.",
+        "actualCause": "전원 스위치 접점 불량이 점검에서 확인됨",
+        "actualAction": "담당 기사가 적합한 스위치로 교체하고 전원 및 속도 전환 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-ricecooker-sensor",
+      "report_id": 903014,
+      "case_id": 903014,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "전기밥솥이 가열을 너무 빨리 멈추며 실제 내솥 상태와 온도 표시가 맞지 않습니다.",
+        "actualCause": "내솥 상태와 온도 감지부의 접촉 상태를 점검하여 센서 접촉 불량을 확인함",
+        "actualAction": "담당 기사가 감지부와 관련 연결을 조치하고 제품 시험 절차에 따라 가열·정지 기능 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-ricecooker-button",
+      "report_id": 903015,
+      "case_id": 903015,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "전기밥솥 버튼이 잘 눌리지 않고 취사 시작 입력이 간헐적으로 먹지 않습니다.",
+        "actualCause": "조작부 버튼 스위치의 동작 불량이 점검에서 확인됨",
+        "actualAction": "적합한 조작부 부품으로 교체하고 입력 및 기본 동작 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-humidifier-level",
+      "report_id": 903016,
+      "case_id": 903016,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "가습기 물통에 물이 충분한데 물 부족 표시가 켜지고 작동하지 않습니다.",
+        "actualCause": "수위 감지 플로트의 오염으로 움직임이 제한된 것이 확인됨",
+        "actualAction": "제품 절차에 따라 감지부를 청소하고 물통 장착 및 수위 감지 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-humidifier-fan",
+      "report_id": 903017,
+      "case_id": 903017,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "가습기에서 분무는 생기지만 밖으로 잘 나오지 않고 팬 회전 소리가 없습니다.",
+        "actualCause": "팬 전원과 연결부를 점검한 뒤 송풍팬 동작 불량을 확인함",
+        "actualAction": "적합한 팬 부품으로 교체하고 송풍과 분무 배출 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-dryer-filter",
+      "report_id": 903018,
+      "case_id": 903018,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "의류건조기 건조 시간이 길어지고 필터에 보풀이 많이 쌓여 있습니다.",
+        "actualCause": "필터와 점검 가능한 유로의 보풀 누적으로 공기 흐름이 제한된 것이 확인됨",
+        "actualAction": "제품 관리 절차에 따라 필터와 유로를 조치하고 건조 시험에서 흐름 및 동작 상태 확인",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-dryer-belt",
+      "report_id": 903019,
+      "case_id": 903019,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "의류건조기에 전원은 들어오고 모터 소리는 나지만 드럼이 돌지 않습니다.",
+        "actualCause": "현물 점검에서 드럼 구동 벨트 손상이 확인됨",
+        "actualAction": "담당 기사가 적합한 벨트로 교체하고 장력과 주변 간섭을 점검한 뒤 회전 시험 완료",
+        "repairSuccessful": true,
+        "outcome": "FIXED"
+      }
+    },
+    {
+      "demo_id": "other-dryer-board",
+      "report_id": 903020,
+      "case_id": 903020,
+      "product_type": "other",
+      "confirmed_revision": 1,
+      "confirmed_at": "2026-10-26T00:00:00Z",
+      "content": {
+        "technicianOpinion": "의류건조기가 간헐적으로 멈추고 PCB에서 mouse_bite 후보가 검출됐습니다.",
+        "actualCause": "패턴 손상 후보를 도면 및 측정과 대조하여 제어 보드의 경로 이상을 확인함. 라벨만으로 원인을 확정하지 않음",
+        "actualAction": "교체 부품을 요청하고 수리를 보류함. 실제 수리 완료 여부는 부품 교체 후 별도 시험이 필요함",
+        "repairSuccessful": false,
+        "outcome": "NOT_FIXED"
       }
     }
   ]

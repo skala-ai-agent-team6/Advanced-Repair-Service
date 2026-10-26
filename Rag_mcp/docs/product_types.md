@@ -1,5 +1,7 @@
 # 제품 종류 연동
 
+RAG와 Python AI 서버는 `other`를 지원한다. Spring의 현재 제품 코드 변환은 아직 세 제품만 지원하므로 기타 접수의 `other` 전달은 백엔드 담당자 연동이 필요하다. `unknown`은 기타 제품이 아니며 검색에서 제외한다.
+
 접수에서 결정한 `product_type`을 AI 서버 → MCP → 최종 확정 보고서 → Spring 조회 응답까지 유지한다. 모델은 기존처럼 라벨만 반환해도 된다. AI 서버가 접수의 제품 종류를 MCP 입력에 함께 전달한다.
 
 | 값 | 의미 |
@@ -7,6 +9,7 @@
 | `vacuum` | 청소기. 로봇청소기와 일반 청소기 포함 |
 | `washing_machine` | 세탁기 |
 | `air_conditioner` | 에어컨 |
+| `other` | 기타 가전. 원문에 실제 제품명을 포함 |
 | `unknown` | 제품 종류 미확인 또는 필드 누락 |
 
 소문자·언더스코어를 그대로 사용한다. `washer`, `robot_vacuum`, 한글 제품명, 빈 문자열, `null` 등은 허용하지 않는다. 기존 `product_domain`은 내부 메타데이터이며 MCP 입력 필드가 아니다.
@@ -114,10 +117,10 @@ AI 서버는 `payload.repair.product_snapshot.product_type`과 camelCase `produc
 
 `graph.py`에서 제품값을 읽고 `tools.py`·`enrichment.py`를 통해 소견/PCB/외형 해석 및 RAG에 전달한다. 최종 AI 리포트와 미확정 초안에도 제품값을 담는다. 미확정 초안은 검색에 넣지 않는다. Spring은 실제 수리 후 확정한 보고서에서 제품값을 유지해야 한다.
 
-## 데모 사례 6건 추가
+## 데모 사례 60건 추가
 
-실제 이력이 없는 데모를 위한 **가상 데이터**다. 세탁기 3건(배수·탈수 진동·도어), 에어컨 3건(풍량·누수·전원)이 들어 있다.
-원본: `data/demo_confirmed_cases.json`. 서버 시작 시 자동으로 추가하지 않는다.
+실제 이력이 없는 데모를 위한 **가상 데이터**다. 세탁기 20건, 에어컨 20건, 기타 가전 20건이 들어 있다. 기타는 냉장고·식기세척기·공기청정기·선풍기·전기밥솥·가습기·의류건조기 사례다. [전체 목록](demo_cases.md).
+원본: `data/demo_confirmed_cases.json`. 서버 시작 시 자동으로 추가하지 않는다. `seed-demo-cases`로 검색 DB에 넣는다.
 
 RAG 서버를 멈춘 후 `Rag_mcp`에서:
 

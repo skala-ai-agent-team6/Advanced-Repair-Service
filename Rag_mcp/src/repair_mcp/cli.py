@@ -6,10 +6,10 @@ def main():
     parser = argparse.ArgumentParser(description="Repair RAG MCP")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("index", help="Offline indexing; does not modify business data")
-    commands.add_parser("seed-demo-cases", help="Insert 6 explicitly synthetic appliance reports into the RAG index")
+    commands.add_parser("seed-demo-cases", help="Insert explicitly synthetic appliance reports into the RAG index")
     normalize = commands.add_parser("normalize", help="Convert one observation with OpenAI; no vector index needed")
     normalize.add_argument("text", help="기사의 한국어 소견")
-    normalize.add_argument("--product-type", choices=["vacuum", "washing_machine", "air_conditioner", "unknown"],
+    normalize.add_argument("--product-type", choices=["vacuum", "washing_machine", "air_conditioner", "other", "unknown"],
                            default="unknown")
     serve = commands.add_parser("serve")
     serve.add_argument("service", choices=["observation", "pcb", "damage", "rag"])
