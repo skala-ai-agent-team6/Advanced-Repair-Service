@@ -266,6 +266,8 @@ async function doOrder() {
             <StateView v-else state="empty" compact title="등록된 제품 사진이 없습니다" />
           </section>
 
+          <!-- 오른쪽 열: 진단 요약 아래에 과거 유사 사례 (왼쪽 사진 카드 옆 빈 곳을 채움) -->
+          <div class="side">
           <!-- 3. 진단 요약 (AI 원문, 수정 불가) -->
           <section class="card-lite ai-zone" aria-labelledby="h-diag">
             <div class="row between">
@@ -283,13 +285,14 @@ async function doOrder() {
             </ol>
             <p v-else class="faint">표시할 분석 근거가 없습니다.</p>
           </section>
-        </div>
 
-        <!-- 과거 유사 사례 (RAG) — 센터 진단 결과와 같은 목록 -->
-        <section class="card-lite" aria-labelledby="h-cases">
-          <h3 id="h-cases" class="h">과거 유사 사례</h3>
-          <SimilarCasesList :diagnosis="diagnosis" :missing="ragMissing" />
-        </section>
+          <!-- 과거 유사 사례 (RAG) — 센터 진단 결과와 같은 목록 -->
+          <section class="card-lite" aria-labelledby="h-cases">
+            <h3 id="h-cases" class="h">과거 유사 사례</h3>
+            <SimilarCasesList :diagnosis="diagnosis" :missing="ragMissing" />
+          </section>
+          </div>
+        </div>
 
         <!-- 기사 수정 (AI 결과와 따로) -->
         <TechnicianEditPanel
@@ -430,6 +433,12 @@ async function doOrder() {
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
 .card-lite {
   display: grid;
