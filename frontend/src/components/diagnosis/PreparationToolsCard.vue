@@ -17,7 +17,8 @@ watch(() => props.repairId, async (id) => {
   <div v-if="report && report.report_status !== 'UNAVAILABLE'" class="prep-tools" aria-label="출장 준비 공구">
     <h4><Wrench :size="16" aria-hidden="true" /> 준비 공구</h4>
     <ul v-if="report.recommended_tools?.length">
-      <li v-for="t in report.recommended_tools" :key="t.name"><strong>{{ t.name }}</strong> — {{ t.purpose }}</li>
+      <!-- [출장] 준비 공구는 앞 4개만 (대장 지시) -->
+      <li v-for="t in report.recommended_tools.slice(0, 4)" :key="t.name"><strong>{{ t.name }}</strong> — {{ t.purpose }}</li>
     </ul>
     <p v-else class="faint">진단 근거에서 특정 공구를 확인하지 못했습니다. 방문 전 확인이 필요합니다.</p>
     <ul v-if="report.warnings?.length" class="faint warn">

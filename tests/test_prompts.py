@@ -91,6 +91,10 @@ def test_prompt_metadata_saved_and_replay_does_not_use_new_version(fixture_tools
     def model(schema):
         async def invoke(value):
             calls.append((schema.__name__, value))
+            if schema is tools.Clues:
+                return tools.Clues(pcb=['충전'], mech=[], sw=[])
+            if schema is tools.Polished:  # [통합] 근거 설명 다듬기 단계
+                return tools.Polished(explanations=['관찰'])
             return tools.Report(summary='결과', repairMethod='점검', candidates=[
                 tools.Candidate(cause='PCB', confidence=.5, explanation='관찰')])
         return SimpleNamespace(ainvoke=invoke)
@@ -103,13 +107,13 @@ def test_prompt_metadata_saved_and_replay_does_not_use_new_version(fixture_tools
             path = next(report.OUT.glob('*.json'))
             saved = json.loads(path.read_text())
             metadata = saved['execution']['prompts']
-            assert set(metadata) == {'write_report', 'write_report'}
+            assert set(metadata) == {'split_text', 'write_report', 'polish_report'}
             manifest = json.loads((directory/'manifest.json').read_text())
             assert all(v['version'] == manifest['prompts'][name]['version'] and len(v['schema_sha256']) == 64 for name,v in metadata.items())
             assert '실행에 사용한 프롬프트' in path.with_suffix('.md').read_text()
             revise(directory, '바뀐 지시 {text}')
             second = await main.handle(cmd, Producer(), journal)
-            assert second == first and len(calls) == 1
+            assert second == first and len(calls) == 3
             assert json.loads(path.read_text())['execution']['prompts'] == metadata
         finally:
             journal.close()

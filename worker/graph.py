@@ -89,6 +89,11 @@ async def classify_photos(state: State, config) -> dict:
                                  "found": False, "output": out})
                 await emit(config, "TOOL_EXECUTED", {"tool": "classify_photo", "toolVersion": "1",
                            "agentType": "RAG", "mcpServer": "agent-llm", "input": {}, "output": out})
+    # [출장] 고객 사진은 제품 전체 외관(세탁기·에어컨)이 많아 OTHER로 빠진다 → 외관 결함 검사(기계 표면)로 보낸다
+    if (state["command"]["payload"].get("repair") or {}).get("intake_source") == "CONSUMER":
+        for p in photos:
+            if p["kind"] == "OTHER":
+                p["kind"] = "MECH"
     # 이전 라운드에서 분류가 실패했던 사진이 이번에 성공하면, 그 실패 기록을 덮는다.
     failed_before = {f.get("attachmentId") for f in state.get("findings", [])
                      if f.get("source") == "CLASSIFICATION" and f.get("output", {}).get("error")}
@@ -244,9 +249,13 @@ async def judge(state: State, config) -> dict:
     await emit(config, "DIAGNOSIS_PROGRESS", {"stage": "JUDGING"})
     photo_round = state["command"]["payload"]["round"]
     # [통합·시연용] DEMO_FORCE_PHOTO=1이면 첫 진단은 무조건 추가 사진 요청. 기계 모델이 거의 항상 뭔가를 검출해서 요청 흐름이 안 보였다
-    if os.getenv("DEMO_FORCE_PHOTO") == "1" and photo_round == 0:
+    # [출장] 고객 접수는 접수 화면에서 사진을 다 받으므로(흐린 사진 대체 + 부품 사진 추가) 강제 요청하지 않는다
+    consumer = (state["command"]["payload"].get("repair") or {}).get("intake_source") == "CONSUMER"
+    if os.getenv("DEMO_FORCE_PHOTO") == "1" and photo_round == 0 and not consumer:
         return {"decision": "PHOTO"}
-    return {"decision": decide(state["findings"], photo_round)}
+    decision = decide(state["findings"], photo_round)
+    # [출장] 고객 접수는 조회 화면에서 추가 사진을 받지 않는다 → 가진 근거로 리포트 작성
+    return {"decision": "COMPLETE" if consumer and decision == "PHOTO" else decision}
 
 
 # ── 5. 부품 확인: 모델이 업무 MCP 도구를 고른다 ──────────
@@ -328,6 +337,7 @@ async def report(state: State, config) -> dict:
     # [통합] 점수 높은 순으로 순위를 다시 매긴다. GPT가 준 순서 그대로면 0.79가 1순위, 0.95가 2순위가 되기도 했다
     ranked = sorted((c.model_dump() for c in r.candidates), key=lambda c: -c["confidence"])
     candidates = [{"rank": i + 1, **c} for i, c in enumerate(ranked)]
+    r.summary, candidates = await tools.polish_report(r.summary, candidates)  # [통합] 요약·근거 설명을 사람이 알아듣게 한 번 검토·다듬기
     evidence = []  # 근거는 코드가 MCP 결과에서 직접 만든다 (GPT가 사진 번호를 지어내지 않게)
     for f in state["findings"]:
         if f["found"]:

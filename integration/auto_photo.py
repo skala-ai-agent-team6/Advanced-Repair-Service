@@ -49,6 +49,8 @@ def confirm_quality(c, ids, timeout=60):
 
 def answer(c, repair):
     detail = c.call("GET", f"/api/repairs/{repair}")
+    if detail.get("intake_source") == "CONSUMER":  # [출장] 고객 접수는 고객이 조회 화면에서 직접 사진을 추가한다
+        return
     now = datetime.now(timezone.utc)
     for req in [r for r in detail.get("photoRequests", []) if r.get("submitted_at") is None]:
         if (now - datetime.fromisoformat(req["created_at"].replace("Z", "+00:00"))).total_seconds() < GRACE:

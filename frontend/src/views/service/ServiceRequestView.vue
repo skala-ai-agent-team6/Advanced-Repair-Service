@@ -9,7 +9,8 @@
  *  실서버: 접수 API 가 아직 없어 FEATURES.customerIntake 가 false 면 안내만 보이고 접수 버튼은 비활성
  * ========================================================================= */
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { ArrowLeft, ArrowRight, Building2, Camera, CircleAlert, CircleCheck, Home, Info, Loader2, Send, ShieldCheck, TriangleAlert } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { ArrowLeft, ArrowRight, Building2, Camera, CircleAlert, CircleCheck, Home, Info, Loader2, Send, ShieldCheck } from 'lucide-vue-next'
 import ProductPhotoSlots from '@/components/service/ProductPhotoSlots.vue'
 import PhotoGuide from '@/components/repair/PhotoGuide.vue'
 import WarrantyPeriodNotice from '@/components/repair/WarrantyPeriodNotice.vue'
@@ -30,6 +31,9 @@ import type { UploadItem } from '@/types/upload'
 const available = USE_MOCK || FEATURES.customerIntake
 const today = kstToday()
 const STEPS = ['제품·증상', '사진', '방문·동의']
+const router = useRouter()
+/** [출장] 사진 단계 '촬영 예시'를 고른 제품 종류에 맞춤 (기본: 로봇청소기) */
+const EXAMPLE_IMG: Record<string, string> = { washing_machine: '/mock/washer.svg', air_conditioner: '/mock/aircon.svg' }
 const step = ref(0)
 
 const form = reactive({ ...({ productType: '', productTypeDetail: '' } as ProductTypeForm), manufacturer: '', model: '', serial: '', purchaseDate: '', symptomText: '', customerName: '', phone: '', preferredDate: '', serviceType: '' as ServiceType | '', centerId: '', visitSlot: '' as VisitSlot | '' })
@@ -50,9 +54,9 @@ const agreed = ref(false)
 /* [시연] 고객이 하나하나 입력하지 않도록 그럴듯한 값을 미리 채움 (사진만 올리면 됨). 비우려면 이 블록 삭제 */
 const inDays = (n: number) => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE') }
 Object.assign(form, {
-  productType: 'washing_machine', manufacturer: 'ROVA', model: 'ROVA AirWash 24', serial: 'WM24A0318752', purchaseDate: '2025-03-14',
+  productType: 'washing_machine', manufacturer: 'ROVA', model: 'ROVA AirWash 24', serial: 'WM24A0318752', purchaseDate: '2026-03-14',
   symptomText: '세탁이 끝나도 물이 안 빠지고 E21 에러가 떠요. 탈수할 때 덜컹거리는 소리도 납니다.',
-  customerName: '김민지', phone: '010-4821-7365', serviceType: 'VISIT', preferredDate: inDays(2), visitSlot: 'PM',
+  customerName: '김민지', phone: '010-4821-7365', serviceType: 'VISIT', preferredDate: inDays(0), visitSlot: 'PM',
 })
 visitAddress.value = { postalCode: '04030', roadAddress: '서울 마포구 양화로 45', jibunAddress: '서울 마포구 합정동 369', detailAddress: '101동 1203호', buildingName: '메세나폴리스' }
 agreed.value = true
@@ -149,11 +153,6 @@ function photosReady(): boolean {
     return false
   }
   return true
-}
-function acceptProblems() {
-  problemsAccepted.value = true
-  problemDlg.value = false
-  next()
 }
 
 /* ---------- 검증 ---------- */
@@ -259,6 +258,8 @@ async function submit() {
       photos.value.map((p) => ({ file: p.file, dataUrl: p.dataUrl })),
     )
     done.value = { receiptNo: res.receiptNo, token: res.token, serviceType: form.serviceType as ServiceType, centerName: selectedCenter.value?.name }
+    // [출장] 실서버: 사진 품질 검사는 접수 뒤 서버에서 하므로 바로 조회 화면으로 (경고 사진이면 거기서 다시 올리기)
+    if (!USE_MOCK && res.token) return void router.push(`/service/track/${res.token}`)
     doneDlg.value = true
     window.scrollTo({ top: 0 })
   } catch (e) {
@@ -367,13 +368,12 @@ async function submit() {
 
     <!-- ② 사진 -->
     <section v-show="step === 1" :hidden="step !== 1" class="card form-card stack" aria-label="사진">
-      <p class="muted">제품 전체가 보이도록 촬영해 주세요. 올린 사진마다 품질 검사 결과가 표시돼요.</p>
+      <p class="muted">제품 전체가 보이도록 촬영해 주세요. {{ FEATURES.photoQualityCheck ? '올린 사진마다 품질 검사 결과가 표시돼요.' : '접수 후 품질 검사 결과를 알려드려요.' }}</p>
       <PhotoGuide kind="PRODUCT" />
       <!-- 가로 3칸: 제품 전체 · 고장 난 부분 · 촬영 예시 (1장 이상, 최대 5장) -->
-      <ProductPhotoSlots v-model="photos" :max="5" :invalid="touched[1] && !photos.length" example-src="/mock/product.svg" @quality="quality = $event" />
+      <ProductPhotoSlots v-model="photos" :max="5" :invalid="touched[1] && !photos.length" :example-src="EXAMPLE_IMG[form.productType] ?? '/mock/product.svg'" @quality="quality = $event" />
       <p v-if="touched[1] && errs.photos" class="error-text" role="alert">{{ errs.photos }}</p>
       <p v-if="quality.checking && qWait" class="callout tone-info"><Loader2 :size="18" class="spin" /> 사진 검사가 끝날 때까지 잠시 기다려 주세요.</p>
-      <p v-else-if="quality.problems" class="callout tone-warning" role="alert"><TriangleAlert :size="18" /> 문제 있는 사진이 {{ quality.problems }}장 있어요. 다시 찍으면 더 정확하게 확인할 수 있어요.</p>
     </section>
 
     <!-- ③ 방문·동의 -->
@@ -496,11 +496,10 @@ async function submit() {
   </form>
 
   <!-- 문제 있는 사진 → 한 번 더 확인 -->
-  <BaseModal :open="problemDlg" title="문제 있는 사진이 있어요" :width="460" @close="problemDlg = false">
-    <p>사진 {{ quality.problems }}장에 문제가 있어요. 그대로 진행하면 기사님이 다시 사진을 요청할 수 있어요.</p>
+  <BaseModal :open="problemDlg" title="사진을 마저 올려 주세요" :width="460" @close="problemDlg = false">
+    <p>사진 아래 알림 {{ quality.problems }}개를 먼저 처리해 주세요.</p>
     <template #footer>
-      <button type="button" class="btn btn-primary" @click="problemDlg = false"><Camera :size="18" /> 다시 찍기</button>
-      <button type="button" class="btn" @click="acceptProblems">이대로 진행</button>
+      <button type="button" class="btn btn-primary" @click="problemDlg = false"><Camera :size="18" /> 확인</button>
     </template>
   </BaseModal>
 

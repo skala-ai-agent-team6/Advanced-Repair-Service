@@ -20,7 +20,8 @@ export const FEATURES = {
    *  Mock 은 이 값과 관계없이 저장한다. 어떤 경우에도 userInput(AI 입력)에는 넣지 않는다 */
   visitInfo: false,
   /** 접수 사진 품질 검사 API (실서버는 아직 없음 → false 면 검사 없이 업로드만). Mock 은 파일 이름으로 흉내 */
-  photoQualityCheck: USE_MOCK,
+  // [출장] 백엔드 POST /public/photos/quality-check 추가로 켬
+  photoQualityCheck: true,
   /** 보증 판정(무상/유상) 카드 — 실서버 API 없음 → false 면 진단 리포트에서 카드를 숨김 */
   // [출장] 백엔드 FieldController 추가로 켬: GET /repairs/{id}/warranty, POST …/warranty/decision
   warranty: true,

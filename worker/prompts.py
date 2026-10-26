@@ -8,6 +8,7 @@ PROMPT_DIR = Path(__file__).resolve().parent.parent / "prompts"
 SPECS = {
     "classify_photo": ("PhotoKind", set()),
     "write_report": ("Report", {"text", "findings", "compatible_parts"}),
+    "polish_report": ("Polished", {"summary", "candidates"}),  # [통합] 근거 설명을 기사가 알아듣는 말로 다듬기
 }
 
 
