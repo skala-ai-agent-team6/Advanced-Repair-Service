@@ -57,7 +57,7 @@ const pageTitle = computed(() => (repair.value ? (preVisitTitle.value ? '출장 
 watchEffect(
   () => {
     void route.fullPath
-    if (repair.value) document.title = `${preVisitTitle.value ? `출장 전 진단 리포트 #${repair.value.id}` : reportTitle(repair.value)} · RobotCare AI`
+    if (repair.value) document.title = `${preVisitTitle.value ? `출장 전 진단 리포트 #${repair.value.id}` : reportTitle(repair.value)} · 수리들어간다`
   },
   { flush: 'post' },
 )

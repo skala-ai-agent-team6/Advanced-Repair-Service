@@ -89,7 +89,7 @@ router.afterEach((to) => {
   // 수리 건 화면을 열면 기억 (기사 메뉴 '수리 작업'의 이어서 보기)
   if (typeof to.params.id === 'string' && String(to.name).startsWith('repair-')) rememberRepair(Number(to.params.id))
   const auth = useAuthStore()
-  document.title = `${pageTitleFor(to.name, to.meta.title, to.meta.customer ? null : menuRoleOf(auth.role, auth.technicianType))} · RobotCare AI`
+  document.title = `${pageTitleFor(to.name, to.meta.title, to.meta.customer ? null : menuRoleOf(auth.role, auth.technicianType))} · 수리들어간다`
 })
 
 // 세션 만료(401): 서버 로그아웃 호출 없이 로컬 상태만 비우고 로그인 화면으로

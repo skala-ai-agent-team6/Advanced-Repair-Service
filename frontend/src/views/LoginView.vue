@@ -2,7 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { CircleAlert, CircleCheck, LogIn, Eye, EyeOff, Wrench } from 'lucide-vue-next'
-import AppLogo from '@/components/common/AppLogo.vue'
+import BrandLogo from '@/components/common/BrandLogo.vue'
 import RobotHero from '@/components/common/RobotHero.vue'
 import { useAuthStore } from '@/stores/auth'
 import { toErrorMessage, USE_MOCK } from '@/api'
@@ -55,17 +55,19 @@ async function submit() {
 
 <template>
   <div class="login">
+    <!-- 로고 + 소개 한 줄: 화면 왼쪽 맨 위 -->
+    <BrandLogo tagline align="start" class="brand-corner" />
     <section class="intro">
       <span class="glow g1" aria-hidden="true" />
       <span class="glow g2" aria-hidden="true" />
-      <!-- 로고: 패널 왼쪽 위 고정 (위 40px · 왼쪽 48px) / 로봇: 패널 가로·세로 가운데 -->
-      <AppLogo class="logo" :height="32" />
+      <!-- 로봇: 패널 가로·세로 가운데 (로고는 오른쪽 로그인 영역 위에) -->
       <div class="hero">
         <RobotHero />
       </div>
     </section>
 
     <section class="panel">
+      <div class="panel-in">
       <form class="card form" novalidate @submit.prevent="submit">
         <h2>로그인</h2>
         <p class="muted">아이디와 비밀번호를 입력하세요. 역할에 맞는 화면으로 이동합니다.</p>
@@ -111,12 +113,14 @@ async function submit() {
           <p class="track-link">접수한 서비스가 있나요? <RouterLink to="/service/track">접수 내역 조회</RouterLink></p>
         </div>
       </form>
+      </div>
     </section>
   </div>
 </template>
 
 <style scoped>
 .login {
+  position: relative;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
@@ -137,10 +141,21 @@ async function submit() {
   display: grid;
   place-items: center;
 }
-.logo {
+/* 로고: 왼쪽 패널 위에 겹쳐 왼쪽 맨 위 (위 40px · 왼쪽 48px) */
+.brand-corner {
   position: absolute;
   top: 40px;
   left: 48px;
+  z-index: 2;
+}
+.panel-in {
+  width: min(480px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+}
+.panel-in .form {
+  width: 100%;
 }
 /* 로봇: 패널 가운데, 최대 너비 480px */
 .hero {
@@ -267,9 +282,20 @@ h2 {
 @media (max-width: 1100px) {
   .login {
     grid-template-columns: 1fr;
+    align-content: start;
   }
   .intro {
     display: none;
+  }
+  /* 왼쪽 패널이 없을 때도 로고는 왼쪽 맨 위 (흐름 안에서 폼 위에) */
+  .brand-corner {
+    position: static;
+    padding: 24px 32px 0;
+  }
+}
+@media (max-width: 480px) {
+  .brand-corner {
+    padding: 16px 16px 0;
   }
 }
 </style>

@@ -8,24 +8,24 @@
  *  ※ 기사 소견은 기사용 접수 화면에만 있다 (고객은 "고장 증상" 하나로 적는다)
  *  실서버: 접수 API 가 아직 없어 FEATURES.customerIntake 가 false 면 안내만 보이고 접수 버튼은 비활성
  * ========================================================================= */
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, ArrowRight, Building2, Camera, CircleAlert, CircleCheck, Home, Info, Loader2, Send, ShieldCheck } from 'lucide-vue-next'
 import ProductPhotoSlots from '@/components/service/ProductPhotoSlots.vue'
 import PhotoGuide from '@/components/repair/PhotoGuide.vue'
-import WarrantyPeriodNotice from '@/components/repair/WarrantyPeriodNotice.vue'
+import ProductInfoFields from '@/components/repair/ProductInfoFields.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import ReceiptDone from '@/components/service/ReceiptDone.vue'
-import { checkWarrantyPeriod, submitCustomerRequest, toErrorMessage, USE_MOCK } from '@/api'
+import { submitCustomerRequest, toErrorMessage, USE_MOCK } from '@/api'
 import { FEATURES } from '@/api/features'
 import AddressSearchField from '@/components/address/AddressSearchField.vue'
 import { getServiceCenters } from '@/api'
 import { SERVICE_TYPE_DESC, SERVICE_TYPE_LABEL, VISIT_SLOT_LABEL, type ServiceCenter, type ServiceType, type VisitSlot } from '@/constants/serviceType'
 import { DETAIL_ADDRESS_MAX, emptyVisitAddress, normalizeVisitAddress, toAddressLine } from '@/api/adapters/address'
 import type { VisitAddress } from '@/types'
-import { canBringToCenter, modelsFor, PRODUCT_TYPE_DETAIL_MAX, PRODUCT_TYPE_OPTIONS, symptomsFor, type ProductType, type ProductTypeForm } from '@/constants/products'
+import { canBringToCenter, symptomsFor, type ProductType, type ProductTypeForm } from '@/constants/products'
 import { kstToday } from '@/utils/kst'
-import type { WarrantyPeriod } from '@/types'
+import type { ProductInfo } from '@/types'
 import type { UploadItem } from '@/types/upload'
 
 const available = USE_MOCK || FEATURES.customerIntake
@@ -36,7 +36,7 @@ const router = useRouter()
 const EXAMPLE_IMG: Record<string, string> = { washing_machine: '/mock/washer.svg', air_conditioner: '/mock/aircon.svg' }
 const step = ref(0)
 
-const form = reactive({ ...({ productType: '', productTypeDetail: '' } as ProductTypeForm), manufacturer: '', model: '', serial: '', purchaseDate: '', symptomText: '', customerName: '', phone: '', preferredDate: '', serviceType: '' as ServiceType | '', centerId: '', visitSlot: '' as VisitSlot | '' })
+const form = reactive({ ...({ productType: '', productTypeDetail: '' } as ProductTypeForm), manufacturer: '', model: '', serial: '', purchaseDate: '', purchaseUnknown: false, product: null as ProductInfo | null, symptomText: '', customerName: '', phone: '', preferredDate: '', serviceType: '' as ServiceType | '', centerId: '', visitSlot: '' as VisitSlot | '' })
 /* ---------- ③ 수리 방법: 방문 수리(주소 · 날짜 · 시간대) / 센터 방문(서비스센터 · 날짜) ---------- */
 const centers = ref<ServiceCenter[]>([])
 onMounted(async () => {
@@ -64,24 +64,10 @@ const touched = reactive([false, false, false])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-/* ---------- ① 제품: 종류를 고르면 그 제품군의 모델·제조사를 제안 (목록에 없으면 직접 입력) ---------- */
-const modelOptions = computed(() => modelsFor(form.productType))
-/** '기타'(unknown)를 고르면 바로 아래에 제품명 직접 입력. 다른 종류로 바꾸면 숨기고 값을 지운다 */
+/* ---------- ① 제품 정보: 기사 접수와 같은 공통 ProductInfoFields (시리얼 조회 · 라벨 사진 · 보증 기간 안내) ---------- */
 const isUnknownType = computed(() => form.productType === 'unknown')
-watch(
-  () => form.productType,
-  (v) => v !== 'unknown' && (form.productTypeDetail = ''),
-)
-const makerOptions = computed(() => [...new Set(modelOptions.value.map((m) => m.manufacturer))])
-watch(
-  () => form.model,
-  (v) => {
-    // 목록의 모델을 고르면 제조사를 채워 줌 (이미 적었으면 그대로)
-    const hit = modelOptions.value.find((m) => m.name.toLowerCase() === v.trim().toLowerCase())
-    if (hit && !form.manufacturer.trim()) form.manufacturer = hit.manufacturer
-  },
-)
-
+/** 서버로 보낼 구매일: 오늘 이후가 아닌 날짜만, "몰라요"면 보내지 않음 (시리얼로 보증 기간 추정) */
+const purchaseForSubmit = computed(() => (!form.purchaseUnknown && form.purchaseDate && form.purchaseDate <= today ? form.purchaseDate : undefined))
 /* ---------- ① 고장 증상: 제품별 증상 + 공통 증상 칩 + 직접 입력 ---------- */
 const SYMPTOMS = computed(() => symptomsFor(form.productType))
 // 제품 종류를 바꾸면 새 목록에 없는 증상 선택은 지움
@@ -90,50 +76,6 @@ function toggleChip(s: string) {
   chips.value = chips.value.includes(s) ? chips.value.filter((x) => x !== s) : [...chips.value, s]
 }
 const symptom = computed(() => [...chips.value, form.symptomText.trim()].filter(Boolean).join(', '))
-
-/* ---------- ① 보증 기간 안내 (시리얼 입력 후 0.5초 · 칸을 벗어날 때 · 구매일이 바뀔 때) ---------- */
-const warrantyPeriod = ref<WarrantyPeriod | null>(null)
-const wpPurchase = computed(() => (form.purchaseDate && form.purchaseDate <= today ? form.purchaseDate : undefined))
-let wpTimer: number | undefined
-let wpSeq = 0
-let wpKey = ''
-/** 시리얼: 앞뒤 공백 제거 · 영문 대문자로 저장, 그다음 보증 기간 안내 */
-function onSerialBlur() {
-  form.serial = form.serial.trim().toUpperCase()
-  void refreshWarranty()
-}
-async function refreshWarranty() {
-  window.clearTimeout(wpTimer)
-  const serial = form.serial.trim().toUpperCase()
-  if (!FEATURES.warranty || !/^RC\d{10}$/.test(serial)) {
-    warrantyPeriod.value = null
-    wpKey = ''
-    return
-  }
-  const key = `${serial}|${wpPurchase.value ?? ''}`
-  if (key === wpKey) return
-  wpKey = key
-  const seq = ++wpSeq
-  try {
-    const res = await checkWarrantyPeriod(serial, wpPurchase.value)
-    if (seq === wpSeq) warrantyPeriod.value = res
-  } catch {
-    // 안내용이라 실패해도 접수는 계속 (박스만 숨김)
-    if (seq === wpSeq) {
-      warrantyPeriod.value = null
-      wpKey = ''
-    }
-  }
-}
-watch(
-  () => form.serial,
-  () => {
-    window.clearTimeout(wpTimer)
-    wpTimer = window.setTimeout(refreshWarranty, 500)
-  },
-)
-watch(wpPurchase, () => void refreshWarranty())
-onBeforeUnmount(() => window.clearTimeout(wpTimer))
 
 /* ---------- ② 사진 품질 검사 ---------- */
 const quality = ref({ checking: 0, problems: 0 })
@@ -164,17 +106,20 @@ function isValidDate(v: string) {
   return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d
 }
 const errs = computed(() => ({
-  productType: !form.productType ? '제품 종류를 선택해 주세요.' : null,
-  productTypeDetail: isUnknownType.value && !form.productTypeDetail.trim() ? '제품 종류를 입력해 주세요.' : null,
-  model: !form.model.trim() ? '제품 모델명을 고르거나 입력해 주세요.' : null,
+  // 기사 접수와 같은 기준: 시리얼 · 제조사 · 모델명 · 구매일(모르면 제외) 필수, 제품 종류는 선택 (기타면 직접 입력 필수)
+  typeDetail: isUnknownType.value && !form.productTypeDetail.trim() ? '제품 종류를 입력해 주세요.' : null,
+  manufacturer: !form.manufacturer.trim() ? '제조사를 입력해 주세요.' : null,
+  model: !form.model.trim() ? '모델명을 입력하거나 시리얼로 조회해 주세요.' : null,
   serial: !form.serial.trim() ? '시리얼 번호를 입력해 주세요.' : !/^[A-Za-z0-9-]{4,30}$/.test(form.serial.trim()) ? '시리얼 번호는 영문·숫자로 입력해 주세요.' : null,
-  purchase: !form.purchaseDate
-    ? '구매일을 골라 주세요. 정확히 모르면 대략적인 날짜를 골라 주세요.'
-    : !isValidDate(form.purchaseDate)
-      ? '날짜 형식이 올바르지 않아요. (예: 2025-03-14)'
-      : form.purchaseDate > today
-        ? '오늘 이후 날짜는 고를 수 없어요.'
-        : null,
+  purchase: form.purchaseUnknown
+    ? null
+    : !form.purchaseDate
+      ? '구매일을 골라 주세요. 모르면 "구매일을 몰라요"를 체크해 주세요.'
+      : !isValidDate(form.purchaseDate)
+        ? '날짜 형식이 올바르지 않아요. (예: 2025-03-14)'
+        : form.purchaseDate > today
+          ? '오늘 이후 날짜는 고를 수 없어요.'
+          : null,
   // '기타'만 고르면 직접 입력이 필요
   symptom: !chips.value.some((c) => c !== '기타') && form.symptomText.trim().length < 5 ? '증상을 하나 이상 고르거나 5자 이상 적어 주세요.' : null,
   photos: !photos.value.length ? '제품 사진을 1장 이상 올려 주세요.' : null,
@@ -196,7 +141,7 @@ const errs = computed(() => ({
 }))
 const stepValid = computed(() => {
   const e = errs.value
-  return [!e.productType && !e.productTypeDetail && !e.model && !e.serial && !e.purchase && !e.symptom, !e.photos, !e.serviceType && !e.center && !e.slot && !e.name && !e.phone && !e.address && !e.detailAddress && !e.date && !e.consent]
+  return [!e.serial && !e.typeDetail && !e.manufacturer && !e.model && !e.purchase && !e.symptom, !e.photos, !e.serviceType && !e.center && !e.slot && !e.name && !e.phone && !e.address && !e.detailAddress && !e.date && !e.consent]
 })
 
 async function focusFirstError() {
@@ -234,14 +179,13 @@ async function submit() {
         customerName: form.customerName.trim(),
         phone: form.phone.trim(),
         // productType 은 항상 Enum 값, 직접 입력한 제품명은 productTypeDetail 로 따로
-        productType: form.productType as ProductType,
+        productType: (form.productType || 'unknown') as ProductType,
         productTypeDetail: isUnknownType.value ? form.productTypeDetail.trim() : null,
-        // 제조사는 선택: 비어 있으면 보내지 않음
-        ...(form.manufacturer.trim() ? { manufacturer: form.manufacturer.trim() } : {}),
+        manufacturer: form.manufacturer.trim(),
         model: form.model.trim(),
         serial: form.serial.trim().toUpperCase(),
         symptom: symptom.value,
-        purchaseDate: wpPurchase.value,
+        purchaseDate: purchaseForSubmit.value,
         preferredDate: form.preferredDate,
         // 수리 방법 (개인정보와 마찬가지로 AI 입력과 무관한 접수 필드)
         serviceType: form.serviceType as ServiceType,
@@ -293,66 +237,22 @@ async function submit() {
 
     <!-- ① 제품·증상 -->
     <section v-show="step === 0" :hidden="step !== 0" class="card form-card form-grid" aria-label="제품·증상">
-      <div class="field">
-        <label for="c-category" class="req">제품 종류</label>
-        <select id="c-category" v-model="form.productType" class="select" required :class="{ invalid: touched[0] && errs.productType }" :aria-invalid="touched[0] && !!errs.productType">
-          <option value="" disabled>제품 종류 선택</option>
-          <option v-for="o in PRODUCT_TYPE_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </select>
-        <p v-if="touched[0] && errs.productType" class="error-text">{{ errs.productType }}</p>
-        <!-- 기타 선택 시 드롭다운 바로 아래 (같은 칸 안에서 펼쳐져 옆 칸 배치는 그대로) -->
-        <div v-if="isUnknownType" class="field type-detail">
-          <label for="c-type-detail" class="req">제품 종류 직접 입력</label>
-          <input
-            id="c-type-detail"
-            v-model="form.productTypeDetail"
-            class="input"
-            :maxlength="PRODUCT_TYPE_DETAIL_MAX"
-            autocomplete="off"
-            placeholder="예) 전자레인지"
-            aria-required="true"
-            :class="{ invalid: touched[0] && errs.productTypeDetail }"
-            :aria-invalid="touched[0] && !!errs.productTypeDetail"
-            :aria-describedby="touched[0] && errs.productTypeDetail ? 'c-type-detail-err' : undefined"
-            @blur="form.productTypeDetail = form.productTypeDetail.trim()"
-          />
-          <p v-if="touched[0] && errs.productTypeDetail" id="c-type-detail-err" class="error-text">{{ errs.productTypeDetail }}</p>
-        </div>
-      </div>
-      <div class="field">
-        <label for="c-maker">제조사 <span class="faint">(선택)</span></label>
-        <input id="c-maker" v-model="form.manufacturer" class="input" list="c-maker-list" maxlength="40" autocomplete="off" placeholder="예) ROVA, CleanBot" />
-        <datalist id="c-maker-list"><option v-for="m in makerOptions" :key="m" :value="m" /></datalist>
-      </div>
-      <div class="field">
-        <label for="c-model" class="req">제품 모델명</label>
-        <input id="c-model" v-model="form.model" class="input" list="c-model-list" maxlength="60" autocomplete="off" placeholder="예) ROVA AirWash 24, CleanBot A100" :class="{ invalid: touched[0] && errs.model }" :aria-invalid="touched[0] && !!errs.model" />
-        <datalist id="c-model-list"><option v-for="m in modelOptions" :key="m.name" :value="m.name">{{ m.manufacturer }}</option></datalist>
-        <p class="help">목록에서 고르거나 제품 라벨의 모델명을 직접 입력해 주세요.</p>
-        <p v-if="touched[0] && errs.model" class="error-text">{{ errs.model }}</p>
-      </div>
-      <div class="field">
-        <label for="c-serial" class="req">시리얼 번호</label>
-        <input
-          id="c-serial"
-          v-model="form.serial"
-          class="input"
-          maxlength="30"
-          autocomplete="off"
-          placeholder="제품 라벨의 시리얼 번호"
-          :class="{ invalid: touched[0] && errs.serial }"
-          :aria-invalid="touched[0] && !!errs.serial"
-          @blur="onSerialBlur"
-        />
-        <p v-if="touched[0] && errs.serial" class="error-text">{{ errs.serial }}</p>
-      </div>
-      <WarrantyPeriodNotice v-if="warrantyPeriod" class="span-2" :period="warrantyPeriod" />
-      <div class="field">
-        <label for="c-purchase" class="req">구매일</label>
-        <input id="c-purchase" v-model="form.purchaseDate" class="input" type="date" :max="today" :class="{ invalid: touched[0] && errs.purchase }" :aria-invalid="touched[0] && !!errs.purchase" />
-        <p class="help">무상 수리 여부 확인에 사용돼요. 영수증이나 앱 구매 내역에서 확인할 수 있어요.</p>
-        <p v-if="touched[0] && errs.purchase" class="error-text">{{ errs.purchase }}</p>
-      </div>
+      <!-- 제품 정보: 기사 수리 접수와 같은 공통 컴포넌트 (데모 안내 문구 없음 · 라벨 사진은 참고용) -->
+      <h2 class="sec span-2">① 제품 정보</h2>
+      <ProductInfoFields
+        v-model:serial="form.serial"
+        v-model:product-type="form.productType"
+        v-model:product-type-detail="form.productTypeDetail"
+        v-model:manufacturer="form.manufacturer"
+        v-model:model="form.model"
+        v-model:purchase-date="form.purchaseDate"
+        v-model:purchase-unknown="form.purchaseUnknown"
+        v-model:product="form.product"
+        class="span-2"
+        id-prefix="c"
+        :errors="errs"
+        :show-errors="touched[0]"
+      />
       <div class="field span-2">
         <span id="c-chips" class="label req">고장 증상</span>
         <div class="chips" role="group" aria-labelledby="c-chips">
@@ -634,21 +534,6 @@ h1 {
   }
   .chip {
     padding: 0 14px;
-  }
-}
-.type-detail {
-  margin-top: var(--field-gap, 16px);
-  animation: type-detail-open 0.18s ease-out;
-}
-@keyframes type-detail-open {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .type-detail {
-    animation: none;
   }
 }
 .svc-cards {
