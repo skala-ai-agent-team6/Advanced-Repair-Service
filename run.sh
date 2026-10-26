@@ -33,7 +33,7 @@ DEV_PASSWORD=1234  # 로그인 비밀번호 고정 (backend/.env 값과 상관�
 export DB_PASSWORD INTERNAL_SERVICE_TOKEN DEV_PASSWORD
 
 # 클라우드 DB: backend/.env의 DB_URL이 localhost가 아니면 로컬 Postgres는 안 띄우고 그 DB를 쓴다 (Kafka만 로컬)
-# 예) DB_URL=jdbc:postgresql://34.64.242.87:5432/repair  DB_USER=repair  DB_PASSWORD=...
+# 예) DB_URL=jdbc:postgresql://<클라우드 DB 주소>:5432/repair  DB_USER=repair  DB_PASSWORD=...
 CLOUD_DB=0
 case "${DB_URL:-localhost}" in *localhost*|*127.0.0.1*) ;; *) CLOUD_DB=1 ;; esac
 hostport=${DB_URL#*://}; hostport=${hostport%%/*}
