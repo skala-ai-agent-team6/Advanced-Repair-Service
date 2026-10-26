@@ -13,6 +13,18 @@ SHARED="${REPAIR_ENV_DIR:-$HOME/.config/skala-repair}"
 
 # 백엔드 비밀값: backend/.env가 있으면 그 값, 없거나 비었으면 로컬 기본값
 if [ -f backend/.env ]; then set -a; . backend/.env; set +a; fi
+# 클라우드 DB 접속값(Host/Port/Database/username/password)이 .env나 backend/.env에 있으면 그걸로 DB 연결
+for f in .env backend/.env; do
+  [ -f "$f" ] || continue
+  while IFS='=' read -r k v || [ -n "$k" ]; do
+    case "$k" in Host|Port|Database|username|password) v=${v%$'\r'}; v=${v#\"}; v=${v%\"}; printf -v "CLOUD_$k" '%s' "$v" ;; esac
+  done < "$f"
+done
+if [ -n "${CLOUD_Host:-}" ]; then
+  DB_URL="jdbc:postgresql://$CLOUD_Host:${CLOUD_Port:-5432}/${CLOUD_Database:-postgres}"
+  DB_USER=${CLOUD_username:-postgres}; DB_PASSWORD=${CLOUD_password:-$DB_PASSWORD}
+  export DB_URL DB_USER DB_PASSWORD
+fi
 : "${DB_PASSWORD:=repair-local}"
 : "${INTERNAL_SERVICE_TOKEN:=local-dev-internal-token-0123456789abcdef}"  # 로컬 전용, 32자 이상
 DEV_PASSWORD=1234  # 로그인 비밀번호 고정 (backend/.env 값과 상관없이, 새 DB에서만 적용)
