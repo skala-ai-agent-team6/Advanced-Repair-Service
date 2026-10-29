@@ -1,5 +1,7 @@
 # 사진 품질 검사 v1
 
+> 2026-10-28 자동 처리 정책: 소비자 자동 처리(`app.consumer.auto-pipeline=true`)는 아래 수동 진단 흐름과 별개입니다. 최초 자동 진단은 기본 PASS만 사용하며, dev는 기존 시연을 위해 `app.consumer.allow-warning-photos=true`로 WARNING도 사용합니다. 이 예외 적용은 자동 처리 감사 로그로 구분합니다. 추가 사진 재개는 PASS만 사용합니다. 상세 구조·조회 부수 효과 변경은 [ARCHITECTURE.md](ARCHITECTURE.md)를 참고하세요.
+
 Java 21의 ImageIO/BufferedImage만 사용한다. OpenCV·Python·외부 AI를 추가하지 않는다. 현재는 모든 촬영 목적에 같은 GENERAL 정책을 적용한다. 부품 종류·촬영 거리·반사광에 의한 결함 가림을 판별하지 않는다. TOO_BRIGHT는 과노출 가능성에 대한 경고일 뿐이다.
 
 ## 활성화와 기존 흐름

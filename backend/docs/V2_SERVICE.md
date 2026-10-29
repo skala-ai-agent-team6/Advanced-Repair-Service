@@ -1,5 +1,7 @@
 # V2 백엔드 실행·연동 안내
 
+> 2026-10-28 자동 처리 정책: 소비자 자동 처리(`app.consumer.auto-pipeline=true`)는 아래 수동 진단 흐름과 별개입니다. 최초 자동 진단은 기본 PASS만 사용하며, dev는 기존 시연을 위해 `app.consumer.allow-warning-photos=true`로 WARNING도 사용합니다. 이 예외 적용은 자동 처리 감사 로그로 구분합니다. 추가 사진 재개는 PASS만 사용합니다. 상세 구조·조회 부수 효과 변경은 [ARCHITECTURE.md](ARCHITECTURE.md)를 참고하세요.
+
 2026-10-23. Java 21 / Spring Boot 4.1.1 / 기존 세션·CSRF / PostgreSQL / 로컬 원본 파일 / Kafka v2·Outbox·SSE를 유지했다. 브랜치 backend/feat/v2-service-expansion. 최초 작업 트리는 깨끗했고 기존 V6(Agent 처리 추적), V7(사진 품질)을 변경하지 않았다. 신규 스키마는 V8__service_expansion.sql이다. 프런트·Agent·RAG 실행 코드는 덮어쓰지 않았다.
 
 ## 요구사항 대조
